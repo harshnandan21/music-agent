@@ -14,12 +14,14 @@ FONT_PATH   = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets",
 
 
 def _get_audio_duration(audio_path: str) -> float:
-    result = subprocess.run(
-        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-         "-of", "default=noprint_wrappers=1:nokey=1", audio_path],
-        capture_output=True, text=True, check=True
-    )
-    return float(result.stdout.strip())
+    """Parse duration from ffmpeg stderr — works without ffprobe."""
+    import re
+    r = subprocess.run(["ffmpeg", "-i", audio_path, "-f", "null", "-"],
+                       capture_output=True, text=True)
+    m = re.search(r"Duration:\s+(\d+):(\d+):([\d.]+)", r.stderr)
+    if not m:
+        raise RuntimeError(f"[assemble] Could not read duration of {audio_path}")
+    return int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3))
 
 
 def run(brain: dict, image_path: str, audio_path: str) -> str:
@@ -27,18 +29,11 @@ def run(brain: dict, image_path: str, audio_path: str) -> str:
     audio_duration = _get_audio_duration(audio_path)
     print(f"[assemble] Audio={audio_duration:.0f}s, building video from static image...")
 
-    safe_title = title.replace("'", "\\'").replace(":", "\\:").replace(",", "\\,")
-    font_arg = FONT_PATH if os.path.exists(FONT_PATH) else ""
-    fontfile_clause = f"fontfile={font_arg}:" if font_arg else ""
-
+    # Clean video — no drawtext overlay (title lives on the thumbnail instead)
     filter_complex = (
         f"[0:v]"
         f"scale=1920:1080:force_original_aspect_ratio=decrease,"
         f"pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,"
-        f"drawtext={fontfile_clause}"
-        f"text='{safe_title}':"
-        f"fontcolor=white:fontsize=52:x=(w-text_w)/2:y=h-80:"
-        f"box=1:boxcolor=black@0.55:boxborderw=12,"
         f"fade=t=in:st=0:d=2,"
         f"fade=t=out:st={audio_duration - 3}:d=3[v]"
     )
@@ -59,7 +54,7 @@ def run(brain: dict, image_path: str, audio_path: str) -> str:
     ]
 
     print("[assemble] Running FFmpeg...")
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=True, stdin=subprocess.DEVNULL)
     size_mb = os.path.getsize(FINAL_VIDEO) / 1_048_576
     print(f"[assemble] Saved {FINAL_VIDEO} ({size_mb:.1f} MB)")
     return FINAL_VIDEO

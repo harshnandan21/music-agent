@@ -2,9 +2,11 @@
 client_secret.json
 youtube_token.json
 output/
+.claude/
 __pycache__/
 *.pyc
 *.wav
 *.mp4
 *.jpg
 *.png
+*.docx

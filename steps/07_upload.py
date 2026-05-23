@@ -8,8 +8,11 @@ import os, sys, json
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from config import YOUTUBE_CLIENT_SECRET_FILE, YOUTUBE_TOKEN_FILE
 
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
-YOUTUBE_PLAYLIST_ID = os.environ.get("YOUTUBE_PLAYLIST_ID", "")  # optional
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube",
+]
+YOUTUBE_PLAYLIST_ID = os.environ.get("YOUTUBE_PLAYLIST_ID", "")
 
 
 def _get_credentials():
@@ -68,12 +71,15 @@ def run(brain: dict, video_path: str, thumbnail_path: str) -> str:
     video_id = response["id"]
     print(f"[upload] Uploaded: https://youtu.be/{video_id}")
 
-    # Set thumbnail
-    youtube.thumbnails().set(
-        videoId=video_id,
-        media_body=MediaFileUpload(thumbnail_path, mimetype="image/jpeg"),
-    ).execute()
-    print(f"[upload] Thumbnail set.")
+    # Set thumbnail (requires verified YouTube channel)
+    try:
+        youtube.thumbnails().set(
+            videoId=video_id,
+            media_body=MediaFileUpload(thumbnail_path, mimetype="image/jpeg"),
+        ).execute()
+        print("[upload] Thumbnail set.")
+    except Exception as e:
+        print(f"[upload] Thumbnail skipped (verify channel at youtube.com/verify): {e}")
 
     # Add to playlist if configured
     if YOUTUBE_PLAYLIST_ID:

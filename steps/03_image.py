@@ -20,9 +20,16 @@ def run(client, brain: dict) -> str:
     print(f"[image] Generating: {prompt[:80]}...")
 
     # Same pattern as affirmation agent's _generate_raw_background
+    # Enforce Madhubani style and landscape ratio — brain already seeds the scene
+    suffix = (
+        " Horizontal landscape 16:9, 1920x1080. "
+        "Madhubani folk painting style: flat 2D, bold black outlines, vibrant natural pigments, "
+        "aged parchment texture, intricate geometric border. "
+        "No text, no watermarks, no photorealism, no 3D shading."
+    )
     response = client.models.generate_content(
         model=IMAGEN_MODEL,
-        contents=prompt + " Horizontal landscape 16:9. Photorealistic, cinematic, 4K. No text, no watermark, no people.",
+        contents=prompt + suffix,
         config=types.GenerateContentConfig(response_modalities=["IMAGE", "TEXT"])
     )
 
