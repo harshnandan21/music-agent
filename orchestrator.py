@@ -59,10 +59,14 @@ def _await_approval(brain: dict, video_path: str, thumb_path: str) -> bool:
 
 
 def main():
-    resume = "--resume" in sys.argv
+    resume    = "--resume" in sys.argv
+    no_upload = "--no-upload" in sys.argv
 
+    mode = "Resuming from assemble" if resume else "Starting pipeline"
+    if no_upload:
+        mode += " (no thumbnail / no upload)"
     print("=" * 60)
-    print(f"MUSIC AGENT — {'Resuming from assemble' if resume else 'Starting pipeline'}")
+    print(f"MUSIC AGENT — {mode}")
     print("=" * 60)
 
     client = genai.Client(api_key=GEMINI_API_KEY)
@@ -78,6 +82,12 @@ def main():
             music_path = os.path.join(OUTPUT_DIR, "music.mp3")
             image_path = os.path.join(OUTPUT_DIR, "background.png")
             print(f"[resume] Using: {brain.get('title', '')}")
+
+            # Generate image if missing
+            if not os.path.exists(image_path):
+                print("[resume] background.png missing — generating image...")
+                image_mod = importlib.import_module("03_image")
+                image_path = image_mod.run(client, brain)
         else:
             clean_output()
 
@@ -96,6 +106,15 @@ def main():
         # Step 4 — Assemble (FFmpeg: static image + audio)
         assemble_mod = importlib.import_module("05_assemble")
         final_video = assemble_mod.run(brain, image_path, music_path)
+
+        if no_upload:
+            print("=" * 60)
+            print(f"DONE (no-upload mode) — review files:")
+            print(f"  Video : {final_video}")
+            print(f"  Music : {music_path}")
+            print(f"  Image : {image_path}")
+            print("=" * 60)
+            return
 
         # Step 5 — Thumbnail (PIL)
         thumb_mod = importlib.import_module("06_thumbnail")

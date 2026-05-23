@@ -45,8 +45,8 @@ def run(brain: dict, video_path: str, thumbnail_path: str) -> str:
 
     body = {
         "snippet": {
-            "title":       brain["title"],
-            "description": brain["description"],
+            "title":       brain.get("title", ""),
+            "description": brain.get("description", ""),
             "tags":        brain.get("tags", []),
             "categoryId":  "10",  # Music
             "defaultLanguage": "en",
@@ -71,15 +71,18 @@ def run(brain: dict, video_path: str, thumbnail_path: str) -> str:
     video_id = response["id"]
     print(f"[upload] Uploaded: https://youtu.be/{video_id}")
 
-    # Set thumbnail (requires verified YouTube channel)
-    try:
-        youtube.thumbnails().set(
-            videoId=video_id,
-            media_body=MediaFileUpload(thumbnail_path, mimetype="image/jpeg"),
-        ).execute()
-        print("[upload] Thumbnail set.")
-    except Exception as e:
-        print(f"[upload] Thumbnail skipped (verify channel at youtube.com/verify): {e}")
+    # Set thumbnail (optional — skipped if no path provided)
+    if thumbnail_path:
+        try:
+            youtube.thumbnails().set(
+                videoId=video_id,
+                media_body=MediaFileUpload(thumbnail_path, mimetype="image/jpeg"),
+            ).execute()
+            print("[upload] Thumbnail set.")
+        except Exception as e:
+            print(f"[upload] Thumbnail skipped (verify channel at youtube.com/verify): {e}")
+    else:
+        print("[upload] No thumbnail — skipping.")
 
     # Add to playlist if configured
     if YOUTUBE_PLAYLIST_ID:

@@ -1,16 +1,15 @@
 [
   {
     "date": "2026-05-23",
-    "title": "396Hz Sitar, Bansuri & Tabla | Stop Overthinking | Raga Darbari Kanada",
+    "title": "396Hz Sitar, Flute, Tabla for Late Night Anxiety Reset | Darbari Kanada",
     "raga": "Darbari Kanada",
     "instrument": "sitar, bansuri flute & tabla",
     "use_case": "late night relaxation",
-    "hook_angle": "Midnight Trio's Majestic Solace",
-    "music_prompt": "",
-    "image_prompt": "",
+    "hook_angle": "Late-night emotional acceptance and letting go",
+    "hook_phrase": "You don't need to be okay right now. Just be here.",
+    "music_prompt": "Instruments: Sitar, Bansuri Flute, and Tabla. Raga: Darbari Kanada. BPM: 45 BPM.\nEach note must decay with a long, natural reverb. Ensure wide silence between musical phrases, emphasizing the contemplative nature of the raga. There should be no buildup, no climax, maintaining a consistent, deeply meditative texture throughout. Record with a warm, analog quality. The structure must be loop-friendly and seamless.\nSitar will lead with a weighty and introspective alap, exploring the deep komal rishab and komal gandhar notes with heavy meend (glides). The bansuri flute will answer the sitar's phrases with its own delicate, midnight-infused expressions. Tabla will enter softly and subtly at approximately 3 minutes, playing a very slow and gentle dadra taal.\nThe playing feel should evoke majestic stillness, allowing thoughts to settle like sediment, creating a profound late-night depth.\nExplicitly exclude: No Western instruments. No aggressive percussion fills. No sudden dynamic shifts or abrupt changes in intensity.",
+    "image_prompt": "Madhubani folk painting style from Mithila, Bihar, India. 16:9 widescreen format. Flat 2D perspective with bold hand-drawn black outlines. Hand-painted texture on aged parchment or natural fabric. Vibrant natural pigments: deep red, saffron yellow, peacock teal, forest green, ivory white, turmeric gold. Characteristic nature motifs: peacocks, lotus flowers, mango leaves, fish, deer, birds. Intricate geometric and floral borders with elephants and paisley.\nScene: A serene night garden where three musicians are seated under a large, flowering tree - a sitar player, a bansuri flute player, and a tabla player. A full moon glows softly overhead, depicted as a stylized mandala. Peacocks and deer are shown listening attentively in the shadows of the garden foliage. Several small oil lamps (diyas) are arranged in a gentle semicircle around the musicians. The overall palette should be dominated by deep indigo for the night sky, contrasted with rich golds and silvers for the moon, stars, and lamp glow. The stylized sky is filled with delicate stars.\nNo text or letters anywhere. Pure illustration only. No watermarks.",
     "thumbnail_hook": "MIDNIGHT CALM",
-    "thumbnail_instr": "SITAR, BANSURI & TABLA · RAAG DARBARI",
-    "thumbnail_tagline": "Saturday Night Deep Relaxation for the Soul",
-    "hz_frequency": "396Hz"
+    "thumbnail_tagline": "Saturday Night Deep Relaxation for the Soul"
   }
 ]

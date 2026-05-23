@@ -35,9 +35,12 @@ def _save_used_idea(brain: dict):
     if os.path.exists(USED_IDEAS_FILE):
         with open(USED_IDEAS_FILE) as f:
             data = json.load(f)
-    data.append({
-        "date":              str(date.today()),
+    today = str(date.today())
+    entry = {
+        "date":              today,
         "title":             brain.get("title", ""),
+        "description":       brain.get("description", ""),
+        "tags":              brain.get("tags", []),
         "raga":              brain.get("raga", ""),
         "instrument":        brain.get("instrument", ""),
         "use_case":          brain.get("use_case", ""),
@@ -47,7 +50,12 @@ def _save_used_idea(brain: dict):
         "image_prompt":      brain.get("image_prompt", ""),
         "thumbnail_hook":    brain.get("thumbnail_hook", ""),
         "thumbnail_tagline": brain.get("thumbnail_tagline", ""),
-    })
+    }
+    # Replace today's entry if one already exists, otherwise append
+    if data and data[-1]["date"] == today:
+        data[-1] = entry
+    else:
+        data.append(entry)
     with open(USED_IDEAS_FILE, "w") as f:
         json.dump(data, f, indent=2)
 

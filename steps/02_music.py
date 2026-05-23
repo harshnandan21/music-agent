@@ -5,7 +5,7 @@ merges with crossfade, normalises volume, then trims to exactly 10 minutes
 with fade-in and fade-out. Output: output/music.mp3
 """
 
-import os, sys, subprocess, time, shutil
+import os, sys, subprocess, time, shutil, concurrent.futures
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from config import OUTPUT_DIR
 
@@ -67,11 +67,19 @@ def _generate_single_clip(client, prompt: str, index: int) -> str:
     print(f"[music] Generating clip {index + 1}/{NUM_CLIPS}...")
 
     for attempt in range(3):
-        response = client.models.generate_content(
-            model="lyria-3-pro-preview",
-            contents=prompt,
-            config=types.GenerateContentConfig(response_modalities=["AUDIO"])
-        )
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+                future = ex.submit(
+                    client.models.generate_content,
+                    model="lyria-3-pro-preview",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(response_modalities=["AUDIO"]),
+                )
+                response = future.result(timeout=300)  # 5-min timeout per clip
+        except concurrent.futures.TimeoutError:
+            print(f"[music] Clip {index + 1} attempt {attempt + 1} timed out after 5 min, retrying...")
+            time.sleep(5)
+            continue
         candidates = response.candidates or []
         if candidates and candidates[0].content:
             audio_bytes = next(
@@ -85,9 +93,14 @@ def _generate_single_clip(client, prompt: str, index: int) -> str:
                 dur = _get_duration(raw_path)
                 size_mb = os.path.getsize(raw_path) / 1_048_576
                 print(f"[music] Clip {index + 1} raw: {dur:.0f}s ({dur/60:.1f} min), {size_mb:.1f} MB")
-                # Strip boundary silence before returning
                 _strip_silence(raw_path, clean_path)
                 os.remove(raw_path)
+                after_dur = _get_duration(clean_path)
+                if after_dur < 60:
+                    print(f"[music] Clip {index + 1} only {after_dur:.0f}s after stripping — regenerating...")
+                    os.remove(clean_path)
+                    time.sleep(3)
+                    continue
                 return clean_path
         print(f"[music] Clip {index + 1} attempt {attempt + 1} returned no audio, retrying...")
         time.sleep(3)
@@ -193,7 +206,7 @@ def run(client, brain: dict) -> str:
     final_dur = _get_duration(MUSIC_FILE)
     size_mb   = os.path.getsize(MUSIC_FILE) / 1_048_576
     print(f"[music] Final: {final_dur:.0f}s ({final_dur/60:.1f} min), "
-          f"{size_mb:.1f} MB → {MUSIC_FILE}")
+          f"{size_mb:.1f} MB -> {MUSIC_FILE}")
     return MUSIC_FILE
 
 
