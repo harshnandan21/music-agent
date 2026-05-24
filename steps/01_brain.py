@@ -40,6 +40,7 @@ def _save_used_idea(brain: dict):
         "date":              today,
         "title":             brain.get("title", ""),
         "description":       brain.get("description", ""),
+        "keywords":          brain.get("keywords", ""),
         "tags":              brain.get("tags", []),
         "raga":              brain.get("raga", ""),
         "instrument":        brain.get("instrument", ""),
@@ -158,23 +159,65 @@ VIDEO PROMPT GUIDANCE (for Veo — seamless 8-second loop):
 - Camera completely static. Only natural elements animate (stars, water, smoke, flames).
 - Base on the image scene: choose the matching animation type from the guide.
 
-DESCRIPTION GUIDANCE (250+ words total):
-- Open with one emotional hook (2 sentences — pull the viewer in immediately)
-- English section: raga name, instruments, use case benefits, DhunDetox brand voice
-- Bullet list: 8-10 use cases (meditation, sleep, yoga, study, anxiety, etc.)
-- 2-3 sentences on raga therapy (why this raga heals)
-- Short Hindi section (3-4 lines summarising the video in Hindi — expands reach)
-- Close with: Like · Save · Share if this helped someone you know
-- End with 15 hashtags: {hashtag_str}
-- Useful keywords to weave in naturally: {eng_keywords}
-- Hinglish search terms to include in hashtags: {hinglish_keywords}
+DESCRIPTION TEMPLATE — follow this structure exactly:
 
-TAGS GUIDANCE: Include exactly 15 tags max — mix raga name, instrument names, use case terms, and broad search terms. English only (no Devanagari). Each tag max 30 characters. Total all tags combined must be under 400 characters.
+{emoji matching use case} {{SEO title repeat}}
+
+{{2-3 sentence hook: address the pain point directly, short and punchy}}
+
+This deeply meditative composition in **Raag {schedule['raga']}** blends the healing resonance of **{{hz_frequency}}** — known for {{hz benefit}} — with soulful **{instruments_label}** to {{use case benefits}}.
+
+> *"{{hook_phrase}}"*
+
+{{2-3 sentences: cultural/historical context of Raag {schedule['raga']}, what it does to the nervous system}}
+
+**{{emoji}} Perfect for:**
+- {{8 specific use cases as bullet points}}
+
+**🎵 Why Raag {schedule['raga']} heals:**
+{{2-3 sentences: parasympathetic nervous system, raga science, Hz frequency benefit if applicable}}
+
+**🎧 How to use this music:**
+1. Use headphones at a comfortable, low volume
+2. Dim the lights or turn them off completely
+3. Lie down or sit comfortably with eyes closed
+4. Take 3 slow deep breaths — exhale longer than you inhale
+5. Let the {{primary instrument}} guide your thoughts into softness
+6. Let the {{secondary instrument}} slow your breath
+7. Let the {{third instrument or rhythm}} ground you in peace
+8. Stay for at least 15–20 minutes for the full effect
+
+---
+
+**🇮🇳 हिंदी में:**
+{{3-4 lines in Hindi describing raga, instruments, use case}}
+*"{{hook_phrase translated to Hindi}}"*
+
+---
+
+💛 If this music brought you stillness tonight, please **LIKE, SUBSCRIBE, and SHARE** with someone who needs peace.
+🔔 **Subscribe to DhunDetox** for more healing frequencies, Indian classical meditation music, raga therapy, and mindful sound journeys.
+💬 Comment below: *{{engaging question related to this video's theme}}*
+🌿 **Save this video** for when you need it most.
+
+---
+
+⚠️ *Disclaimer: This music is intended for relaxation, meditation, and wellness purposes. It is not a substitute for professional medical or psychological treatment.*
+
+{hashtag_str}
+
+KEYWORD STRING (separate field — for YouTube tags):
+Comma-separated, no spaces after commas, total 490–500 chars exactly.
+Pattern: raga name variations, instruments, hz frequency variants, use case terms, channel name (dhundetox).
+Example: raag {schedule['raga'].lower()},raga {schedule['raga'].lower()},{instruments_label.replace(' & ', ' ').replace(', ', ' ')},396hz,396 hz healing,...,dhundetox
+
+TAGS GUIDANCE: Exactly 15 tags max — English only, each max 30 chars, total under 400 chars combined. Parse from the keyword string above.
 
 {{
   "title": "SEO title ≤70 chars",
-  "description": "250+ word YouTube description per guidance above",
-  "tags": ["15 YouTube search tags, English only, each max 30 chars"],
+  "description": "Full YouTube description following the 11-section template above, including Hindi section, CTA, disclaimer, and 15 hashtags at end",
+  "keywords": "comma-separated keyword string, 490-500 chars, no spaces after commas, for YouTube tags field",
+  "tags": ["15 tags parsed from keywords, English only, each max 30 chars"],
   "music_prompt": "Detailed Lyria prompt per music guidance above",
   "image_prompt": "Madhubani painting scene per image guidance above",
   "video_prompt": "Veo 8-second seamless loop per video guidance above",
