@@ -234,12 +234,17 @@ CONTENT_SEEDS = {
         "Desert Night", "River Fog",
     ],
     "title_patterns": [
-        "{outcome} {emoji} {instruments} | {secondary_benefit} | Raga {raga}",
-        "{hz} {instruments} | {outcome} | {use_case} | Raga {raga}",
-        "{atmosphere} {emoji} {instruments} for {outcome} | Indian Raga Therapy",
-        "Can't {problem}? {instruments} & Raga {raga} That Actually Works",
-        "{atmosphere} × {instruments} | {outcome}",
-        "Stop {problem}: {instruments} Music for {use_case} | Raga {raga}",
+        # Top formula — pain point + emoji + raga + hz + instruments + benefit
+        "{pain_point} {emoji} Raag {raga} at {hz} | {instruments} for {use_case}",
+        # Emotional / vulnerable hooks (perform best for late-night & anxiety content)
+        "When Your {pain_noun} Won't {verb} {emoji} Raag {raga} {hz} | {instruments} for {use_case}",
+        "For the {atmosphere} {emoji} Raag {raga} at {hz} | Healing {instruments}",
+        "Some Nights Your Mind Won't Slow Down {emoji} {raga} {hz} {instrument1} | Deep {outcome}",
+        # Outcome-first formulas
+        "{outcome} {emoji} Raag {raga} at {hz} | {instruments} for {use_case}",
+        "{hz} {instruments} | {outcome} | Raag {raga}",
+        # Atmosphere-led
+        "{atmosphere} {emoji} {instruments} | Raag {raga} for {outcome}",
     ],
     "hook_phrases": [
         # Stress / anxiety

@@ -127,8 +127,14 @@ TODAY'S POST CONFIG (from weekly schedule):
 CONTENT SEEDS (weave 1-2 naturally):
 - Outcome hooks: {seeds_outcomes}
 - Atmosphere hooks: {seeds_atmos}
-- Title patterns (pick one as inspiration):
+- Title patterns (emotional/vulnerable hook preferred — highest CTR for this niche):
 {seeds_patterns}
+- Real examples of winning titles:
+  · "Late Night Anxiety Relief 🌙 Raag Darbari Kanada at 396Hz | Sitar, Bansuri & Tabla for Overthinking"
+  · "When Your Mind Won't Sleep 🌙 Raag Darbari Kanada 396Hz | Sitar for Anxiety & Overthinking"
+  · "For the Sleepless Nights 🌙 Raag Darbari Kanada at 396Hz | Healing Sitar, Bansuri & Tabla"
+  · "Some Nights Your Mind Won't Slow Down 🌙 Darbari Kanada 396Hz Sitar | Deep Anxiety Relief"
+  Rule: pain point or relatable moment first → emoji → Raag name + Hz → instruments → benefit
 - Emotional hook openers for description (pick the most fitting):
 {seeds_hooks}
 
