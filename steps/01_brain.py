@@ -169,12 +169,12 @@ DESCRIPTION GUIDANCE (250+ words total):
 - Useful keywords to weave in naturally: {eng_keywords}
 - Hinglish search terms to include in hashtags: {hinglish_keywords}
 
-TAGS GUIDANCE: Include 40 tags — mix specific (raga name, instrument names) + broad (stress relief, meditation) + Hindi/Hinglish terms.
+TAGS GUIDANCE: Include exactly 15 tags max — mix raga name, instrument names, use case terms, and broad search terms. English only (no Devanagari). Each tag max 30 characters. Total all tags combined must be under 400 characters.
 
 {{
   "title": "SEO title ≤70 chars",
   "description": "250+ word YouTube description per guidance above",
-  "tags": ["40 specific YouTube search tags mixing English and Hindi/Hinglish"],
+  "tags": ["15 YouTube search tags, English only, each max 30 chars"],
   "music_prompt": "Detailed Lyria prompt per music guidance above",
   "image_prompt": "Madhubani painting scene per image guidance above",
   "video_prompt": "Veo 8-second seamless loop per video guidance above",

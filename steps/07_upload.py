@@ -43,11 +43,14 @@ def run(brain: dict, video_path: str, thumbnail_path: str) -> str:
     creds = _get_credentials()
     youtube = build("youtube", "v3", credentials=creds)
 
+    # YouTube rejects non-ASCII tags (Hindi/Devanagari etc.)
+    safe_tags = [t for t in brain.get("tags", []) if t.isascii()]
+
     body = {
         "snippet": {
             "title":       brain.get("title", ""),
             "description": brain.get("description", ""),
-            "tags":        brain.get("tags", []),
+            "tags":        safe_tags,
             "categoryId":  "10",  # Music
             "defaultLanguage": "en",
         },
