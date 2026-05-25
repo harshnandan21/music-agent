@@ -36,7 +36,7 @@ def _get_credentials():
     return creds
 
 
-def run(brain: dict, video_path: str, thumbnail_path: str) -> str:
+def run(brain: dict, video_path: str, thumbnail_path: str, publish_at: str = None) -> str:
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaFileUpload
 
@@ -59,7 +59,8 @@ def run(brain: dict, video_path: str, thumbnail_path: str) -> str:
             "defaultLanguage": "en",
         },
         "status": {
-            "privacyStatus": "public",
+            "privacyStatus": "private" if publish_at else "public",
+            "publishAt":     publish_at,
             "selfDeclaredMadeForKids": False,
         },
     }

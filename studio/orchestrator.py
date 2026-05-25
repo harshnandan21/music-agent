@@ -170,12 +170,25 @@ def do_publish(date_str: str):
         print("[orchestrator] Upload rejected via Telegram. Files kept in draft folder.")
         sys.exit(0)
 
+    # Optional: schedule publish time
+    schedule_token = tg.new_token()
+    tg.send_schedule_prompt(schedule_token)
+    publish_at = tg.wait_for_schedule(schedule_token, timeout_seconds=300)
+
     # Step 4 — Upload
     step04 = _load_step("04_upload.py")
-    video_id = step04.run(brain, draft_dir)
+    video_id = step04.run(brain, draft_dir, publish_at=publish_at)
+
+    if publish_at:
+        from datetime import datetime
+        from studio.telegram import IST
+        dt = datetime.fromisoformat(publish_at)
+        schedule_label = f"Scheduled for {dt.strftime('%d %b %Y %I:%M %p')} IST"
+    else:
+        schedule_label = "Live now"
 
     upload_caption = (
-        f"Uploaded!\n\n"
+        f"Uploaded! {schedule_label}\n\n"
         f"{brain.get('title', '')}\n\n"
         f"https://youtu.be/{video_id}"
     )

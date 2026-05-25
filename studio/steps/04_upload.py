@@ -21,12 +21,11 @@ def _load_upload_mod():
     return mod
 
 
-def run(brain: dict, draft_dir: str) -> str:
+def run(brain: dict, draft_dir: str, publish_at: str = None) -> str:
     video_path = os.path.join(draft_dir, "video.mp4")
     if not os.path.exists(video_path):
         raise FileNotFoundError(f"[upload] video.mp4 not found in {draft_dir}")
 
-    # Use thumbnail.png if present, else fall back to background image
     thumbnail_path = None
     for name in ["thumbnail.png", "thumbnail.jpg", "background.png", "background.jpg"]:
         p = os.path.join(draft_dir, name)
@@ -35,5 +34,5 @@ def run(brain: dict, draft_dir: str) -> str:
             break
 
     upload_mod = _load_upload_mod()
-    video_id = upload_mod.run(brain, video_path, thumbnail_path)
+    video_id = upload_mod.run(brain, video_path, thumbnail_path, publish_at=publish_at)
     return video_id
