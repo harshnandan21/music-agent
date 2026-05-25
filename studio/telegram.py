@@ -1,5 +1,5 @@
 """Minimal Telegram helpers for studio — send messages, photo+approval, long-poll."""
-import json, os, time, uuid
+import io, json, os, time, uuid
 import requests
 
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -8,6 +8,17 @@ CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID")
 
 def _url(method):
     return f"https://api.telegram.org/bot{BOT_TOKEN}/{method}"
+
+
+def send_document(filename: str, content: str, caption: str = ""):
+    """Send a plain-text file as a Telegram document (easy to open & copy on phone)."""
+    buf = io.BytesIO(content.encode("utf-8"))
+    resp = requests.post(_url("sendDocument"), data={
+        "chat_id": CHAT_ID,
+        "caption": caption,
+    }, files={"document": (filename, buf, "text/plain")}, timeout=30)
+    resp.raise_for_status()
+    return resp.json()
 
 
 def send_text(text: str):

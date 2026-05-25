@@ -5,7 +5,7 @@ Runs the brain (Gemini), saves brain.json, sends Telegram with idea summary
 Waits up to 2 hours for approval before the day's work begins.
 """
 
-import html, importlib.util, json, os, sys
+import importlib.util, json, os, sys
 
 STUDIO_DIR = os.path.dirname(os.path.dirname(__file__))
 ROOT_DIR   = os.path.dirname(STUDIO_DIR)
@@ -125,32 +125,51 @@ def run(client, draft_dir: str) -> tuple[dict, str]:
     token = tg.new_token()
     tg.send_approval(None, caption, token)
 
-    # 2 — Full Suno prompt
-    def e(s): return html.escape(str(s))
-    suno = _suno_prompt(brain)
-    tg.send_text(f"<b>SUNO CUSTOM MODE</b>\n\n<pre>{e(suno)}</pre>")
-
-    # 3 — Gemini background prompt
-    bg = _gemini_bg_prompt(brain)
-    tg.send_text(f"<b>GEMINI — BACKGROUND (16:9)</b>\n\n<pre>{e(bg[:3800])}</pre>")
-
-    # 4 — Gemini thumbnail prompt
+    # 2 — All prompts as a single .txt file (open on phone → easy copy-paste)
+    suno  = _suno_prompt(brain)
+    bg    = _gemini_bg_prompt(brain)
     thumb = _gemini_thumb_prompt(brain)
-    tg.send_text(f"<b>GEMINI — THUMBNAIL</b>\n\n<pre>{e(thumb[:3800])}</pre>")
+    divider = "\n" + "=" * 60 + "\n\n"
+    doc_content = (
+        f"DHUNDETOX — IDEA OF THE DAY ({date_label})\n"
+        f"{'=' * 60}\n\n"
+        f"Raga:        {brain.get('raga', '')}\n"
+        f"Instruments: {brain.get('instrument', '')}\n"
+        f"Title:       {brain.get('title', '')}\n"
+        f"Hz:          {brain.get('hz_frequency', '')}\n"
+        f"Hook:        {brain.get('thumbnail_hook', '')}\n"
+        f"Tagline:     {brain.get('thumbnail_tagline', '')}\n"
+        + divider
+        + suno
+        + divider
+        + bg
+        + divider
+        + thumb
+        + "\n"
+    )
+    tg.send_document(
+        filename=f"dhundetox-{date_label}.txt",
+        content=doc_content,
+        caption=f"Open file to copy Suno + Gemini prompts",
+    )
 
-    print("[draft] Prompts sent. Waiting up to 2h for approval...")
-    decision = tg.wait_for_decision(token, timeout_seconds=7200)
+    print("[draft] Prompts sent. Waiting up to 10h for approval (no reply = rejected)...")
+    decision = tg.wait_for_decision(token, timeout_seconds=36000)
+    if decision == "timeout":
+        decision = "rejected"
     print(f"[draft] Decision: {decision}")
 
     if decision == "approved":
         tg.send_text(
             f"Idea locked in for {date_label}!\n\n"
             f"Drop your files into studio/drafts/{date_label}/\n"
-            f"  clip_1.mp3   (required)\n"
-            f"  clip_2.mp3   (optional)\n"
+            f"  clip_1.mp3      (required)\n"
+            f"  clip_2.mp3      (optional)\n"
             f"  background.png  (required)\n"
             f"  thumbnail.png   (optional)\n\n"
             f"Then run:\npython studio/orchestrator.py --publish"
         )
+    else:
+        tg.send_text(f"Idea for {date_label} rejected / timed out. Run --draft again for a new idea.")
 
     return brain, decision
