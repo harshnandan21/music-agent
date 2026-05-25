@@ -98,23 +98,32 @@ def do_publish(date_str: str):
 
     draft_dir = _draft_dir(date_str)
     brain     = _load_brain(draft_dir)
-    print("[orchestrator] Title:", brain.get('title', '').encode('ascii', 'replace').decode('ascii'))
+    title_safe = brain.get('title', '').encode('ascii', 'replace').decode('ascii')
+    print("[orchestrator] Title:", title_safe)
+
+    tg.send_text(f"Publish started for {date_str}\n{title_safe}")
 
     # Step 2 — Extend music (skip if music.mp3 already exists)
     music_path = os.path.join(draft_dir, "music.mp3")
     if os.path.exists(music_path):
         print(f"[orchestrator] music.mp3 already present — skipping extend step.")
+        tg.send_text("music.mp3 already exists — skipping extend step.")
     else:
+        tg.send_text("Extending music clips to 20+ min... (takes 3-5 min)")
         step02 = _load_step("02_extend.py")
         step02.run(draft_dir)
+        tg.send_text("Music ready.")
 
     # Step 3 — Assemble video (skip if video.mp4 already exists)
     video_path = os.path.join(draft_dir, "video.mp4")
     if os.path.exists(video_path):
         print(f"[orchestrator] video.mp4 already present — skipping assemble step.")
+        tg.send_text("video.mp4 already exists — skipping assemble step.")
     else:
+        tg.send_text("Assembling video (image + music)... (takes 2-4 min)")
         step03 = _load_step("03_assemble.py")
         step03.run(brain, draft_dir)
+        tg.send_text("Video assembled. Sending for approval...")
 
     # Telegram approval
     preview_image = None
