@@ -173,7 +173,7 @@ def do_publish(date_str: str):
     # Optional: schedule publish time
     schedule_token = tg.new_token()
     tg.send_schedule_prompt(schedule_token)
-    publish_at = tg.wait_for_schedule(schedule_token, timeout_seconds=300)
+    publish_at = tg.wait_for_schedule(schedule_token)
 
     # Step 4 — Upload
     step04 = _load_step("04_upload.py")

@@ -200,7 +200,8 @@ def wait_for_schedule(token: str, timeout_seconds: int = 10800) -> str | None:
                 return None
 
             if data.startswith(f"SCH_{token}_"):
-                _, _, _, day_offset, hour = data.split("_", 4)
+                parts = data.split("_")
+                day_offset, hour = parts[-2], parts[-1]
                 dt = (datetime.now(IST).replace(hour=int(hour), minute=0, second=0, microsecond=0)
                       + __import__("datetime").timedelta(days=int(day_offset)))
                 label = dt.strftime("%d %b %Y %I:%M %p") + " IST"
