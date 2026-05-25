@@ -78,11 +78,14 @@ def do_draft(date_str: str):
     client    = genai.Client(api_key=GEMINI_API_KEY)
 
     step01 = _load_step("01_draft.py")
-    step01.run(client, draft_dir)
+    _, decision = step01.run(client, draft_dir)
 
     print("=" * 60)
-    print(f"Draft saved: {draft_dir}")
-    print("Check Telegram for today's idea, then drop your files and run --publish.")
+    if decision == "rejected":
+        print("Idea rejected via Telegram. Re-run --draft to generate a new one.")
+    else:
+        print(f"Draft saved: {draft_dir}")
+        print("Idea approved! Drop your files and run --publish when ready.")
     print("=" * 60)
 
 
