@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from config import (
     BRAIN_MODEL, OUTPUT_DIR,
     today_schedule, format_instruments,
-    CONTENT_SEEDS, MADHUBANI_STYLE, CINEMATIC_STYLE,
+    CONTENT_SEEDS, MADHUBANI_STYLE,
     VIDEO_ANIMATION_GUIDE, YOUTUBE_KEYWORDS,
 )
 

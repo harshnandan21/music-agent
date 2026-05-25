@@ -21,6 +21,17 @@ def send_document(filename: str, content: str, caption: str = ""):
     return resp.json()
 
 
+def send_photo(image_path: str, caption: str):
+    """Send a photo with caption (no buttons)."""
+    img_bytes = _compress_for_telegram(image_path)
+    resp = requests.post(_url("sendPhoto"), data={
+        "chat_id": CHAT_ID,
+        "caption": caption,
+    }, files={"photo": ("preview.jpg", img_bytes, "image/jpeg")}, timeout=30)
+    resp.raise_for_status()
+    return resp.json()
+
+
 def send_text(text: str):
     resp = requests.post(_url("sendMessage"), json={
         "chat_id": CHAT_ID,

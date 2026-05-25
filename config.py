@@ -13,7 +13,6 @@ YOUTUBE_TOKEN_FILE = os.environ.get("YOUTUBE_TOKEN_FILE", "youtube_token.json")
 BRAIN_MODEL   = "gemini-2.5-flash"
 MUSIC_MODEL   = "lyria-realtime-exp"
 IMAGEN_MODEL  = "gemini-3-pro-image-preview"
-VEO_MODEL     = "veo-3.0-generate-preview"
 
 # ── Weekly schedule — SINGLE SOURCE OF TRUTH for every post ──────────────────
 #
@@ -287,17 +286,6 @@ MADHUBANI_STYLE = (
     "No text, no watermarks, no 3D shading, no photorealism, no Western art influence."
 )
 
-# ── Cinematic photo-realistic style (for use cases that suit real-world scenes) ─
-CINEMATIC_STYLE = (
-    "Cinematic photo-realistic 16:9 scene. "
-    "Ultra-detailed 8K photography quality. No people, no text, no watermarks. "
-    "Instruments arranged naturally — sitar / bansuri / tabla on a silk cloth or stone surface. "
-    "Atmospheric lighting: candlelight, moonlight, or golden sunrise. "
-    "Natural elements: incense smoke, mist, rain droplets, marigold flowers. "
-    "Warm amber and deep midnight blue color palette. "
-    "Loop-friendly composition: animatable smoke, flame, or mist in foreground."
-)
-
 # ── Video animation elements by scene type (for Veo/video_prompt guidance) ────
 VIDEO_ANIMATION_GUIDE = (
     "Madhubani night scene: stars twinkling 2%, mandala rotating 1%, lotus swaying 5%, fish swimming 10%. "
@@ -325,9 +313,7 @@ YOUTUBE_KEYWORDS = {
 }
 
 # ── Video format ──────────────────────────────────────────────────────────────
-MUSIC_DURATION_SEC = 180
-VIDEO_LOOPS        = 4
-VEO_CLIP_SEC       = 8
+VEO_CLIP_SEC = 8
 
 # ── FFmpeg ────────────────────────────────────────────────────────────────────
 # Shotcut ships ffmpeg.exe but not ffprobe. We add its dir to PATH so all

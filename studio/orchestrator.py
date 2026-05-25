@@ -21,8 +21,8 @@ Before running --publish, drop into studio/drafts/YYYY-MM-DD/:
   thumbnail.png    (optional) custom thumbnail
 """
 
-import importlib.util, json, os, sys, traceback
-from datetime import date
+import importlib.util, json, os, shutil, sys, traceback
+from datetime import date, timedelta
 
 STUDIO_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR   = os.path.dirname(STUDIO_DIR)
@@ -174,14 +174,44 @@ def do_publish(date_str: str):
     step04 = _load_step("04_upload.py")
     video_id = step04.run(brain, draft_dir)
 
-    tg.send_text(
-        f"\U0001f389 Uploaded!\n\n"
+    upload_caption = (
+        f"Uploaded!\n\n"
         f"{brain.get('title', '')}\n\n"
         f"https://youtu.be/{video_id}"
     )
+    if preview_image:
+        tg.send_photo(preview_image, upload_caption)
+    else:
+        tg.send_text(upload_caption)
     print("=" * 60)
     print(f"DONE — https://youtu.be/{video_id}")
     print("=" * 60)
+
+
+# ── Cleanup ───────────────────────────────────────────────────────────────────
+
+def do_cleanup(days: int = 30):
+    drafts_root = os.path.join(STUDIO_DIR, "drafts")
+    if not os.path.isdir(drafts_root):
+        print("[cleanup] No drafts folder found.")
+        return
+    cutoff = date.today() - timedelta(days=days)
+    removed = []
+    for name in sorted(os.listdir(drafts_root)):
+        folder = os.path.join(drafts_root, name)
+        if not os.path.isdir(folder):
+            continue
+        try:
+            folder_date = date.fromisoformat(name)
+        except ValueError:
+            continue
+        if folder_date < cutoff:
+            shutil.rmtree(folder)
+            removed.append(name)
+    if removed:
+        print(f"[cleanup] Removed {len(removed)} folder(s): {', '.join(removed)}")
+    else:
+        print(f"[cleanup] Nothing to remove (cutoff: {cutoff}).")
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
@@ -203,9 +233,15 @@ def main():
             print(f"\n[ERROR] Publish failed: {e}")
             traceback.print_exc()
             sys.exit(1)
+    elif "--cleanup" in sys.argv:
+        days = 30
+        for i, arg in enumerate(sys.argv):
+            if arg == "--days" and i + 1 < len(sys.argv):
+                days = int(sys.argv[i + 1])
+        do_cleanup(days)
     else:
         print(__doc__)
-        print("Error: pass --draft or --publish")
+        print("Error: pass --draft, --publish, or --cleanup")
         sys.exit(1)
 
 
