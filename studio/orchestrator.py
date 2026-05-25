@@ -74,8 +74,13 @@ def do_draft(date_str: str):
     print(f"STUDIO — Draft  ({date_str})")
     print("=" * 60)
 
-    draft_dir = _draft_dir(date_str)
-    client    = genai.Client(api_key=GEMINI_API_KEY)
+    draft_dir  = _draft_dir(date_str)
+    brain_path = os.path.join(draft_dir, "brain.json")
+    if os.path.exists(brain_path) and "--force" not in sys.argv:
+        print(f"[orchestrator] brain.json already exists for {date_str}. Use --force to regenerate.")
+        return
+
+    client = genai.Client(api_key=GEMINI_API_KEY)
 
     step01 = _load_step("01_draft.py")
 

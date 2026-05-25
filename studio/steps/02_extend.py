@@ -10,25 +10,20 @@ Final pass: dynaudnorm volume levelling + 3s fade-in + 8s fade-out.
 Output: draft_dir/music.mp3
 """
 
-import os, re, shutil, subprocess, sys
+import os, shutil, subprocess, sys, tempfile
 
 STUDIO_DIR   = os.path.dirname(os.path.dirname(__file__))
 ROOT_DIR     = os.path.dirname(STUDIO_DIR)
 sys.path.insert(0, ROOT_DIR)
+sys.path.insert(0, STUDIO_DIR)
+
+from utils import get_duration
 
 TARGET_SEC   = 20 * 60   # 20 minutes
 CROSSFADE_SEC = 6
 FADE_IN_SEC  = 3
 FADE_OUT_SEC = 8
 
-
-def _get_duration(path: str) -> float:
-    r = subprocess.run(["ffmpeg", "-i", path, "-f", "null", "-"],
-                       capture_output=True, text=True)
-    m = re.search(r"Duration:\s+(\d+):(\d+):([\d.]+)", r.stderr)
-    if not m:
-        raise RuntimeError(f"[extend] Cannot read duration of {path}")
-    return int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3))
 
 
 def _strip_silence(src: str, dst: str) -> str:
@@ -46,34 +41,40 @@ def _strip_silence(src: str, dst: str) -> str:
 
 
 def _crossfade_merge(clips: list, output_path: str) -> str:
-    """Merge a list of clip paths with acrossfade between each pair."""
+    """Merge clips with acrossfade, chaining pairs to avoid huge filter_complex strings."""
     if len(clips) == 1:
         shutil.copy(clips[0], output_path)
         return output_path
 
-    inputs = []
-    for c in clips:
-        inputs += ["-i", c]
-
-    filter_parts = []
-    prev = "0"
-    for i in range(1, len(clips)):
-        out_label = "out" if i == len(clips) - 1 else f"a{i}"
-        filter_parts.append(
-            f"[{prev}][{i}]acrossfade=d={CROSSFADE_SEC}:c1=qsin:c2=qsin[{out_label}]"
-        )
-        prev = out_label
-
-    cmd = [
-        "ffmpeg", "-y",
-        *inputs,
-        "-filter_complex", "; ".join(filter_parts),
-        "-map", "[out]",
-        "-c:a", "libmp3lame", "-b:a", "192k",
-        output_path,
-    ]
     print(f"[extend] Crossfade-merging {len(clips)} segments ({CROSSFADE_SEC}s overlap)...")
-    subprocess.run(cmd, check=True, stdin=subprocess.DEVNULL)
+    tmp_files = []
+    current = clips[0]
+
+    for i, next_clip in enumerate(clips[1:], 1):
+        is_last = (i == len(clips) - 1)
+        if is_last:
+            out = output_path
+        else:
+            tmp = tempfile.NamedTemporaryFile(
+                suffix=".mp3", delete=False,
+                dir=os.path.dirname(output_path),
+            )
+            tmp.close()
+            out = tmp.name
+            tmp_files.append(out)
+
+        subprocess.run([
+            "ffmpeg", "-y", "-i", current, "-i", next_clip,
+            "-filter_complex",
+            f"[0][1]acrossfade=d={CROSSFADE_SEC}:c1=qsin:c2=qsin[out]",
+            "-map", "[out]", "-c:a", "libmp3lame", "-b:a", "192k", out,
+        ], check=True, stdin=subprocess.DEVNULL, capture_output=True)
+        current = out
+
+    for f in tmp_files:
+        if os.path.exists(f):
+            os.remove(f)
+
     return output_path
 
 
@@ -117,7 +118,7 @@ def run(draft_dir: str) -> str:
     for i, src in enumerate(clips_raw):
         dst = os.path.join(draft_dir, f"_stripped_{i+1}.mp3")
         _strip_silence(src, dst)
-        dur = _get_duration(dst)
+        dur = get_duration(dst)
         print(f"[extend] Clip {i+1} after silence strip: {dur:.0f}s ({dur/60:.1f} min)")
         stripped.append(dst)
 
@@ -130,7 +131,7 @@ def run(draft_dir: str) -> str:
     while total < TARGET_SEC + 60:   # overshoot by 1 min so trim is clean
         clip = stripped[idx % len(stripped)]
         sequence.append(clip)
-        dur = _get_duration(clip)
+        dur = get_duration(clip)
         # Each segment after the first loses CROSSFADE_SEC to overlap
         if len(sequence) == 1:
             total += dur
@@ -145,7 +146,7 @@ def run(draft_dir: str) -> str:
     merged_path = os.path.join(draft_dir, "_merged.mp3")
     _crossfade_merge(sequence, merged_path)
 
-    merged_dur = _get_duration(merged_path)
+    merged_dur = get_duration(merged_path)
     print(f"[extend] Merged: {merged_dur:.0f}s ({merged_dur/60:.1f} min)")
 
     out_path = os.path.join(draft_dir, "music.mp3")
@@ -156,7 +157,7 @@ def run(draft_dir: str) -> str:
         if os.path.exists(p):
             os.remove(p)
 
-    final_dur = _get_duration(out_path)
+    final_dur = get_duration(out_path)
     size_mb   = os.path.getsize(out_path) / 1_048_576
     print(f"[extend] Done: {final_dur:.0f}s ({final_dur/60:.1f} min), {size_mb:.1f} MB -> {out_path}")
     return out_path

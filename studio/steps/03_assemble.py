@@ -4,20 +4,14 @@ Combines draft_dir/background.png (or .jpg) + draft_dir/music.mp3 into
 draft_dir/video.mp4 using FFmpeg (static image loop + audio).
 """
 
-import os, re, subprocess, sys
+import os, subprocess, sys
 
 STUDIO_DIR = os.path.dirname(os.path.dirname(__file__))
 ROOT_DIR   = os.path.dirname(STUDIO_DIR)
 sys.path.insert(0, ROOT_DIR)
+sys.path.insert(0, STUDIO_DIR)
 
-
-def _get_audio_duration(path: str) -> float:
-    r = subprocess.run(["ffmpeg", "-i", path, "-f", "null", "-"],
-                       capture_output=True, text=True)
-    m = re.search(r"Duration:\s+(\d+):(\d+):([\d.]+)", r.stderr)
-    if not m:
-        raise RuntimeError(f"[assemble] Cannot read duration of {path}")
-    return int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3))
+from utils import get_duration
 
 
 def _find_image(draft_dir: str) -> str:
@@ -42,7 +36,7 @@ def run(brain: dict, draft_dir: str) -> str:
         raise FileNotFoundError(f"[assemble] music.mp3 not found in {draft_dir}")
 
     image_path    = _find_image(draft_dir)
-    audio_duration = _get_audio_duration(music_path)
+    audio_duration = get_duration(music_path)
     print(f"[assemble] Audio={audio_duration:.0f}s, image={os.path.basename(image_path)}")
 
     filter_complex = (
