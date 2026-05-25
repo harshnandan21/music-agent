@@ -78,11 +78,22 @@ def do_draft(date_str: str):
     client    = genai.Client(api_key=GEMINI_API_KEY)
 
     step01 = _load_step("01_draft.py")
-    _, decision = step01.run(client, draft_dir)
+
+    MAX_RETRIES = 3
+    for attempt in range(1, MAX_RETRIES + 1):
+        if attempt > 1:
+            print(f"[orchestrator] Generating new idea (attempt {attempt}/{MAX_RETRIES})...")
+        _, decision = step01.run(client, draft_dir)
+        if decision != "rejected":
+            break
+        if attempt < MAX_RETRIES:
+            tg.send_text(f"Generating a fresh idea... (attempt {attempt + 1}/{MAX_RETRIES})")
+        else:
+            tg.send_text("All ideas rejected. Run --draft manually when ready.")
 
     print("=" * 60)
     if decision == "rejected":
-        print("Idea rejected via Telegram. Re-run --draft to generate a new one.")
+        print("All ideas rejected via Telegram. Re-run --draft to try again.")
     else:
         print(f"Draft saved: {draft_dir}")
         print("Idea approved! Drop your files and run --publish when ready.")
@@ -114,12 +125,17 @@ def do_publish(date_str: str):
         step02.run(draft_dir)
         tg.send_text("Music ready.")
 
-    # Step 3 — Assemble video (skip if video.mp4 already exists)
+    # Step 3 — Assemble video (skip if video.mp4 already exists and non-empty)
     video_path = os.path.join(draft_dir, "video.mp4")
-    if os.path.exists(video_path):
+    video_ok = os.path.exists(video_path) and os.path.getsize(video_path) > 0
+    if video_ok:
         print(f"[orchestrator] video.mp4 already present — skipping assemble step.")
         tg.send_text("video.mp4 already exists — skipping assemble step.")
-    else:
+    elif os.path.exists(video_path):
+        print(f"[orchestrator] video.mp4 is empty/corrupt — re-assembling.")
+        tg.send_text("video.mp4 was empty/corrupt — re-assembling...")
+        os.remove(video_path)
+    if not video_ok:
         tg.send_text("Assembling video (image + music)... (takes 2-4 min)")
         step03 = _load_step("03_assemble.py")
         step03.run(brain, draft_dir)

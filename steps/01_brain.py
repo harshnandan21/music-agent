@@ -255,6 +255,11 @@ TAGS GUIDANCE: Exactly 15 tags max — English only, each max 30 chars, total un
     _p(f"[brain] Raga={data['raga']} | Instruments={data['instrument']} | Hz={locked.get('hz_frequency', 'none')}")
     _p(f"[brain] Title: {data['title']}")
     _p(f"[brain] Hook: {data.get('thumbnail_hook')} | Tagline: {data.get('thumbnail_tagline')}")
+
+    kw_len = len(data.get("keywords", ""))
+    if not (470 <= kw_len <= 480):
+        print(f"[brain] WARNING: keyword string is {kw_len} chars (target 470-480)")
+
     return data
 
 
