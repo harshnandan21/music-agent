@@ -167,7 +167,7 @@ VIDEO PROMPT GUIDANCE (for Veo — seamless 8-second loop):
 
 DESCRIPTION TEMPLATE — follow this structure exactly:
 
-{emoji matching use case} {{SEO title repeat}}
+{{emoji matching use case}} {{SEO title repeat}}
 
 {{2-3 sentence hook: address the pain point directly, short and punchy}}
 
@@ -250,9 +250,10 @@ TAGS GUIDANCE: Exactly 15 tags max — English only, each max 30 chars, total un
     data.update(locked)
 
     _save_used_idea(data)
-    print(f"[brain] Raga={data['raga']} | Instruments={data['instrument']} | Hz={locked.get('hz_frequency', 'none')}")
-    print(f"[brain] Title: {data['title']}")
-    print(f"[brain] Hook: {data.get('thumbnail_hook')} | Tagline: {data.get('thumbnail_tagline')}")
+    def _p(s): print(str(s).encode("ascii", "replace").decode("ascii"))
+    _p(f"[brain] Raga={data['raga']} | Instruments={data['instrument']} | Hz={locked.get('hz_frequency', 'none')}")
+    _p(f"[brain] Title: {data['title']}")
+    _p(f"[brain] Hook: {data.get('thumbnail_hook')} | Tagline: {data.get('thumbnail_tagline')}")
     return data
 
 

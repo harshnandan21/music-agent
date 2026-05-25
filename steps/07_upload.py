@@ -46,10 +46,14 @@ def run(brain: dict, video_path: str, thumbnail_path: str) -> str:
     # YouTube rejects non-ASCII tags (Hindi/Devanagari etc.)
     safe_tags = [t for t in brain.get("tags", []) if t.isascii()]
 
+    # YouTube rejects < and > in descriptions (e.g. markdown blockquotes use >)
+    import re
+    clean_desc = re.sub(r'[<>]', '', brain.get("description", ""))
+
     body = {
         "snippet": {
             "title":       brain.get("title", ""),
-            "description": brain.get("description", ""),
+            "description": clean_desc,
             "tags":        safe_tags,
             "categoryId":  "10",  # Music
             "defaultLanguage": "en",
@@ -61,7 +65,7 @@ def run(brain: dict, video_path: str, thumbnail_path: str) -> str:
     }
 
     media = MediaFileUpload(video_path, mimetype="video/mp4", resumable=True, chunksize=5 * 1024 * 1024)
-    print(f"[upload] Uploading: {brain['title']}")
+    print("[upload] Uploading:", brain['title'].encode('ascii', 'replace').decode('ascii'))
 
     request = youtube.videos().insert(part=",".join(body.keys()), body=body, media_body=media)
     response = None
@@ -77,10 +81,24 @@ def run(brain: dict, video_path: str, thumbnail_path: str) -> str:
     # Set thumbnail (optional — skipped if no path provided)
     if thumbnail_path:
         try:
+            # Compress to under 2MB (YouTube limit) before uploading
+            import io
+            from PIL import Image
+            img = Image.open(thumbnail_path).convert("RGB")
+            for quality in (85, 70, 55, 40):
+                buf = io.BytesIO()
+                img.save(buf, format="JPEG", quality=quality)
+                if buf.tell() < 2 * 1024 * 1024:
+                    break
+            buf.seek(0)
+            import tempfile, pathlib
+            tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+            tmp.write(buf.read()); tmp.close()
             youtube.thumbnails().set(
                 videoId=video_id,
-                media_body=MediaFileUpload(thumbnail_path, mimetype="image/jpeg"),
+                media_body=MediaFileUpload(tmp.name, mimetype="image/jpeg"),
             ).execute()
+            pathlib.Path(tmp.name).unlink(missing_ok=True)
             print("[upload] Thumbnail set.")
         except Exception as e:
             print(f"[upload] Thumbnail skipped (verify channel at youtube.com/verify): {e}")
