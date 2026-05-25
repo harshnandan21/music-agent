@@ -213,16 +213,17 @@ This deeply meditative composition in **Raag {schedule['raga']}** blends the hea
 {hashtag_str}
 
 KEYWORD STRING (separate field — for YouTube tags):
-Comma-separated, no spaces after commas, total 490–500 chars exactly.
-Pattern: raga name variations, instruments, hz frequency variants, use case terms, channel name (dhundetox).
-Example: raag {schedule['raga'].lower()},raga {schedule['raga'].lower()},{instruments_label.replace(' & ', ' ').replace(', ', ' ')},396hz,396 hz healing,...,dhundetox
+Comma-separated, no spaces after commas, total 470–480 chars exactly.
+Pattern: raga name variations → instrument + raga combos → instrument alone → meditation/healing/use-case terms → emotion terms → channel name (thelifemerit) → 2-3 Hindi keywords at end (e.g. ध्यान संगीत,<instrument> संगीत,राग <raga in Devanagari>).
+Do NOT include Hz frequency terms in the keyword string.
+Example: raag {schedule['raga'].lower()},raga {schedule['raga'].lower()},{instruments_label.replace(' & ', ' ').replace(', ', ' ')},indian classical music,meditation music,healing music,...,thelifemerit,ध्यान संगीत,राग {schedule['raga'].lower()}
 
-TAGS GUIDANCE: Exactly 15 tags max — English only, each max 30 chars, total under 400 chars combined. Parse from the keyword string above.
+TAGS GUIDANCE: Exactly 15 tags max — English only, each max 30 chars, total under 400 chars combined. Parse from the English keywords above (exclude Hindi).
 
 {{
   "title": "SEO title ≤70 chars",
   "description": "Full YouTube description following the 11-section template above, including Hindi section, CTA, disclaimer, and 15 hashtags at end",
-  "keywords": "comma-separated keyword string, 490-500 chars, no spaces after commas, for YouTube tags field",
+  "keywords": "comma-separated keyword string, 470-480 chars, no spaces after commas, for YouTube tags field",
   "tags": ["15 tags parsed from keywords, English only, each max 30 chars"],
   "music_prompt": "Detailed Lyria prompt per music guidance above",
   "image_prompt": "Madhubani painting scene per image guidance above",
