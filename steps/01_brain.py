@@ -171,19 +171,19 @@ DESCRIPTION TEMPLATE — follow this structure exactly:
 
 {{2-3 sentence hook: address the pain point directly, short and punchy}}
 
-This deeply meditative composition in **Raag {schedule['raga']}** blends the healing resonance of **{{hz_frequency}}** — known for {{hz benefit}} — with soulful **{instruments_label}** to {{use case benefits}}.
+This deeply meditative composition in Raag {schedule['raga']} blends the healing resonance of {{hz_frequency}} — known for {{hz benefit}} — with soulful {instruments_label} to {{use case benefits}}.
 
-> *"{{hook_phrase}}"*
+"{{hook_phrase}}"
 
 {{2-3 sentences: cultural/historical context of Raag {schedule['raga']}, what it does to the nervous system}}
 
-**{{emoji}} Perfect for:**
+{{emoji}} PERFECT FOR:
 - {{8 specific use cases as bullet points}}
 
-**🎵 Why Raag {schedule['raga']} heals:**
+🎵 WHY RAAG {schedule['raga'].upper()} HEALS:
 {{2-3 sentences: parasympathetic nervous system, raga science, Hz frequency benefit if applicable}}
 
-**🎧 How to use this music:**
+🎧 HOW TO USE THIS MUSIC:
 1. Use headphones at a comfortable, low volume
 2. Dim the lights or turn them off completely
 3. Lie down or sit comfortably with eyes closed
@@ -193,22 +193,22 @@ This deeply meditative composition in **Raag {schedule['raga']}** blends the hea
 7. Let the {{third instrument or rhythm}} ground you in peace
 8. Stay for at least 15–20 minutes for the full effect
 
----
+────────────────────────────
 
-**🇮🇳 हिंदी में:**
+🇮🇳 हिंदी में:
 {{3-4 lines in Hindi describing raga, instruments, use case}}
-*"{{hook_phrase translated to Hindi}}"*
+"{{hook_phrase translated to Hindi}}"
 
----
+────────────────────────────
 
-💛 If this music brought you stillness tonight, please **LIKE, SUBSCRIBE, and SHARE** with someone who needs peace.
-🔔 **Subscribe to DhunDetox** for more healing frequencies, Indian classical meditation music, raga therapy, and mindful sound journeys.
-💬 Comment below: *{{engaging question related to this video's theme}}*
-🌿 **Save this video** for when you need it most.
+💛 If this music brought you stillness tonight, please LIKE, SUBSCRIBE, and SHARE with someone who needs peace.
+🔔 Subscribe to DhunDetox for more healing frequencies, Indian classical meditation music, raga therapy, and mindful sound journeys.
+💬 Comment below: {{engaging question related to this video's theme}}
+🌿 Save this video for when you need it most.
 
----
+────────────────────────────
 
-⚠️ *Disclaimer: This music is intended for relaxation, meditation, and wellness purposes. It is not a substitute for professional medical or psychological treatment.*
+⚠️ Disclaimer: This music is intended for relaxation, meditation, and wellness purposes. It is not a substitute for professional medical or psychological treatment.
 
 {hashtag_str}
 

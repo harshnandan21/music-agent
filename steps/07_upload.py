@@ -59,9 +59,12 @@ def run(brain: dict, video_path: str, thumbnail_path: str, publish_at: str = Non
     else:
         safe_tags = [t for t in brain.get("tags", []) if t.isascii()]
 
-    # YouTube rejects < and > in descriptions (e.g. markdown blockquotes use >)
     import re
-    clean_desc = re.sub(r'[<>]', '', brain.get("description", ""))
+    desc = brain.get("description", "")
+    # Strip markdown bold/italic markers and blockquote symbols
+    desc = re.sub(r'\*+', '', desc)
+    desc = re.sub(r'^---$', '────────────────────────────', desc, flags=re.MULTILINE)
+    clean_desc = re.sub(r'[<>]', '', desc)
 
     body = {
         "snippet": {
