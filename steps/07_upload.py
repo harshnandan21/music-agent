@@ -43,8 +43,21 @@ def run(brain: dict, video_path: str, thumbnail_path: str, publish_at: str = Non
     creds = _get_credentials()
     youtube = build("youtube", "v3", credentials=creds)
 
-    # YouTube rejects non-ASCII tags (Hindi/Devanagari etc.)
-    safe_tags = [t for t in brain.get("tags", []) if t.isascii()]
+    # Build tags from full keywords string (more terms than the 15-item tags array).
+    # Filter non-ASCII (Hindi), strip whitespace, drop tags over 30 chars,
+    # and stop before the 500-char YouTube total limit.
+    raw_kw = brain.get("keywords", "")
+    if raw_kw:
+        candidates = [k.strip() for k in raw_kw.split(",")
+                      if k.strip().isascii() and len(k.strip()) <= 30]
+        safe_tags, total = [], 0
+        for tag in candidates:
+            if total + len(tag) + (1 if safe_tags else 0) > 500:
+                break
+            safe_tags.append(tag)
+            total += len(tag) + (1 if len(safe_tags) > 1 else 0)
+    else:
+        safe_tags = [t for t in brain.get("tags", []) if t.isascii()]
 
     # YouTube rejects < and > in descriptions (e.g. markdown blockquotes use >)
     import re
