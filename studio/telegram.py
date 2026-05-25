@@ -1,5 +1,5 @@
 """Minimal Telegram helpers for studio — send messages, photo+approval, long-poll."""
-import io, json, os, re, time, uuid
+import io, json, os, time, uuid
 from datetime import datetime, timezone, timedelta
 import requests
 
@@ -131,26 +131,39 @@ def wait_for_decision(token: str, timeout_seconds: int = 21600) -> str:
 
 
 def send_schedule_prompt(token: str):
-    """Ask user to schedule or publish now. Times are treated as IST."""
-    keyboard = {"inline_keyboard": [[
-        {"text": "⚡ Publish Now", "callback_data": f"PUBLISH_NOW_{token}"},
-    ]]}
+    """Send preset schedule buttons. Times are IST. No typing needed."""
+    now = datetime.now(IST)
+
+    def _btn(label: str, day_offset: int, hour: int) -> dict:
+        key = f"SCH_{token}_{day_offset}_{hour}"
+        return {"text": label, "callback_data": key}
+
+    # Build future-only time slots for today
+    slots_today = []
+    for h, label in [(9, "9 AM"), (12, "12 PM"), (18, "6 PM"), (21, "9 PM")]:
+        t = now.replace(hour=h, minute=0, second=0, microsecond=0)
+        if t > now:
+            slots_today.append(_btn(f"Today {label}", 0, h))
+
+    # Always offer tomorrow 9 AM
+    slots_tomorrow = [_btn("Tomorrow 9 AM", 1, 9)]
+    publish_now_btn = [{"text": "⚡ Publish Now", "callback_data": f"PUB_NOW_{token}"}]
+
+    # Lay out in rows of 2
+    all_btns = slots_today + slots_tomorrow
+    rows = [all_btns[i:i+2] for i in range(0, len(all_btns), 2)]
+    rows.append(publish_now_btn)
+
     requests.post(_url("sendMessage"), json={
         "chat_id":      CHAT_ID,
         "parse_mode":   "HTML",
-        "text": (
-            "<b>Schedule publish time? (IST)</b>\n\n"
-            "Reply with date and time:\n"
-            "<code>2026-05-26 21:00</code>\n\n"
-            "Or tap <b>Publish Now</b> to go live immediately.\n"
-            "<i>No reply in 5 min = Publish Now</i>"
-        ),
-        "reply_markup": json.dumps(keyboard),
+        "text":         "<b>When to publish?</b>\n<i>No tap in 3h = Publish Now</i>",
+        "reply_markup": json.dumps({"inline_keyboard": rows}),
     }, timeout=15).raise_for_status()
 
 
-def wait_for_schedule(token: str, timeout_seconds: int = 300) -> str | None:
-    """Poll for schedule reply. Returns RFC3339 string (IST) or None to publish now."""
+def wait_for_schedule(token: str, timeout_seconds: int = 10800) -> str | None:
+    """Poll for schedule button tap. Returns RFC3339 IST string or None to publish now."""
     deadline = time.time() + timeout_seconds
     try:
         r = requests.get(_url("getUpdates"), params={"limit": 1, "offset": -1}, timeout=10)
@@ -159,7 +172,7 @@ def wait_for_schedule(token: str, timeout_seconds: int = 300) -> str | None:
     except Exception:
         offset = 0
 
-    print("[telegram] Waiting up to 5 min for schedule reply...")
+    print("[telegram] Waiting up to 3h for schedule tap...")
     while time.time() < deadline:
         remaining = int(deadline - time.time())
         wait = min(30, remaining)
@@ -176,29 +189,28 @@ def wait_for_schedule(token: str, timeout_seconds: int = 300) -> str | None:
             continue
         for upd in updates:
             offset = upd["update_id"] + 1
-            # Publish Now button
             cq = upd.get("callback_query", {})
-            if cq.get("data") == f"PUBLISH_NOW_{token}":
+            data = cq.get("data", "")
+
+            if data == f"PUB_NOW_{token}":
                 requests.post(_url("answerCallbackQuery"), json={
                     "callback_query_id": cq["id"], "text": "Publishing now!",
                 }, timeout=5)
                 print("[telegram] Schedule: Publish Now")
                 return None
-            # Text reply — parse "YYYY-MM-DD HH:MM"
-            text = upd.get("message", {}).get("text", "").strip()
-            if text:
-                m = re.match(r"(\d{4}-\d{2}-\d{2})\s+(\d{1,2}:\d{2})", text)
-                if m:
-                    try:
-                        dt = datetime.strptime(f"{m.group(1)} {m.group(2)}", "%Y-%m-%d %H:%M")
-                        dt_ist = dt.replace(tzinfo=IST)
-                        send_text(f"Scheduled for {dt_ist.strftime('%d %b %Y %I:%M %p')} IST")
-                        print(f"[telegram] Schedule: {dt_ist.isoformat()}")
-                        return dt_ist.isoformat()
-                    except ValueError:
-                        send_text("Invalid format. Use: 2026-05-26 21:00")
 
-    print("[telegram] No schedule reply — publishing now.")
+            if data.startswith(f"SCH_{token}_"):
+                _, _, _, day_offset, hour = data.split("_", 4)
+                dt = (datetime.now(IST).replace(hour=int(hour), minute=0, second=0, microsecond=0)
+                      + __import__("datetime").timedelta(days=int(day_offset)))
+                label = dt.strftime("%d %b %Y %I:%M %p") + " IST"
+                requests.post(_url("answerCallbackQuery"), json={
+                    "callback_query_id": cq["id"], "text": f"Scheduled for {label}",
+                }, timeout=5)
+                print(f"[telegram] Schedule: {dt.isoformat()}")
+                return dt.isoformat()
+
+    print("[telegram] No schedule tap in 3h — publishing now.")
     return None
 
 
