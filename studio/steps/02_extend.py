@@ -19,7 +19,7 @@ sys.path.insert(0, STUDIO_DIR)
 
 from utils import get_duration
 
-TARGET_SEC   = 20 * 60   # 20 minutes
+DEFAULT_MIN  = 20
 CROSSFADE_SEC = 6
 FADE_IN_SEC  = 3
 FADE_OUT_SEC = 8
@@ -96,8 +96,11 @@ def _normalise_and_fade(src: str, dst: str, duration: float) -> str:
     return dst
 
 
-def run(draft_dir: str) -> str:
+def run(draft_dir: str, target_min: int = DEFAULT_MIN) -> str:
     # Discover user clips — any .mp3 or .wav in the folder, sorted by name
+    TARGET_SEC = target_min * 60
+    print(f"[extend] Target duration: {target_min} min ({TARGET_SEC}s)")
+
     SKIP = {"music.mp3"}
     clips_raw = sorted([
         os.path.join(draft_dir, f)

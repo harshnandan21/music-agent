@@ -126,9 +126,12 @@ def do_publish(date_str: str):
         print(f"[orchestrator] music.mp3 already present — skipping extend step.")
         tg.send_text("music.mp3 already exists — skipping extend step.")
     else:
-        tg.send_text("Extending music clips to 20+ min... (takes 3-5 min)")
+        dur_token = tg.new_token()
+        tg.send_duration_prompt(dur_token)
+        target_min = tg.wait_for_duration(dur_token)
+        tg.send_text(f"Extending music to {target_min} min... (takes 3-5 min)")
         step02 = _load_step("02_extend.py")
-        step02.run(draft_dir)
+        step02.run(draft_dir, target_min=target_min)
         tg.send_text("Music ready.")
 
     # Step 3 — Assemble video (skip if video.mp4 already exists and non-empty)

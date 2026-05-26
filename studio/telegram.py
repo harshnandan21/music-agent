@@ -130,40 +130,28 @@ def wait_for_decision(token: str, timeout_seconds: int = 21600) -> str:
     return "timeout"
 
 
-def send_schedule_prompt(token: str):
-    """Send preset schedule buttons. Times are IST. No typing needed."""
-    now = datetime.now(IST)
+def send_duration_prompt(token: str):
+    """Ask how long the video should be. Preset buttons + Custom option."""
+    durations = [("~1 min", 1), ("~20 min", 20), ("~30 min", 30), ("~60 min", 60)]
 
-    def _btn(label: str, day_offset: int, hour: int) -> dict:
-        key = f"SCH_{token}_{day_offset}_{hour}"
-        return {"text": label, "callback_data": key}
+    def _btn(label: str, minutes: int) -> dict:
+        return {"text": label, "callback_data": f"DUR_{token}_{minutes}"}
 
-    # Build future-only time slots for today
-    slots_today = []
-    for h, label in [(9, "9 AM"), (12, "12 PM"), (18, "6 PM"), (21, "9 PM")]:
-        t = now.replace(hour=h, minute=0, second=0, microsecond=0)
-        if t > now:
-            slots_today.append(_btn(f"Today {label}", 0, h))
-
-    # Always offer tomorrow 9 AM
-    slots_tomorrow = [_btn("Tomorrow 9 AM", 1, 9)]
-    publish_now_btn = [{"text": "⚡ Publish Now", "callback_data": f"PUB_NOW_{token}"}]
-
-    # Lay out in rows of 2
-    all_btns = slots_today + slots_tomorrow
-    rows = [all_btns[i:i+2] for i in range(0, len(all_btns), 2)]
-    rows.append(publish_now_btn)
-
+    rows = [
+        [_btn(l, m) for l, m in durations[:2]],
+        [_btn(l, m) for l, m in durations[2:]],
+        [{"text": "✏️ Custom", "callback_data": f"DUR_{token}_custom"}],
+    ]
     requests.post(_url("sendMessage"), json={
         "chat_id":      CHAT_ID,
         "parse_mode":   "HTML",
-        "text":         "<b>When to publish?</b>\n<i>No tap in 3h = Publish Now</i>",
+        "text":         "<b>How long should the video be?</b>\n<i>No tap in 10 min = 20 min default</i>",
         "reply_markup": json.dumps({"inline_keyboard": rows}),
     }, timeout=15).raise_for_status()
 
 
-def wait_for_schedule(token: str, timeout_seconds: int = 10800) -> str | None:
-    """Poll for schedule button tap. Returns RFC3339 IST string or None to publish now."""
+def wait_for_duration(token: str, timeout_seconds: int = 600) -> int:
+    """Poll for duration tap or typed number. Returns minutes. Default 20 on timeout."""
     deadline = time.time() + timeout_seconds
     try:
         r = requests.get(_url("getUpdates"), params={"limit": 1, "offset": -1}, timeout=10)
@@ -172,7 +160,9 @@ def wait_for_schedule(token: str, timeout_seconds: int = 10800) -> str | None:
     except Exception:
         offset = 0
 
-    print("[telegram] Waiting up to 3h for schedule tap...")
+    print("[telegram] Waiting up to 10 min for duration...")
+    custom_mode = False  # True after user taps Custom — next text message is the answer
+
     while time.time() < deadline:
         remaining = int(deadline - time.time())
         wait = min(30, remaining)
@@ -187,10 +177,101 @@ def wait_for_schedule(token: str, timeout_seconds: int = 10800) -> str | None:
             print(f"[telegram] Poll error: {e}")
             time.sleep(5)
             continue
+
         for upd in updates:
             offset = upd["update_id"] + 1
-            cq = upd.get("callback_query", {})
+            cq   = upd.get("callback_query", {})
             data = cq.get("data", "")
+            msg  = upd.get("message", {})
+
+            # Preset button tapped
+            if data.startswith(f"DUR_{token}_") and not data.endswith("_custom"):
+                minutes = int(data.split("_")[-1])
+                requests.post(_url("answerCallbackQuery"), json={
+                    "callback_query_id": cq["id"], "text": f"~{minutes} min selected.",
+                }, timeout=5)
+                print(f"[telegram] Duration: ~{minutes} min")
+                return minutes
+
+            # Custom button tapped — ask user to type
+            if data == f"DUR_{token}_custom":
+                requests.post(_url("answerCallbackQuery"), json={
+                    "callback_query_id": cq["id"], "text": "Type duration below.",
+                }, timeout=5)
+                send_text("Type duration in minutes (e.g. 8 or 25):")
+                custom_mode = True
+
+            # Text reply after Custom tap
+            if custom_mode and msg.get("text", "").strip().isdigit():
+                minutes = int(msg["text"].strip())
+                send_text(f"Got it — ~{minutes} min.")
+                print(f"[telegram] Duration (custom): ~{minutes} min")
+                return minutes
+
+    print("[telegram] No duration input — defaulting to 20 min.")
+    return 20
+
+
+def send_schedule_prompt(token: str):
+    """Send preset schedule buttons + Custom option. Times are IST."""
+    now = datetime.now(IST)
+
+    def _btn(label: str, day_offset: int, hour: int) -> dict:
+        return {"text": label, "callback_data": f"SCH_{token}_{day_offset}_{hour}"}
+
+    slots_today = []
+    for h, label in [(9, "9 AM"), (12, "12 PM"), (18, "6 PM"), (21, "9 PM")]:
+        t = now.replace(hour=h, minute=0, second=0, microsecond=0)
+        if t > now:
+            slots_today.append(_btn(f"Today {label}", 0, h))
+
+    slots_tomorrow = [_btn("Tomorrow 9 AM", 1, 9)]
+    all_btns = slots_today + slots_tomorrow
+    rows = [all_btns[i:i+2] for i in range(0, len(all_btns), 2)]
+    rows.append([{"text": "✏️ Custom", "callback_data": f"SCH_{token}_custom"}])
+    rows.append([{"text": "⚡ Publish Now", "callback_data": f"PUB_NOW_{token}"}])
+
+    requests.post(_url("sendMessage"), json={
+        "chat_id":      CHAT_ID,
+        "parse_mode":   "HTML",
+        "text":         "<b>When to publish?</b>\n<i>No tap in 3h = Publish Now</i>",
+        "reply_markup": json.dumps({"inline_keyboard": rows}),
+    }, timeout=15).raise_for_status()
+
+
+def wait_for_schedule(token: str, timeout_seconds: int = 10800) -> str | None:
+    """Poll for schedule tap or typed offset. Returns RFC3339 IST string or None."""
+    deadline = time.time() + timeout_seconds
+    try:
+        r = requests.get(_url("getUpdates"), params={"limit": 1, "offset": -1}, timeout=10)
+        results = r.json().get("result", [])
+        offset = results[-1]["update_id"] + 1 if results else 0
+    except Exception:
+        offset = 0
+
+    print("[telegram] Waiting up to 3h for schedule tap...")
+    custom_mode = False  # True after Custom tap — next text message is minutes from now
+
+    while time.time() < deadline:
+        remaining = int(deadline - time.time())
+        wait = min(30, remaining)
+        if wait <= 0:
+            break
+        try:
+            r = requests.get(_url("getUpdates"), params={
+                "offset": offset, "timeout": wait, "limit": 10,
+            }, timeout=wait + 5)
+            updates = r.json().get("result", [])
+        except Exception as e:
+            print(f"[telegram] Poll error: {e}")
+            time.sleep(5)
+            continue
+
+        for upd in updates:
+            offset = upd["update_id"] + 1
+            cq   = upd.get("callback_query", {})
+            data = cq.get("data", "")
+            msg  = upd.get("message", {})
 
             if data == f"PUB_NOW_{token}":
                 requests.post(_url("answerCallbackQuery"), json={
@@ -199,16 +280,31 @@ def wait_for_schedule(token: str, timeout_seconds: int = 10800) -> str | None:
                 print("[telegram] Schedule: Publish Now")
                 return None
 
-            if data.startswith(f"SCH_{token}_"):
+            if data.startswith(f"SCH_{token}_") and not data.endswith("_custom"):
                 parts = data.split("_")
                 day_offset, hour = parts[-2], parts[-1]
                 dt = (datetime.now(IST).replace(hour=int(hour), minute=0, second=0, microsecond=0)
-                      + __import__("datetime").timedelta(days=int(day_offset)))
+                      + timedelta(days=int(day_offset)))
                 label = dt.strftime("%d %b %Y %I:%M %p") + " IST"
                 requests.post(_url("answerCallbackQuery"), json={
                     "callback_query_id": cq["id"], "text": f"Scheduled for {label}",
                 }, timeout=5)
                 print(f"[telegram] Schedule: {dt.isoformat()}")
+                return dt.isoformat()
+
+            if data == f"SCH_{token}_custom":
+                requests.post(_url("answerCallbackQuery"), json={
+                    "callback_query_id": cq["id"], "text": "Type minutes from now.",
+                }, timeout=5)
+                send_text("Type minutes from now to schedule (e.g. 45 or 120):")
+                custom_mode = True
+
+            if custom_mode and msg.get("text", "").strip().isdigit():
+                minutes = int(msg["text"].strip())
+                dt = datetime.now(IST) + timedelta(minutes=minutes)
+                label = dt.strftime("%d %b %Y %I:%M %p") + " IST"
+                send_text(f"Scheduled for {label}.")
+                print(f"[telegram] Schedule (custom): +{minutes}min → {dt.isoformat()}")
                 return dt.isoformat()
 
     print("[telegram] No schedule tap in 3h — publishing now.")
