@@ -6,13 +6,12 @@ Uses OAuth 2.0 (token file persisted across runs).
 
 import os, sys, json
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from config import YOUTUBE_CLIENT_SECRET_FILE, YOUTUBE_TOKEN_FILE
+from config import YOUTUBE_CLIENT_SECRET_FILE, YOUTUBE_TOKEN_FILE, get_playlist_id
 
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload",
     "https://www.googleapis.com/auth/youtube",
 ]
-YOUTUBE_PLAYLIST_ID = os.environ.get("YOUTUBE_PLAYLIST_ID", "")
 
 
 def _get_credentials():
@@ -122,18 +121,21 @@ def run(brain: dict, video_path: str, thumbnail_path: str, publish_at: str = Non
     else:
         print("[upload] No thumbnail — skipping.")
 
-    # Add to playlist if configured
-    if YOUTUBE_PLAYLIST_ID:
+    # Add to the video's designated playlist (looked up by key from brain)
+    playlist_id = get_playlist_id(brain.get("playlist", ""))
+    if playlist_id:
         youtube.playlistItems().insert(
             part="snippet",
             body={
                 "snippet": {
-                    "playlistId": YOUTUBE_PLAYLIST_ID,
+                    "playlistId": playlist_id,
                     "resourceId": {"kind": "youtube#video", "videoId": video_id},
                 }
             },
         ).execute()
-        print(f"[upload] Added to playlist {YOUTUBE_PLAYLIST_ID}")
+        print(f"[upload] Added to playlist '{brain.get('playlist')}' ({playlist_id})")
+    else:
+        print(f"[upload] No playlist ID set for key '{brain.get('playlist', 'none')}' — skipping.")
 
     return video_id
 

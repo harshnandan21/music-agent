@@ -2,7 +2,7 @@
 Studio Step 1 — Draft
 Runs the brain (Gemini), saves brain.json, sends Telegram with idea summary
 (APPROVE/REJECT) + full Suno and Gemini prompts as follow-up messages.
-Waits up to 2 hours for approval before the day's work begins.
+Waits up to 10 hours for approval before auto-rejecting.
 """
 
 import importlib.util, json, os, sys

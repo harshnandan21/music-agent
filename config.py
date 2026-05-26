@@ -59,14 +59,15 @@ WEEKLY_SCHEDULE = {
         "thumbnail_hook":     "MIDNIGHT FOCUS",
         "thumbnail_instr":    "VEENA & TABLA · RAAG CHANDRAKAUNS",
         "thumbnail_tagline":  "Dissolve Brain Fog & Think With Clarity",
+        "playlist":           "focus",
     },
 
-    1: {  # Tuesday — mid-week unwind
+    1: {  # Tuesday — mid-week cortisol drop
         "raga":        "Yaman Kalyan",
         "raga_mood":   "romantic, gentle, dusk — the day's weight slowly dissolving",
         "instruments": ["sitar", "bansuri flute"],
-        "use_case":    "relaxation after work",
-        "theme":       "Sitar and flute in evening dialogue — city noise fading into calm water",
+        "use_case":    "evening cortisol drop and stress relief",
+        "theme":       "Sitar and flute at dusk — cortisol dropping, body unclenching, city noise dissolving",
         "music_hints": (
             "Sitar and bansuri in gentle call-and-response. Sitar sets the melodic foundation, "
             "bansuri answers with breathy long tones. Teentaal at 80 BPM, light tabla. "
@@ -79,19 +80,20 @@ WEEKLY_SCHEDULE = {
             "peacocks and deer in golden light, vibrant saffron-to-teal sky."
         ),
         # ── overrides ────────────────────────────────────────────────────────
-        "hz_frequency":       None,
+        "hz_frequency":       "174Hz",
         "title":              None,
-        "thumbnail_hook":     "AFTER WORK CALM",
+        "thumbnail_hook":     "CORTISOL DROP",
         "thumbnail_instr":    "SITAR & BANSURI · RAAG YAMAN KALYAN",
-        "thumbnail_tagline":  "Release Office Stress & Reset Your Mind",
+        "thumbnail_tagline":  "Drop Your Cortisol & Unwind After a Long Day",
+        "playlist":           "stress",
     },
 
-    2: {  # Wednesday — hump-day stress release
+    2: {  # Wednesday — overthinking release
         "raga":        "Bageshri",
         "raga_mood":   "longing, introspective, late night — emotions quietly surfacing and releasing",
         "instruments": ["bansuri flute"],
-        "use_case":    "stress relief and anxiety",
-        "theme":       "Lone bansuri in monsoon rain — every breath releases what you have been holding",
+        "use_case":    "overthinking and anxiety relief",
+        "theme":       "Lone bansuri in monsoon rain — quiet the overthinking mind, let every held breath go",
         "music_hints": (
             "Solo bansuri, breathy and intimate. Vilambit at 55 BPM. "
             "Long held komal notes that sigh and resolve, like exhaling weeks of tension. "
@@ -107,17 +109,18 @@ WEEKLY_SCHEDULE = {
         # ── overrides ────────────────────────────────────────────────────────
         "hz_frequency":       "528Hz",
         "title":              None,
-        "thumbnail_hook":     "STRESS DETOX",
+        "thumbnail_hook":     "OVERTHINKING OFF",
         "thumbnail_instr":    "BANSURI FLUTE · RAAG BAGESHRI",
-        "thumbnail_tagline":  "Monsoon Rain Flute to Calm Your Nervous System",
+        "thumbnail_tagline":  "Stop Overthinking & Let Your Mind Finally Rest",
+        "playlist":           "stress",
     },
 
     3: {  # Thursday — pre-weekend deep rest
         "raga":        "Yaman",
         "raga_mood":   "peaceful, uplifting, evening calm — light releasing into stillness",
         "instruments": ["santoor", "tanpura"],
-        "use_case":    "deep sleep",
-        "theme":       "Santoor crystals over tanpura drone — 432Hz, body melting into rest",
+        "use_case":    "deep sleep and melatonin release",
+        "theme":       "Santoor crystals over tanpura drone — 432Hz releasing melatonin, body drifting into sleep",
         "music_hints": (
             "Santoor with pure crystal-hammer strokes tuned to 432Hz. Vilambit at 50 BPM. "
             "Tanpura drone in low register as unbroken foundation. "
@@ -136,15 +139,16 @@ WEEKLY_SCHEDULE = {
         "title":              None,
         "thumbnail_hook":     "DEEP SLEEP NOW",
         "thumbnail_instr":    "SANTOOR & TANPURA · RAAG YAMAN",
-        "thumbnail_tagline":  "432Hz Music to Fall Asleep Fast & Stay Asleep",
+        "thumbnail_tagline":  "432Hz to Release Melatonin & Fall Asleep Fast",
+        "playlist":           "sleep",
     },
 
-    4: {  # Friday — energetic start to the weekend
+    4: {  # Friday — morning prana flow
         "raga":        "Bhupali",
         "raga_mood":   "serene, hopeful, expansive — pentatonic openness, bright and alive",
         "instruments": ["sitar", "sarod", "tabla"],
-        "use_case":    "yoga and breathwork",
-        "theme":       "Three instruments, one sunrise — body, breath, and rhythm awakening together",
+        "use_case":    "morning prana flow and cortisol reset",
+        "theme":       "Sunrise trio — morning prana awakening, cortisol reset, body and breath in harmony",
         "music_hints": (
             "Sitar, sarod, and tabla in full sunrise energy. Sitar leads the melody, "
             "sarod adds resonant depth, tabla drives steady teentaal at 90 BPM. "
@@ -159,19 +163,20 @@ WEEKLY_SCHEDULE = {
             "vibrant red, gold and forest-green palette, intricate elephant border."
         ),
         # ── overrides ────────────────────────────────────────────────────────
-        "hz_frequency":       None,
+        "hz_frequency":       "432Hz",
         "title":              None,
-        "thumbnail_hook":     "MORNING ENERGY",
+        "thumbnail_hook":     "MORNING PRANA",
         "thumbnail_instr":    "SITAR, SAROD & TABLA · RAAG BHUPALI",
-        "thumbnail_tagline":  "Breathe. Move. Awaken. Indian Classical for Yoga",
+        "thumbnail_tagline":  "Morning Prana Flow to Reset Cortisol & Awaken Your Body",
+        "playlist":           "morning",
     },
 
-    5: {  # Saturday — late-night weekend depth
+    5: {  # Saturday — overactive mind, late-night calm
         "raga":        "Darbari Kanada",
         "raga_mood":   "majestic, contemplative, late-night gravity — heavy with meaning",
         "instruments": ["sitar", "bansuri flute", "tabla"],
-        "use_case":    "late night relaxation",
-        "theme":       "Midnight trio — sitar, flute, and tabla in the emperor's private hours",
+        "use_case":    "overactive mind and late night calm",
+        "theme":       "Midnight trio — silence an overactive mind, let the nervous system finally rest",
         "music_hints": (
             "Sitar leads with weighty alap, bansuri answers with midnight phrases, "
             "tabla enters softly at 3 minutes with a slow dadra. "
@@ -189,15 +194,16 @@ WEEKLY_SCHEDULE = {
         "title":              None,
         "thumbnail_hook":     "MIDNIGHT CALM",
         "thumbnail_instr":    "SITAR, BANSURI & TABLA · RAAG DARBARI",
-        "thumbnail_tagline":  "Saturday Night Deep Relaxation for the Soul",
+        "thumbnail_tagline":  "Silence an Overactive Mind & Reset Your Nervous System",
+        "playlist":           "midnight",
     },
 
-    6: {  # Sunday — devotional morning reset
+    6: {  # Sunday — morning cortisol reset
         "raga":        "Bhairavi",
         "raga_mood":   "devotional, melancholic, surrendered — the most emotionally complete raga",
         "instruments": ["bansuri flute", "tanpura"],
-        "use_case":    "morning meditation",
-        "theme":       "Bansuri over tanpura at the Ganges — Sunday surrender, week washing away",
+        "use_case":    "morning cortisol reset and meditation",
+        "theme":       "Bansuri over tanpura at the Ganges — lower morning cortisol, surrender to the new week",
         "music_hints": (
             "Bansuri warm and intimate over a continuous tanpura drone. "
             "Slow vilambit at 60 BPM turning to madhya laya. "
@@ -211,11 +217,12 @@ WEEKLY_SCHEDULE = {
             "saffron and gold palette, geometric fish-and-wave border."
         ),
         # ── overrides ────────────────────────────────────────────────────────
-        "hz_frequency":       None,
+        "hz_frequency":       "432Hz",
         "title":              None,
-        "thumbnail_hook":     "SUNDAY RESET",
+        "thumbnail_hook":     "CORTISOL CALM",
         "thumbnail_instr":    "BANSURI & TANPURA · RAAG BHAIRAVI",
-        "thumbnail_tagline":  "Start Your Week with Devotion & Inner Peace",
+        "thumbnail_tagline":  "Lower Morning Cortisol & Reset for the Week Ahead",
+        "playlist":           "morning",
     },
 }
 
@@ -226,6 +233,9 @@ CONTENT_SEEDS = {
         "Anxiety Reset", "Nervous System Calm", "Emotional Detox", "Mind Reset",
         "Stop Overthinking", "Morning Clarity", "Work Focus", "Inner Stillness",
         "Sleep Fast", "Wake Up Calm", "Dissolve Tension",
+        # Science-backed hooks — high search intent, proven in healing music niche
+        "Lower Cortisol", "Parasympathetic Reset", "Melatonin Boost", "HRV Calm",
+        "Cortisol Relief", "Nervous System Reset", "Deep Nervous System Healing",
     ],
     "atmosphere_hooks": [
         "Monsoon Rain", "Temple at Dawn", "Candlelight", "Midnight Stillness",
@@ -248,7 +258,9 @@ CONTENT_SEEDS = {
     "hook_phrases": [
         # Stress / anxiety
         "Your stress ends here.",
-        "For the next 2 hours, nothing is your problem.",
+        "Put the world down. For now, nothing is your problem.",
+        "Lower your cortisol. Slow your breath. Let this raga do the rest.",
+        "Still. Ancient strings. Your nervous system finally rests.",
         "You don't need to be okay right now. Just be here.",
         "Ancient strings. Sparse beats. Deep healing.",
         # Morning / energy
@@ -304,6 +316,8 @@ YOUTUBE_KEYWORDS = {
         "calming music", "overthinking relief", "brain fog relief", "mental detox",
         "deep relaxation", "inner peace", "bansuri music", "flute music",
         "432hz", "chakra healing", "morning meditation",
+        # Science-backed search terms from healing music niche
+        "cortisol relief music", "parasympathetic music", "nervous system healing music",
     ],
     "hinglish": [
         "stress kam karne wala music", "mann shant karne ka sangeet",
@@ -311,6 +325,55 @@ YOUTUBE_KEYWORDS = {
         "dimag shant karne wala music", "sukoon dene wala music",
     ],
 }
+
+# ── Playlists ─────────────────────────────────────────────────────────────────
+# Five themed playlists — each maps to a YouTube playlist ID stored in .env.
+# Create each playlist manually on YouTube Studio, then paste the ID into .env.
+#
+# Playlist IDs are loaded from environment variables at runtime so they never
+# live in source code. Add to .env:
+#   YT_PLAYLIST_MORNING=PLxxxxxxx
+#   YT_PLAYLIST_FOCUS=PLxxxxxxx
+#   YT_PLAYLIST_STRESS=PLxxxxxxx
+#   YT_PLAYLIST_SLEEP=PLxxxxxxx
+#   YT_PLAYLIST_MIDNIGHT=PLxxxxxxx
+#
+PLAYLISTS = {
+    "morning":  {
+        "name":   "Morning Raga Rituals",
+        "desc":   "Start your day with intention — raga-based music to lower morning cortisol, awaken prana, and set a calm, focused tone for the day.",
+        "env":    "YT_PLAYLIST_MORNING",
+    },
+    "focus": {
+        "name":   "Focus & Brain Clarity",
+        "desc":   "Indian classical music to dissolve brain fog, sharpen concentration, and lock into deep work. Ancient frequencies meet modern productivity.",
+        "env":    "YT_PLAYLIST_FOCUS",
+    },
+    "stress": {
+        "name":   "Stress & Overthinking Relief",
+        "desc":   "Raga therapy for the overworked mind — drop cortisol, quiet overthinking, and let the nervous system breathe after a long day.",
+        "env":    "YT_PLAYLIST_STRESS",
+    },
+    "sleep": {
+        "name":   "Sleep & Deep Rest",
+        "desc":   "432Hz raga sessions designed to release melatonin, slow the breath, and guide you into deep, uninterrupted sleep.",
+        "env":    "YT_PLAYLIST_SLEEP",
+    },
+    "midnight": {
+        "name":   "Midnight Calm",
+        "desc":   "For the nights your mind won't stop — late-night raga to silence an overactive mind, reset the nervous system, and find stillness.",
+        "env":    "YT_PLAYLIST_MIDNIGHT",
+    },
+}
+
+
+def get_playlist_id(key: str) -> str:
+    """Return the YouTube playlist ID for a given key, or '' if not set."""
+    entry = PLAYLISTS.get(key)
+    if not entry:
+        return ""
+    return os.environ.get(entry["env"], "")
+
 
 # ── Video format ──────────────────────────────────────────────────────────────
 VEO_CLIP_SEC = 8

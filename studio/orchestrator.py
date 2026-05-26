@@ -17,7 +17,8 @@ Usage:
 Before running --publish, drop into studio/drafts/YYYY-MM-DD/:
   clip_1.mp3       (required) your recorded music
   clip_2.mp3       (optional) second clip — interleaved with clip_1
-  background.png   (required) 1920x1080 Madhubani background
+  clip.mp4         (optional) 8-second Veo loop — preferred over background image
+  background.png   (required if no clip.mp4) 1920x1080 Madhubani background
   thumbnail.png    (optional) custom thumbnail
 """
 

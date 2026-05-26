@@ -1,21 +1,38 @@
 """
 Studio Step 3 — Assemble
-Combines draft_dir/background.png (or .jpg) + draft_dir/music.mp3 into
-draft_dir/video.mp4 using FFmpeg (static image loop + audio).
+Combines background + music.mp3 into video.mp4.
+
+Video clip mode (preferred):
+  Drop clip.mp4 (8-second Veo loop) in the draft folder.
+  A cross-dissolve is baked at the loop point, then the unit is looped
+  for the full audio duration with -stream_loop. No visible seam.
+
+Static image mode (fallback):
+  Drop background.png/jpg. Used when no clip.mp4 is found.
 """
 
 import os, subprocess, sys
 
-STUDIO_DIR = os.path.dirname(os.path.dirname(__file__))
-ROOT_DIR   = os.path.dirname(STUDIO_DIR)
+STUDIO_DIR   = os.path.dirname(os.path.dirname(__file__))
+ROOT_DIR     = os.path.dirname(STUDIO_DIR)
 sys.path.insert(0, ROOT_DIR)
 sys.path.insert(0, STUDIO_DIR)
 
 from utils import get_duration
 
+DISSOLVE_SEC = 0.5   # cross-dissolve baked at the loop point
+SCALE_FILTER = (
+    "scale=1920:1080:force_original_aspect_ratio=decrease,"
+    "pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black"
+)
+
+
+def _find_clip(draft_dir: str) -> str | None:
+    p = os.path.join(draft_dir, "clip.mp4")
+    return p if os.path.exists(p) else None
+
 
 def _find_image(draft_dir: str) -> str:
-    # Prefer explicitly named background, then any image that isn't the thumbnail
     SKIP = {"thumbnail.png", "thumbnail.jpg"}
     for name in ["background.png", "background.jpg", "background.jpeg"]:
         p = os.path.join(draft_dir, name)
@@ -26,8 +43,87 @@ def _find_image(draft_dir: str) -> str:
             return os.path.join(draft_dir, f)
     raise FileNotFoundError(
         f"[assemble] No background image found in {draft_dir}. "
-        "Drop an image file there and re-run --publish."
+        "Drop background.png or clip.mp4 and re-run --publish."
     )
+
+
+def _make_loop_unit(clip_path: str, out_path: str) -> str:
+    """
+    Bake a cross-dissolve at the loop point so the clip tiles invisibly.
+    The unit is trimmed to `clip_dur - DISSOLVE_SEC` so the last visible
+    frame is already mid-dissolve into the clip's opening frames.
+    When stream_loop repeats the unit, clip[0] picks up seamlessly.
+    """
+    dur    = get_duration(clip_path)
+    offset = round(dur - DISSOLVE_SEC, 3)  # dissolve starts here
+    trim   = offset                         # output = [0, offset) seconds
+
+    subprocess.run([
+        "ffmpeg", "-y",
+        "-i", clip_path, "-i", clip_path,
+        "-filter_complex",
+        f"[0][1]xfade=transition=fade:duration={DISSOLVE_SEC}:offset={offset}[v]",
+        "-map", "[v]",
+        "-t", str(trim),
+        "-c:v", "libx264", "-preset", "fast", "-crf", "18", "-pix_fmt", "yuv420p",
+        out_path,
+    ], check=True, stdin=subprocess.DEVNULL, capture_output=True)
+
+    print(f"[assemble] Loop unit: {trim:.2f}s ({DISSOLVE_SEC}s dissolve baked at loop point)")
+    return out_path
+
+
+def _assemble_from_clip(clip_path: str, music_path: str, duration: float, out_path: str):
+    loop_unit = os.path.join(os.path.dirname(clip_path), "_loop_unit.mp4")
+    _make_loop_unit(clip_path, loop_unit)
+
+    fade_out_start = duration - 3
+    vf = (
+        f"{SCALE_FILTER},"
+        f"fade=t=in:st=0:d=2,"
+        f"fade=t=out:st={fade_out_start}:d=3"
+    )
+    cmd = [
+        "ffmpeg", "-y",
+        "-stream_loop", "-1", "-i", loop_unit,
+        "-i", music_path,
+        "-vf", vf,
+        "-map", "0:v", "-map", "1:a",
+        "-c:v", "libx264", "-preset", "fast", "-crf", "20",
+        "-c:a", "aac", "-b:a", "192k",
+        "-pix_fmt", "yuv420p",
+        "-t", str(duration),
+        "-movflags", "+faststart",
+        out_path,
+    ]
+    print("[assemble] Assembling video from looped clip...")
+    subprocess.run(cmd, check=True, stdin=subprocess.DEVNULL)
+
+    if os.path.exists(loop_unit):
+        os.remove(loop_unit)
+
+
+def _assemble_from_image(image_path: str, music_path: str, duration: float, out_path: str):
+    filter_complex = (
+        f"[0:v]{SCALE_FILTER},"
+        f"fade=t=in:st=0:d=2,"
+        f"fade=t=out:st={duration - 3}:d=3[v]"
+    )
+    cmd = [
+        "ffmpeg", "-y",
+        "-loop", "1", "-i", image_path,
+        "-i", music_path,
+        "-filter_complex", filter_complex,
+        "-map", "[v]", "-map", "1:a",
+        "-c:v", "libx264", "-tune", "stillimage", "-preset", "fast", "-crf", "20",
+        "-c:a", "aac", "-b:a", "192k",
+        "-pix_fmt", "yuv420p",
+        "-t", str(duration),
+        "-movflags", "+faststart",
+        out_path,
+    ]
+    print("[assemble] Assembling video from static image...")
+    subprocess.run(cmd, check=True, stdin=subprocess.DEVNULL)
 
 
 def run(brain: dict, draft_dir: str) -> str:
@@ -35,35 +131,17 @@ def run(brain: dict, draft_dir: str) -> str:
     if not os.path.exists(music_path):
         raise FileNotFoundError(f"[assemble] music.mp3 not found in {draft_dir}")
 
-    image_path    = _find_image(draft_dir)
-    audio_duration = get_duration(music_path)
-    print(f"[assemble] Audio={audio_duration:.0f}s, image={os.path.basename(image_path)}")
+    duration  = get_duration(music_path)
+    out_path  = os.path.join(draft_dir, "video.mp4")
+    clip_path = _find_clip(draft_dir)
 
-    filter_complex = (
-        f"[0:v]"
-        f"scale=1920:1080:force_original_aspect_ratio=decrease,"
-        f"pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,"
-        f"fade=t=in:st=0:d=2,"
-        f"fade=t=out:st={audio_duration - 3}:d=3[v]"
-    )
-
-    out_path = os.path.join(draft_dir, "video.mp4")
-    cmd = [
-        "ffmpeg", "-y",
-        "-loop", "1", "-i", image_path,
-        "-i", music_path,
-        "-filter_complex", filter_complex,
-        "-map", "[v]",
-        "-map", "1:a",
-        "-c:v", "libx264", "-tune", "stillimage", "-preset", "fast", "-crf", "20",
-        "-c:a", "aac", "-b:a", "192k",
-        "-pix_fmt", "yuv420p",
-        "-t", str(audio_duration),
-        "-movflags", "+faststart",
-        out_path,
-    ]
-    print("[assemble] Running FFmpeg...")
-    subprocess.run(cmd, check=True, stdin=subprocess.DEVNULL)
+    if clip_path:
+        print(f"[assemble] clip.mp4 found — video loop mode")
+        _assemble_from_clip(clip_path, music_path, duration, out_path)
+    else:
+        image_path = _find_image(draft_dir)
+        print(f"[assemble] Audio={duration:.0f}s, image={os.path.basename(image_path)}")
+        _assemble_from_image(image_path, music_path, duration, out_path)
 
     size_mb = os.path.getsize(out_path) / 1_048_576
     print(f"[assemble] Saved {out_path} ({size_mb:.1f} MB)")

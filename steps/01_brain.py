@@ -73,7 +73,7 @@ def run(client) -> dict:
     # ── Collect locked override values from config ────────────────────────────
     # Any key set (non-None) in the schedule is a hard constraint.
     locked = {}
-    for key in ("hz_frequency", "title", "thumbnail_hook", "thumbnail_instr", "thumbnail_tagline", "hook_phrase"):
+    for key in ("hz_frequency", "title", "thumbnail_hook", "thumbnail_instr", "thumbnail_tagline", "hook_phrase", "playlist"):
         val = schedule.get(key)
         if val:
             locked[key] = val
@@ -97,10 +97,10 @@ def run(client) -> dict:
             "address a real pain point, include hz_frequency if provided."
         )
 
-    seeds_outcomes  = ", ".join(CONTENT_SEEDS["outcome_hooks"][:10])
+    seeds_outcomes  = ", ".join(CONTENT_SEEDS["outcome_hooks"][:14])
     seeds_atmos     = ", ".join(CONTENT_SEEDS["atmosphere_hooks"][:8])
     seeds_patterns  = "\n".join(f"  · {p}" for p in CONTENT_SEEDS["title_patterns"])
-    seeds_hooks     = "\n".join(f"  · {p}" for p in CONTENT_SEEDS["hook_phrases"][:6])
+    seeds_hooks     = "\n".join(f"  · {p}" for p in CONTENT_SEEDS["hook_phrases"][:8])
     seeds_avoid     = ", ".join(CONTENT_SEEDS["avoid_generic"])
     hz_note         = f"Hz frequency for this post: {locked['hz_frequency']}" if "hz_frequency" in locked else ""
 
