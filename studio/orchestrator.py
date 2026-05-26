@@ -39,6 +39,15 @@ from google import genai
 from config import GEMINI_API_KEY
 import studio.telegram as tg
 
+NO_TELEGRAM = "--no-telegram" in sys.argv
+
+
+def _tg_send(text: str):
+    if not NO_TELEGRAM:
+        tg.send_text(text)
+    else:
+        print(f"[telegram-skip] {text}")
+
 
 def _load_step(filename: str):
     """Load a steps/ module by filename (handles digit-prefixed names)."""
@@ -118,39 +127,43 @@ def do_publish(date_str: str):
     title_safe = brain.get('title', '').encode('ascii', 'replace').decode('ascii')
     print("[orchestrator] Title:", title_safe)
 
-    tg.send_text(f"Publish started for {date_str}\n{title_safe}")
+    _tg_send(f"Publish started for {date_str}\n{title_safe}")
 
     # Step 2 — Extend music (skip if music.mp3 already exists)
     music_path = os.path.join(draft_dir, "music.mp3")
     if os.path.exists(music_path):
         print(f"[orchestrator] music.mp3 already present — skipping extend step.")
-        tg.send_text("music.mp3 already exists — skipping extend step.")
+        _tg_send("music.mp3 already exists — skipping extend step.")
     else:
-        dur_token = tg.new_token()
-        tg.send_duration_prompt(dur_token)
-        target_min = tg.wait_for_duration(dur_token)
-        tg.send_text(f"Extending music to {target_min} min... (takes 3-5 min)")
+        if NO_TELEGRAM:
+            target_min = 20
+            print(f"[orchestrator] --no-telegram: defaulting to {target_min} min")
+        else:
+            dur_token = tg.new_token()
+            tg.send_duration_prompt(dur_token)
+            target_min = tg.wait_for_duration(dur_token)
+        _tg_send(f"Extending music to {target_min} min... (takes 3-5 min)")
         step02 = _load_step("02_extend.py")
         step02.run(draft_dir, target_min=target_min)
-        tg.send_text("Music ready.")
+        _tg_send("Music ready.")
 
     # Step 3 — Assemble video (skip if video.mp4 already exists and non-empty)
     video_path = os.path.join(draft_dir, "video.mp4")
     video_ok = os.path.exists(video_path) and os.path.getsize(video_path) > 0
     if video_ok:
         print(f"[orchestrator] video.mp4 already present — skipping assemble step.")
-        tg.send_text("video.mp4 already exists — skipping assemble step.")
+        _tg_send("video.mp4 already exists — skipping assemble step.")
     elif os.path.exists(video_path):
         print(f"[orchestrator] video.mp4 is empty/corrupt — re-assembling.")
-        tg.send_text("video.mp4 was empty/corrupt — re-assembling...")
+        _tg_send("video.mp4 was empty/corrupt — re-assembling...")
         os.remove(video_path)
     if not video_ok:
-        tg.send_text("Assembling video (image + music)... (takes 2-4 min)")
+        _tg_send("Assembling video (clip + music)... (takes 2-4 min)")
         step03 = _load_step("03_assemble.py")
         step03.run(brain, draft_dir)
-        tg.send_text("Video assembled. Sending for approval...")
+        _tg_send("Video assembled. Sending for approval...")
 
-    # Telegram approval
+    # Approval
     preview_image = None
     for name in ["thumbnail.png", "thumbnail.jpg", "background.png", "background.jpg"]:
         p = os.path.join(draft_dir, name)
@@ -158,26 +171,30 @@ def do_publish(date_str: str):
             preview_image = p
             break
 
-    token   = tg.new_token()
-    caption = (
-        f"Ready to upload?\n\n"
-        f"Raga: {brain.get('raga', '—')}\n"
-        f"Instruments: {brain.get('instrument', '—')}\n\n"
-        f"Title:\n{brain.get('title', '—')}\n\n"
-        f"Hook: {brain.get('thumbnail_hook', '—')}\n"
-        f"Tagline: {brain.get('thumbnail_tagline', '—')}"
-    )
-    tg.send_approval(preview_image, caption, token)
-    decision = tg.wait_for_decision(token, timeout_seconds=21600)
+    if NO_TELEGRAM:
+        print("[orchestrator] --no-telegram: auto-approving upload.")
+        decision = "approved"
+        publish_at = None
+    else:
+        token   = tg.new_token()
+        caption = (
+            f"Ready to upload?\n\n"
+            f"Raga: {brain.get('raga', '—')}\n"
+            f"Instruments: {brain.get('instrument', '—')}\n\n"
+            f"Title:\n{brain.get('title', '—')}\n\n"
+            f"Hook: {brain.get('thumbnail_hook', '—')}\n"
+            f"Tagline: {brain.get('thumbnail_tagline', '—')}"
+        )
+        tg.send_approval(preview_image, caption, token)
+        decision = tg.wait_for_decision(token, timeout_seconds=21600)
 
-    if decision == "rejected":
-        print("[orchestrator] Upload rejected via Telegram. Files kept in draft folder.")
-        sys.exit(0)
+        if decision == "rejected":
+            print("[orchestrator] Upload rejected via Telegram. Files kept in draft folder.")
+            sys.exit(0)
 
-    # Optional: schedule publish time
-    schedule_token = tg.new_token()
-    tg.send_schedule_prompt(schedule_token)
-    publish_at = tg.wait_for_schedule(schedule_token)
+        schedule_token = tg.new_token()
+        tg.send_schedule_prompt(schedule_token)
+        publish_at = tg.wait_for_schedule(schedule_token)
 
     # Step 4 — Upload
     step04 = _load_step("04_upload.py")
@@ -196,10 +213,12 @@ def do_publish(date_str: str):
         f"{brain.get('title', '')}\n\n"
         f"https://youtu.be/{video_id}"
     )
-    if preview_image:
-        tg.send_photo(preview_image, upload_caption)
-    else:
-        tg.send_text(upload_caption)
+    if not NO_TELEGRAM:
+        if preview_image:
+            tg.send_photo(preview_image, upload_caption)
+        else:
+            tg.send_text(upload_caption)
+    print(upload_caption)
     print("=" * 60)
     print(f"DONE — https://youtu.be/{video_id}")
     print("=" * 60)

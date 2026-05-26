@@ -78,20 +78,20 @@ def _crossfade_merge(clips: list, output_path: str) -> str:
     return output_path
 
 
-def _normalise_and_fade(src: str, dst: str, duration: float) -> str:
+def _normalise_and_fade(src: str, dst: str, duration: float, trim_sec: float | None = None) -> str:
+    out_dur = min(duration, trim_sec) if trim_sec else duration
     af = (
         "dynaudnorm=f=500:g=31:r=0.9,"
         f"afade=t=in:st=0:d={FADE_IN_SEC},"
-        f"afade=t=out:st={duration - FADE_OUT_SEC}:d={FADE_OUT_SEC}"
+        f"afade=t=out:st={out_dur - FADE_OUT_SEC}:d={FADE_OUT_SEC}"
     )
-    cmd = [
-        "ffmpeg", "-y",
-        "-i", src,
-        "-af", af,
-        "-c:a", "libmp3lame", "-b:a", "192k",
-        dst,
-    ]
-    print(f"[extend] Normalising + fading ({duration:.0f}s)...")
+    cmd = ["ffmpeg", "-y", "-i", src, "-af", af, "-c:a", "libmp3lame", "-b:a", "192k"]
+    if trim_sec and duration > trim_sec:
+        cmd += ["-t", str(trim_sec)]
+        print(f"[extend] Normalising + trimming to {trim_sec:.0f}s ({trim_sec/60:.1f} min)...")
+    else:
+        print(f"[extend] Normalising + fading ({duration:.0f}s)...")
+    cmd.append(dst)
     subprocess.run(cmd, check=True, stdin=subprocess.DEVNULL)
     return dst
 
@@ -153,7 +153,8 @@ def run(draft_dir: str, target_min: int = DEFAULT_MIN) -> str:
     print(f"[extend] Merged: {merged_dur:.0f}s ({merged_dur/60:.1f} min)")
 
     out_path = os.path.join(draft_dir, "music.mp3")
-    _normalise_and_fade(merged_path, out_path, merged_dur)
+    _normalise_and_fade(merged_path, out_path, merged_dur,
+                        trim_sec=TARGET_SEC if merged_dur > TARGET_SEC else None)
 
     # Cleanup temp files
     for p in stripped + [merged_path]:

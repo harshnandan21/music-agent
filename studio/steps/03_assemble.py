@@ -3,9 +3,9 @@ Studio Step 3 — Assemble
 Combines background + music.mp3 into video.mp4.
 
 Video clip mode (preferred):
-  Drop clip.mp4 (8-second Veo loop) in the draft folder.
-  A cross-dissolve is baked at the loop point, then the unit is looped
-  for the full audio duration with -stream_loop. No visible seam.
+  Drop clip.mp4 (8-second Veo seamless loop) in the draft folder.
+  Veo guarantees first frame == last frame, so the clip is looped
+  directly with -stream_loop -1. No dissolve needed.
 
 Static image mode (fallback):
   Drop background.png/jpg. Used when no clip.mp4 is found.
@@ -20,7 +20,6 @@ sys.path.insert(0, STUDIO_DIR)
 
 from utils import get_duration
 
-DISSOLVE_SEC = 0.5   # cross-dissolve baked at the loop point
 SCALE_FILTER = (
     "scale=1920:1080:force_original_aspect_ratio=decrease,"
     "pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black"
@@ -47,36 +46,9 @@ def _find_image(draft_dir: str) -> str:
     )
 
 
-def _make_loop_unit(clip_path: str, out_path: str) -> str:
-    """
-    Bake a cross-dissolve at the loop point so the clip tiles invisibly.
-    The unit is trimmed to `clip_dur - DISSOLVE_SEC` so the last visible
-    frame is already mid-dissolve into the clip's opening frames.
-    When stream_loop repeats the unit, clip[0] picks up seamlessly.
-    """
-    dur    = get_duration(clip_path)
-    offset = round(dur - DISSOLVE_SEC, 3)  # dissolve starts here
-    trim   = offset                         # output = [0, offset) seconds
-
-    subprocess.run([
-        "ffmpeg", "-y",
-        "-i", clip_path, "-i", clip_path,
-        "-filter_complex",
-        f"[0][1]xfade=transition=fade:duration={DISSOLVE_SEC}:offset={offset}[v]",
-        "-map", "[v]",
-        "-t", str(trim),
-        "-c:v", "libx264", "-preset", "fast", "-crf", "18", "-pix_fmt", "yuv420p",
-        out_path,
-    ], check=True, stdin=subprocess.DEVNULL, capture_output=True)
-
-    print(f"[assemble] Loop unit: {trim:.2f}s ({DISSOLVE_SEC}s dissolve baked at loop point)")
-    return out_path
-
-
 def _assemble_from_clip(clip_path: str, music_path: str, duration: float, out_path: str):
-    loop_unit = os.path.join(os.path.dirname(clip_path), "_loop_unit.mp4")
-    _make_loop_unit(clip_path, loop_unit)
-
+    # Veo clips are seamless loops (first frame == last frame) — loop directly,
+    # no dissolve processing needed.
     fade_out_start = duration - 3
     vf = (
         f"{SCALE_FILTER},"
@@ -85,7 +57,7 @@ def _assemble_from_clip(clip_path: str, music_path: str, duration: float, out_pa
     )
     cmd = [
         "ffmpeg", "-y",
-        "-stream_loop", "-1", "-i", loop_unit,
+        "-stream_loop", "-1", "-i", clip_path,
         "-i", music_path,
         "-vf", vf,
         "-map", "0:v", "-map", "1:a",
@@ -98,9 +70,6 @@ def _assemble_from_clip(clip_path: str, music_path: str, duration: float, out_pa
     ]
     print("[assemble] Assembling video from looped clip...")
     subprocess.run(cmd, check=True, stdin=subprocess.DEVNULL)
-
-    if os.path.exists(loop_unit):
-        os.remove(loop_unit)
 
 
 def _assemble_from_image(image_path: str, music_path: str, duration: float, out_path: str):
