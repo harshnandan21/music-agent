@@ -43,20 +43,27 @@ def run(brain: dict, video_path: str, thumbnail_path: str, publish_at: str = Non
     youtube = build("youtube", "v3", credentials=creds)
 
     # Build tags from full keywords string (more terms than the 15-item tags array).
-    # Filter non-ASCII (Hindi), strip whitespace, drop tags over 30 chars,
-    # and stop before the 500-char YouTube total limit.
-    raw_kw = brain.get("keywords", "")
-    if raw_kw:
+    # Build tags: prefer explicit tags[] array (curated, always valid).
+    # Fall back to keywords string only when tags[] is absent.
+    # YouTube counts tags with spaces as quoted (+2 chars) toward the 500-char limit.
+    def _yt_tag_len(tag):
+        return len(tag) + (2 if " " in tag else 0)
+
+    explicit_tags = [t.strip() for t in brain.get("tags", [])
+                     if t.strip().isascii() and t.strip()]
+    if explicit_tags:
+        safe_tags = explicit_tags
+    else:
+        raw_kw = brain.get("keywords", "")
         candidates = [k.strip() for k in raw_kw.split(",")
                       if k.strip().isascii() and len(k.strip()) <= 30]
         safe_tags, total = [], 0
         for tag in candidates:
-            if total + len(tag) + (1 if safe_tags else 0) > 500:
+            cost = _yt_tag_len(tag)
+            if total + cost > 500:
                 break
             safe_tags.append(tag)
-            total += len(tag) + (1 if len(safe_tags) > 1 else 0)
-    else:
-        safe_tags = [t for t in brain.get("tags", []) if t.isascii()]
+            total += cost
 
     import re
     desc = brain.get("description", "")
