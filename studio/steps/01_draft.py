@@ -75,27 +75,8 @@ def _gemini_bg_prompt(brain: dict) -> str:
     return f"GEMINI PRO — BACKGROUND IMAGE (16:9)\n\n{brain.get('image_prompt', '')}"
 
 
-def _gemini_thumb_prompt(brain: dict) -> str:
-    parts  = _parse_instruments(brain.get("instrument", "sitar"))
-    instr1 = parts[0] if parts else "sitar"
-    hook   = brain.get("thumbnail_hook", "")
-    tagline = brain.get("thumbnail_tagline", "")
-    mood   = brain.get("hook_angle", "")
-
-    return (
-        f"GEMINI PRO — THUMBNAIL (16:9, YouTube-optimised)\n\n"
-        f"Create a bold, high-contrast YouTube thumbnail in Madhubani folk art style. "
-        f"16:9 format, must look striking at 320x180px.\n\n"
-        f"Composition: Left 60% — deep indigo night sky, large glowing full moon upper half, "
-        f"ornate {instr1} dead-centre slightly oversized, gold lotus decoration, warm saffron lamp glow from below. "
-        f"Right 40% — intentionally darker and simpler, faint peacock silhouette and geometric border, "
-        f"clear space for text overlay.\n\n"
-        f"Style: Madhubani flat illustration, thick black outlines, no gradients, no photorealism, "
-        f"no 3D shading. Bold and graphic.\n\n"
-        f"Mood: {mood}\n\n"
-        f"Text to overlay later (do NOT include in image) — Hook: {hook} | Tagline: {tagline}\n\n"
-        f"No text, no watermarks, no letters anywhere. Pure illustration only."
-    )
+def _veo_video_prompt(brain: dict) -> str:
+    return f"VEO — VIDEO PROMPT (8-second seamless loop)\n\n{brain.get('video_prompt', '')}"
 
 
 def run(client, draft_dir: str) -> tuple[dict, str]:
@@ -128,7 +109,7 @@ def run(client, draft_dir: str) -> tuple[dict, str]:
     # 2 — All prompts as a single .txt file (open on phone → easy copy-paste)
     suno  = _suno_prompt(brain)
     bg    = _gemini_bg_prompt(brain)
-    thumb = _gemini_thumb_prompt(brain)
+    video = _veo_video_prompt(brain)
     divider = "\n" + "=" * 60 + "\n\n"
     doc_content = (
         f"DHUNDETOX — IDEA OF THE DAY ({date_label})\n"
@@ -144,7 +125,7 @@ def run(client, draft_dir: str) -> tuple[dict, str]:
         + divider
         + bg
         + divider
-        + thumb
+        + video
         + "\n"
     )
     tg.send_document(

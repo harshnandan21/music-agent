@@ -161,9 +161,28 @@ IMAGE PROMPT GUIDANCE (choose Madhubani folk art — standard for this channel):
 - Always end with: "No text or letters anywhere. Pure illustration only. No watermarks."
 
 VIDEO PROMPT GUIDANCE (for Veo — seamless 8-second loop):
-- Animation elements reference: {VIDEO_ANIMATION_GUIDE}
-- Camera completely static. Only natural elements animate (stars, water, smoke, flames).
-- Base on the image scene: choose the matching animation type from the guide.
+Generate video_prompt in this EXACT format, derived from the image scene above:
+
+"Animate this image as a seamless loop video.
+Camera completely static and locked, no movement.
+
+Only animate these subtle elements:
+- [pick 3-5 natural elements FROM the image scene: flames, water, sky glow, mist, clouds, birds, leaves, smoke — with action and percentage]
+
+Everything else completely frozen and still:
+[list ALL musicians, instruments, animals, plants, decorative elements from the image scene].
+
+First frame and last frame must be identical.
+No brightness change. No color shift. No flicker.
+8 second seamless loop.
+Madhubani folk art style preserved exactly.
+[one-line mood/atmosphere sentence matching the image scene]."
+
+Rules:
+- Musicians and instruments ALWAYS frozen (never animate)
+- Animals (peacocks, deer, fish) ALWAYS frozen
+- Flames: 5%, water ripples: 3-5%, sky glow: 2%, leaves: 3%, smoke: 80%, birds/clouds: drifting slowly (no %)
+- List every frozen element explicitly so nothing gets accidentally animated
 
 DESCRIPTION TEMPLATE — follow this structure exactly:
 
