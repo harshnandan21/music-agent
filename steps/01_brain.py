@@ -161,27 +161,37 @@ IMAGE PROMPT GUIDANCE (choose Madhubani folk art — standard for this channel):
 - Always end with: "No text or letters anywhere. Pure illustration only. No watermarks."
 
 THUMBNAIL PROMPT GUIDANCE (16:9 YouTube thumbnail — rich painterly style):
-Generate thumbnail_prompt using this EXACT visual formula. This is a SEPARATE image from the background — it must include baked-in text and a storytelling visual split.
+Generate thumbnail_prompt as a SEPARATE image from the background. This is the YouTube thumbnail — it must have baked-in text and strong visual storytelling. Be creative with the composition — do NOT repeat the same layout every time.
 
-STYLE: Rich Indian folk-art painting — Mughal miniature meets Madhubani. Intricate hand-painted textures, warm earthy pigments, decorative botanical borders. NOT flat/digital. Painterly, detailed, illustrative.
+STYLE PRINCIPLES (always apply):
+- Rich Indian painting — Mughal miniature meets folk art. NOT flat or digital. Painterly, textured, illustrative, intricate.
+- Central figure: the {instruments_label} player — seated, eyes closed, serene, ornate outfit in colours matching the raga's mood
+- Music flows visibly from the instrument — as wisps, smoke, notes, ripples, light — connecting to the world around them
+- The scene tells the emotional story of the raga and use case through symbolism, not text
+- Ornate decorative border on all four edges — paisley, lotus, geometric motifs
+- Rich botanical elements natural to the scene — derive from raga setting
 
-STRUCTURE:
-- Centre: {instruments_label} player seated cross-legged, eyes gently closed, peaceful expression, ornate saree/outfit matching the raga's mood colour
-- Left half: the PROBLEM visual — derive from use_case (e.g. overthinking = tangled spirals, stress = tension lines, insomnia = restless waves, brain fog = dark clouds, anxiety = frantic hatching lines) — these dissolve/unravel as they meet the music
-- Right half: the RELIEF visual — the raga's signature nature element (peacock for Bageshri/Darbari, deer for Yaman, lotus bloom for Bhairavi, crescent moon for Chandrakauns, sunrise birds for Bhupali, river heron for any water scene)
-- Music: swirling notes and smoke-like wisps flow from instrument outward toward both sides
-- Background: sky matching raga time-of-day — left stormy/tense transitioning to warm golden glow behind musician
-- Botanicals: large lotus flowers bottom corners, mango/banyan tree branches arching overhead, small birds perching on branches
-- Border: intricate paisley and lotus motif border on all four edges
+TEXT OVERLAY (always include, baked into image):
+A wide ornate parchment or stone banner (top or woven naturally into the composition) containing:
+  Line 1 (large bold serif, high contrast): short punchy version of title — max 6 words, no emojis, no Hz numbers
+  Line 2 (smaller elegant serif): "Raag {schedule['raga']} · {{hz_frequency}}  |  {{2-3 word benefit}}"
 
-TEXT OVERLAY (baked into image):
-Top of image: wide ornate parchment banner with floral border containing:
-  Line 1 (large bold serif): the thumbnail title — derive a SHORT punchy version of the title (max 6-7 words, no emojis, no Hz)
-  Line 2 (smaller elegant serif): "Raag {schedule['raga']} · {{hz_frequency}} | {{use_case benefit, 2-3 words}}"
+COMPOSITION — invent a fresh approach each time. Some possibilities to draw from:
+- The two-world split: musician at centre, one half shows the emotional problem (tangled spirals for overthinking, dark storm clouds for stress, fragmented shards for anxiety, grey fog for brain fatigue), other half shows the relief (peacock in full bloom, deer in golden light, lotus opening, moon emerging from clouds) — both halves dissolving into the music
+- The immersive scene: musician fully embedded in a rich landscape — river at dawn, monsoon garden, moonlit terrace — the music animates the whole scene with visible sound waves
+- The before/after arch: upper half dark and chaotic, lower half calm and luminous, musician at the threshold playing the transition
+- The circular mandala: musician at centre of a radiant circular composition, raga's nature symbols radiating outward like petals, problem symbols at outer edges dissolving inward
+- The atmospheric portrait: musician large in frame, face and instrument dominant, atmospheric landscape behind — painterly like a classical Indian portrait but with visible sound and emotion
+- Or invent something entirely fitting to the specific raga and use case
 
-COLOUR PALETTE: derive from raga mood — e.g. monsoon=deep indigo+teal+rose, midnight=dark navy+gold, dawn=saffron+rose+ivory, dusk=amber+teal+crimson. Always warm golden glow behind the central musician.
+COLOUR PALETTE: always derive from raga mood and time of day
+  monsoon/night ragas → deep indigo, stormy teal, rose, silver rain
+  dawn ragas → saffron, warm gold, ivory, fresh green
+  dusk ragas → amber, crimson, peacock teal, turmeric
+  midnight ragas → dark navy, deep violet, gold lamp-glow
+  Always: warm golden halo or glow behind the central musician
 
-OUTPUT: write thumbnail_prompt as one cohesive detailed paragraph that a text-to-image model can follow directly. Do NOT use bullet points in the output — write it as flowing descriptive text.
+OUTPUT: write thumbnail_prompt as one flowing paragraph of rich descriptive prose — as if briefing a master illustrator. Do NOT use bullet points. Make it specific, vivid, and unique to this raga and use case.
 
 VIDEO PROMPT GUIDANCE (for Veo — seamless 8-second loop):
 Generate video_prompt in this EXACT format, derived from the image scene above:
