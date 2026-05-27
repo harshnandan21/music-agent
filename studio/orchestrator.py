@@ -1,29 +1,40 @@
 """
-Studio Orchestrator — two-phase manual workflow
+Studio Orchestrator — unified manual + auto workflow
 
 Phase 1 (--draft):
   Runs the brain (Gemini) → saves idea to studio/drafts/YYYY-MM-DD/brain.json
-  → sends a Telegram message with today's idea so you can create music + image.
+  → sends Telegram: APPROVE / REJECT
+  → if approved → Telegram: AUTO or MANUAL?
 
-Phase 2 (--publish):
-  Reads the draft folder → extends your music clips to 20 min → assembles video
-  → sends Telegram preview with APPROVE / REJECT buttons → uploads on approval.
+  AUTO  → asks duration → generates Lyria music + Gemini image → assembles video
+          → Telegram: APPROVE / REJECT upload + schedule → uploads
+  MANUAL → sends drop-files instructions → exits
+           (run --publish when files are ready)
+
+Phase 2 (--publish)  [MANUAL mode, or AUTO resume after interruption]:
+  Reads the draft folder → extends music clips → assembles video
+  → sends Telegram preview → uploads on approval.
 
 Usage:
   python studio/orchestrator.py --draft
   python studio/orchestrator.py --publish
   python studio/orchestrator.py --publish --date 2026-05-25
+  python studio/orchestrator.py --publish --no-telegram
 
-Before running --publish, drop into studio/drafts/YYYY-MM-DD/:
+Before running --publish in MANUAL mode, drop into studio/drafts/YYYY-MM-DD/:
   clip_1.mp3       (required) your recorded music
   clip_2.mp3       (optional) second clip — interleaved with clip_1
   clip.mp4         (optional) 8-second Veo loop — preferred over background image
-  background.png   (required if no clip.mp4) 1920x1080 Madhubani background
+  background.png   (required if no clip.mp4) 1920x1080 background
   thumbnail.png    (optional) custom thumbnail
 """
 
-import importlib.util, json, os, shutil, sys, traceback
+import importlib.util, io, json, os, shutil, sys, traceback
 from datetime import date, timedelta
+
+# Ensure stdout handles emoji/Unicode on Windows without crashing
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 STUDIO_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR   = os.path.dirname(STUDIO_DIR)
@@ -50,7 +61,7 @@ def _tg_send(text: str):
 
 
 def _load_step(filename: str):
-    """Load a steps/ module by filename (handles digit-prefixed names)."""
+    """Load a studio/steps/ module by filename (handles digit-prefixed names)."""
     name = os.path.splitext(filename)[0]
     spec = importlib.util.spec_from_file_location(name, os.path.join(STEPS_DIR, filename))
     mod  = importlib.util.module_from_spec(spec)
@@ -77,6 +88,102 @@ def _load_brain(draft_dir: str) -> dict:
         return json.load(f)
 
 
+def _save_brain(brain: dict, draft_dir: str):
+    brain_path = os.path.join(draft_dir, "brain.json")
+    with open(brain_path, "w", encoding="utf-8") as f:
+        json.dump(brain, f, indent=2, ensure_ascii=False)
+
+
+# ── AUTO pipeline ─────────────────────────────────────────────────────────────
+
+def _do_auto_steps(client, brain: dict, draft_dir: str, target_min: int):
+    """Full AUTO pipeline: Lyria music → Gemini image → assemble → upload."""
+    date_str = os.path.basename(draft_dir)
+
+    # Step A — Generate Lyria clips (saved as clip_1.mp3 … clip_4.mp3)
+    music_path = os.path.join(draft_dir, "music.mp3")
+    if not os.path.exists(music_path):
+        _tg_send(f"Generating music via Lyria (~15 min for 4 clips)...")
+        auto_music = _load_step("auto_music.py")
+        auto_music.run(client, brain, draft_dir)
+
+        # Step B — Extend / loop clips to target duration
+        _tg_send(f"Extending to {target_min} min...")
+        step02 = _load_step("02_extend.py")
+        step02.run(draft_dir, target_min=target_min)
+        _tg_send("Music ready.")
+    else:
+        print("[orchestrator] music.mp3 already present — skipping music generation.")
+
+    # Step C — Generate background image
+    image_path = os.path.join(draft_dir, "background.png")
+    if not os.path.exists(image_path):
+        _tg_send("Generating background image via Gemini...")
+        auto_image = _load_step("auto_image.py")
+        auto_image.run(client, brain, draft_dir)
+        _tg_send("Image generated.")
+    else:
+        print("[orchestrator] background.png already present — skipping image generation.")
+
+    # Step D — Assemble video
+    video_path = os.path.join(draft_dir, "video.mp4")
+    video_ok   = os.path.exists(video_path) and os.path.getsize(video_path) > 0
+    if not video_ok:
+        if os.path.exists(video_path):
+            os.remove(video_path)
+        _tg_send("Assembling video (2-5 min)...")
+        step03 = _load_step("03_assemble.py")
+        step03.run(brain, draft_dir)
+        _tg_send("Video assembled!")
+    else:
+        print("[orchestrator] video.mp4 already present — skipping assemble.")
+
+    # Step E — Upload approval + schedule
+    preview_image = next(
+        (os.path.join(draft_dir, n)
+         for n in ["background.png", "background.jpg", "thumbnail.png"]
+         if os.path.exists(os.path.join(draft_dir, n))),
+        None,
+    )
+
+    if NO_TELEGRAM:
+        print("[orchestrator] --no-telegram: auto-approving upload.")
+        decision   = "approved"
+        publish_at = None
+    else:
+        token = tg.new_token()
+        caption = (
+            f"AUTO complete — ready to upload?\n\n"
+            f"Raga: {brain.get('raga', '—')}\n"
+            f"Instruments: {brain.get('instrument', '—')}\n\n"
+            f"Title:\n{brain.get('title', '—')}"
+        )
+        tg.send_approval(preview_image, caption, token)
+        decision = tg.wait_for_decision(token, timeout_seconds=21600)
+
+        if decision == "rejected":
+            _tg_send(f"Upload skipped. Files are in studio/drafts/{date_str}/")
+            return
+
+        sch_token = tg.new_token()
+        tg.send_schedule_prompt(sch_token)
+        publish_at = tg.wait_for_schedule(sch_token)
+
+    step04   = _load_step("04_upload.py")
+    video_id = step04.run(brain, draft_dir, publish_at=publish_at)
+
+    if publish_at:
+        from datetime import datetime
+        dt    = datetime.fromisoformat(publish_at)
+        label = f"Scheduled for {dt.strftime('%d %b %Y %I:%M %p')} IST"
+    else:
+        label = "Live now"
+
+    upload_msg = f"Uploaded! {label}\n\nhttps://youtu.be/{video_id}"
+    _tg_send(upload_msg)
+    print(f"\nDONE — https://youtu.be/{video_id}")
+
+
 # ── Phase 1 ───────────────────────────────────────────────────────────────────
 
 def do_draft(date_str: str):
@@ -91,10 +198,10 @@ def do_draft(date_str: str):
         return
 
     client = genai.Client(api_key=GEMINI_API_KEY)
-
     step01 = _load_step("01_draft.py")
 
     MAX_RETRIES = 3
+    decision    = "rejected"
     for attempt in range(1, MAX_RETRIES + 1):
         if attempt > 1:
             print(f"[orchestrator] Generating new idea (attempt {attempt}/{MAX_RETRIES})...")
@@ -106,12 +213,54 @@ def do_draft(date_str: str):
         else:
             tg.send_text("All ideas rejected. Run --draft manually when ready.")
 
-    print("=" * 60)
     if decision == "rejected":
         print("All ideas rejected via Telegram. Re-run --draft to try again.")
+        print("=" * 60)
+        return
+
+    # ── Mode selection ────────────────────────────────────────────────────────
+    if NO_TELEGRAM:
+        mode = "manual"
+        print("[orchestrator] --no-telegram: defaulting to MANUAL mode.")
     else:
-        print(f"Draft saved: {draft_dir}")
-        print("Idea approved! Drop your files and run --publish when ready.")
+        mode_token = tg.new_token()
+        tg.send_choice_prompt(
+            mode_token,
+            "<b>How would you like to create today's content?</b>\n\n"
+            "🤖 <b>AUTO</b> — Lyria generates music, Gemini generates image (~40 min, hands-off)\n"
+            "✋ <b>MANUAL</b> — You provide clips + background, then run --publish",
+            [("🤖 AUTO", "AUTO"), ("✋ MANUAL", "MANUAL")],
+        )
+        mode = (tg.wait_for_choice(mode_token, timeout_seconds=3600) or "MANUAL").lower()
+
+    brain = _load_brain(draft_dir)
+    brain["mode"] = mode
+    _save_brain(brain, draft_dir)
+    print(f"[orchestrator] Mode: {mode}")
+
+    if mode == "auto":
+        if NO_TELEGRAM:
+            target_min = 30
+        else:
+            dur_token = tg.new_token()
+            tg.send_duration_prompt(dur_token)
+            target_min = tg.wait_for_duration(dur_token)
+
+        _tg_send(f"AUTO mode — starting {target_min}-min pipeline. Sit back!")
+        _do_auto_steps(client, brain, draft_dir, target_min)
+    else:
+        manual_msg = (
+            f"MANUAL mode — drop files into studio/drafts/{date_str}/\n"
+            f"  clip_1.mp3      (required)\n"
+            f"  clip_2.mp3      (optional)\n"
+            f"  background.png  (required)\n"
+            f"  thumbnail.png   (optional)\n\n"
+            f"Then run:\n  python studio/orchestrator.py --publish --date {date_str}"
+        )
+        _tg_send(manual_msg)
+
+    print("=" * 60)
+    print(f"Draft saved: {draft_dir}")
     print("=" * 60)
 
 
@@ -124,15 +273,29 @@ def do_publish(date_str: str):
 
     draft_dir = _draft_dir(date_str)
     brain     = _load_brain(draft_dir)
-    title_safe = brain.get('title', '').encode('ascii', 'replace').decode('ascii')
-    print("[orchestrator] Title:", title_safe)
+    print("[orchestrator] Title:", brain.get("title", ""))
+    _tg_send(f"Publish started for {date_str}\n{brain.get('title', '')}")
 
-    _tg_send(f"Publish started for {date_str}\n{title_safe}")
+    # ── AUTO resume ───────────────────────────────────────────────────────────
+    if brain.get("mode") == "auto":
+        print("[orchestrator] AUTO mode detected — running auto pipeline.")
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        music_path = os.path.join(draft_dir, "music.mp3")
+        if not os.path.exists(music_path) and not NO_TELEGRAM:
+            dur_token = tg.new_token()
+            tg.send_duration_prompt(dur_token)
+            target_min = tg.wait_for_duration(dur_token)
+        else:
+            target_min = 30
+        _do_auto_steps(client, brain, draft_dir, target_min)
+        return
 
-    # Step 2 — Extend music (skip if music.mp3 already exists)
+    # ── MANUAL flow ───────────────────────────────────────────────────────────
+
+    # Extend music (skip if music.mp3 already exists)
     music_path = os.path.join(draft_dir, "music.mp3")
     if os.path.exists(music_path):
-        print(f"[orchestrator] music.mp3 already present — skipping extend step.")
+        print("[orchestrator] music.mp3 already present — skipping extend step.")
         _tg_send("music.mp3 already exists — skipping extend step.")
     else:
         if NO_TELEGRAM:
@@ -147,36 +310,36 @@ def do_publish(date_str: str):
         step02.run(draft_dir, target_min=target_min)
         _tg_send("Music ready.")
 
-    # Step 3 — Assemble video (skip if video.mp4 already exists and non-empty)
+    # Assemble video (skip if video.mp4 already exists and non-empty)
     video_path = os.path.join(draft_dir, "video.mp4")
-    video_ok = os.path.exists(video_path) and os.path.getsize(video_path) > 0
+    video_ok   = os.path.exists(video_path) and os.path.getsize(video_path) > 0
     if video_ok:
-        print(f"[orchestrator] video.mp4 already present — skipping assemble step.")
+        print("[orchestrator] video.mp4 already present — skipping assemble step.")
         _tg_send("video.mp4 already exists — skipping assemble step.")
-    elif os.path.exists(video_path):
-        print(f"[orchestrator] video.mp4 is empty/corrupt — re-assembling.")
-        _tg_send("video.mp4 was empty/corrupt — re-assembling...")
-        os.remove(video_path)
-    if not video_ok:
+    else:
+        if os.path.exists(video_path):
+            print("[orchestrator] video.mp4 is empty/corrupt — re-assembling.")
+            _tg_send("video.mp4 was empty/corrupt — re-assembling...")
+            os.remove(video_path)
         _tg_send("Assembling video (clip + music)... (takes 2-4 min)")
         step03 = _load_step("03_assemble.py")
         step03.run(brain, draft_dir)
         _tg_send("Video assembled. Sending for approval...")
 
     # Approval
-    preview_image = None
-    for name in ["thumbnail.png", "thumbnail.jpg", "background.png", "background.jpg"]:
-        p = os.path.join(draft_dir, name)
-        if os.path.exists(p):
-            preview_image = p
-            break
+    preview_image = next(
+        (os.path.join(draft_dir, n)
+         for n in ["thumbnail.png", "thumbnail.jpg", "background.png", "background.jpg"]
+         if os.path.exists(os.path.join(draft_dir, n))),
+        None,
+    )
 
     if NO_TELEGRAM:
         print("[orchestrator] --no-telegram: auto-approving upload.")
-        decision = "approved"
+        decision   = "approved"
         publish_at = None
     else:
-        token   = tg.new_token()
+        token = tg.new_token()
         caption = (
             f"Ready to upload?\n\n"
             f"Raga: {brain.get('raga', '—')}\n"
@@ -196,31 +359,19 @@ def do_publish(date_str: str):
         tg.send_schedule_prompt(schedule_token)
         publish_at = tg.wait_for_schedule(schedule_token)
 
-    # Step 4 — Upload
-    step04 = _load_step("04_upload.py")
+    step04   = _load_step("04_upload.py")
     video_id = step04.run(brain, draft_dir, publish_at=publish_at)
 
     if publish_at:
         from datetime import datetime
-        from studio.telegram import IST
-        dt = datetime.fromisoformat(publish_at)
-        schedule_label = f"Scheduled for {dt.strftime('%d %b %Y %I:%M %p')} IST"
+        dt    = datetime.fromisoformat(publish_at)
+        label = f"Scheduled for {dt.strftime('%d %b %Y %I:%M %p')} IST"
     else:
-        schedule_label = "Live now"
+        label = "Live now"
 
-    upload_caption = (
-        f"Uploaded! {schedule_label}\n\n"
-        f"{brain.get('title', '')}\n\n"
-        f"https://youtu.be/{video_id}"
-    )
-    if not NO_TELEGRAM:
-        if preview_image:
-            tg.send_photo(preview_image, upload_caption)
-        else:
-            tg.send_text(upload_caption)
-    print(upload_caption)
-    print("=" * 60)
-    print(f"DONE — https://youtu.be/{video_id}")
+    upload_caption = f"Uploaded! {label}\n\n{brain.get('title', '')}\n\nhttps://youtu.be/{video_id}"
+    _tg_send(upload_caption)
+    print(f"\nDONE — https://youtu.be/{video_id}")
     print("=" * 60)
 
 
