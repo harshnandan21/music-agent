@@ -240,7 +240,12 @@ Example: raag {schedule['raga'].lower()},raga {schedule['raga'].lower()},{instru
 TAGS GUIDANCE: Exactly 15 tags max — English only, each max 30 chars, total under 400 chars combined. Parse from the English keywords above (exclude Hindi).
 
 {{
-  "title": "SEO title ≤70 chars",
+  "title": "best of the 3 title_options below — pick the strongest SEO + CTR option",
+  "title_options": [
+    "option 1 — emotional/vulnerable hook: When... / For the... / Some nights... formula",
+    "option 2 — outcome-first: raga + hz + instruments + benefit, lead with the result",
+    "option 3 — atmosphere-led: scene or mood first, then raga + instruments"
+  ],
   "description": "Full YouTube description following the 11-section template above, including Hindi section, CTA, disclaimer, and 15 hashtags at end",
   "keywords": "comma-separated keyword string, 470-480 chars, no spaces after commas, for YouTube tags field",
   "tags": ["15 tags parsed from keywords, English only, each max 30 chars"],
@@ -273,6 +278,8 @@ TAGS GUIDANCE: Exactly 15 tags max — English only, each max 30 chars, total un
     def _p(s): print(str(s).encode("ascii", "replace").decode("ascii"))
     _p(f"[brain] Raga={data['raga']} | Instruments={data['instrument']} | Hz={locked.get('hz_frequency', 'none')}")
     _p(f"[brain] Title: {data['title']}")
+    for i, t in enumerate(data.get("title_options", []), 1):
+        _p(f"[brain] Title option {i}: {t}")
     _p(f"[brain] Hook: {data.get('thumbnail_hook')} | Tagline: {data.get('thumbnail_tagline')}")
 
     kw_len = len(data.get("keywords", ""))

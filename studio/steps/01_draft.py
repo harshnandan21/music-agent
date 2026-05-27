@@ -99,7 +99,13 @@ def run(client, draft_dir: str) -> tuple[dict, str]:
         f"Instruments: {brain.get('instrument', '—')}\n"
         f"Use case: {brain.get('use_case', '—')}\n\n"
         f"Title:\n{brain.get('title', '—')}\n\n"
-        f"Hook: {brain.get('thumbnail_hook', '—')}\n"
+        + (
+            "Other title options:\n"
+            + "\n".join(f"  {i+1}. {t}" for i, t in enumerate(brain.get("title_options", [])))
+            + "\n\n"
+            if brain.get("title_options") else ""
+        )
+        + f"Hook: {brain.get('thumbnail_hook', '—')}\n"
         f"Tagline: {brain.get('thumbnail_tagline', '—')}\n\n"
         f"Approve to lock in today's idea."
     )
@@ -117,7 +123,11 @@ def run(client, draft_dir: str) -> tuple[dict, str]:
         f"Raga:        {brain.get('raga', '')}\n"
         f"Instruments: {brain.get('instrument', '')}\n"
         f"Title:       {brain.get('title', '')}\n"
-        f"Hz:          {brain.get('hz_frequency', '')}\n"
+        + (
+            "".join(f"  Option {i+1}: {t}\n" for i, t in enumerate(brain.get("title_options", [])))
+            if brain.get("title_options") else ""
+        )
+        + f"Hz:          {brain.get('hz_frequency', '')}\n"
         f"Hook:        {brain.get('thumbnail_hook', '')}\n"
         f"Tagline:     {brain.get('thumbnail_tagline', '')}\n"
         + divider
