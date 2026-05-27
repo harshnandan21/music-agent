@@ -116,7 +116,6 @@ def run(client, draft_dir: str) -> tuple[dict, str]:
     suno  = _suno_prompt(brain)
     bg    = _gemini_bg_prompt(brain)
     video = _veo_video_prompt(brain)
-    thumb = f"GEMINI — THUMBNAIL PROMPT (16:9 with text overlay)\n\n{brain.get('thumbnail_prompt', '')}"
     divider = "\n" + "=" * 60 + "\n\n"
     doc_content = (
         f"DHUNDETOX — IDEA OF THE DAY ({date_label})\n"
@@ -137,8 +136,6 @@ def run(client, draft_dir: str) -> tuple[dict, str]:
         + bg
         + divider
         + video
-        + divider
-        + thumb
         + "\n"
     )
     tg.send_document(

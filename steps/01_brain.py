@@ -155,10 +155,36 @@ MUSIC PROMPT GUIDANCE (for Lyria — think like Indian classical recording engin
 - Anti-patterns to explicitly exclude: no Western instruments, no percussion fills, no sudden dynamics
 - Base on: {schedule['music_hints']}
 
-IMAGE PROMPT GUIDANCE (choose Madhubani folk art — standard for this channel):
-- Madhubani style: {MADHUBANI_STYLE}
-- Scene base: {schedule['image_hints']}
-- Always end with: "No text or letters anywhere. Pure illustration only. No watermarks."
+IMAGE PROMPT GUIDANCE (16:9 video background — rich Indian painterly style):
+Style: Rich Indian painting — Mughal miniature meets regional folk art (Madhubani, Pahari, Pattachitra).
+NOT flat/digital. Painterly, textured, deeply detailed, illustrative. Warm earthy pigments on aged parchment.
+Intricate hand-painted feel with fine crosshatching and stippling. Ornate botanical borders on all edges.
+
+Scene base to work from: {schedule['image_hints']}
+
+COMPOSITION — invent a fresh, polished approach that fits the raga and use case. Some archetypes:
+- Immersive landscape: musician(s) fully embedded in a rich atmospheric setting — river at dawn, monsoon garden,
+  moonlit terrace, forest clearing — with visible sound/music flowing outward as wisps, ripples, or light
+- The living scene: musician at centre surrounded by the raga's nature world — peacocks, deer, lotus,
+  birds — all gathered as if drawn by the music, rich foliage framing
+- The contemplative portrait: musician large in frame, instrument prominent, atmospheric landscape
+  behind them — painterly like a classical Indian miniature painting, mood-heavy
+- The two-world: one half of the scene shows tension/stillness (dark sky, bare branches, still water),
+  the other half shows bloom/relief (golden light, flowers opening, birds in flight) — musician at threshold
+- Or invent a composition entirely fitting to the specific raga, instruments, and emotion
+
+Key rules:
+- Central figure: the {instruments_label} player(s), eyes closed or deeply focused, serene
+- Music flows visibly — as wisps, smoke, notes, light rays, ripples — from the instrument into the scene
+- Raga's signature nature elements must be present (peacock=Bageshri/Darbari, deer=Yaman, lotus=Bhairavi,
+  crescent moon=Chandrakauns, sunrise birds=Bhupali, river heron=water scenes)
+- Colour palette derived from raga mood and time of day:
+    monsoon/night → deep indigo, stormy teal, rose, silver
+    dawn → saffron, warm gold, ivory, fresh green
+    dusk → amber, crimson, peacock teal, turmeric
+    midnight → dark navy, deep violet, gold lamp-glow
+- Warm golden glow or soft halo behind the central musician
+- No text, no watermarks, no letters anywhere. Pure illustration only.
 
 THUMBNAIL PROMPT GUIDANCE (16:9 YouTube thumbnail — rich painterly style):
 Generate thumbnail_prompt as a SEPARATE image from the background. This is the YouTube thumbnail — it must have baked-in text and strong visual storytelling. Be creative with the composition — do NOT repeat the same layout every time.
@@ -293,8 +319,7 @@ TAGS GUIDANCE: Exactly 15 tags max — English only, each max 30 chars, total un
   "hook_phrase": "the 2-sentence emotional opener used at start of description — standalone, punchy",
   "thumbnail_hook": "2-4 ALL-CAPS word hook for thumbnail",
   "thumbnail_instr": "Instruments & Raga line for thumbnail middle",
-  "thumbnail_tagline": "6-10 word benefit tagline for thumbnail bottom",
-  "thumbnail_prompt": "Full Gemini image prompt for the YouTube thumbnail per thumbnail guidance above — flowing paragraph, includes text overlay instructions, visual split storytelling, colour palette, style notes"
+  "thumbnail_tagline": "6-10 word benefit tagline for thumbnail bottom"
 }}"""
 
     response = client.models.generate_content(model=BRAIN_MODEL, contents=prompt)
