@@ -382,7 +382,7 @@ VEO_CLIP_SEC = 8
 # Shotcut ships ffmpeg.exe but not ffprobe. We add its dir to PATH so all
 # subprocess calls to "ffmpeg" resolve without full paths.
 FFMPEG_DIR = r"C:\Program Files\Shotcut"
-if FFMPEG_DIR not in os.environ.get("PATH", ""):
+if os.name == "nt" and os.path.exists(FFMPEG_DIR) and FFMPEG_DIR not in os.environ.get("PATH", ""):
     os.environ["PATH"] = FFMPEG_DIR + os.pathsep + os.environ.get("PATH", "")
 
 # ── Output paths ──────────────────────────────────────────────────────────────

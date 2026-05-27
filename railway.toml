@@ -1,0 +1,3 @@
+[deploy]
+startCommand = "python startup.py"
+cronSchedule = "30 2 * * *"
