@@ -93,7 +93,16 @@ def run(brain: dict, video_path: str, thumbnail_path: str, publish_at: str = Non
     request = youtube.videos().insert(part=",".join(body.keys()), body=body, media_body=media)
     response = None
     while response is None:
-        status, response = request.next_chunk()
+        for attempt in range(5):
+            try:
+                status, response = request.next_chunk()
+                break
+            except Exception as e:
+                if attempt == 4:
+                    raise
+                wait = 2 ** attempt * 5
+                print(f"[upload] Network error ({e}) — retrying in {wait}s...")
+                import time; time.sleep(wait)
         if status:
             pct = int(status.progress() * 100)
             print(f"[upload] {pct}% uploaded...")
