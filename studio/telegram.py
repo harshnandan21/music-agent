@@ -311,5 +311,192 @@ def wait_for_schedule(token: str, timeout_seconds: int = 10800) -> str | None:
     return None
 
 
+def _download_file(file_id: str, save_path: str) -> str:
+    """Download a Telegram file by file_id and save to save_path."""
+    r = requests.get(_url("getFile"), params={"file_id": file_id}, timeout=15)
+    r.raise_for_status()
+    file_path = r.json()["result"]["file_path"]
+    file_url  = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_path}"
+    resp = requests.get(file_url, stream=True, timeout=300)
+    resp.raise_for_status()
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    with open(save_path, "wb") as f:
+        for chunk in resp.iter_content(chunk_size=65536):
+            f.write(chunk)
+    return save_path
+
+
+def wait_for_audio_file(draft_dir: str, timeout_seconds: int = 86400) -> str | None:
+    """Poll for an audio/document message, download and save as clip_1.<ext>. Returns path or None."""
+    deadline = time.time() + timeout_seconds
+    try:
+        r = requests.get(_url("getUpdates"), params={"limit": 1, "offset": -1}, timeout=10)
+        results = r.json().get("result", [])
+        offset = results[-1]["update_id"] + 1 if results else 0
+    except Exception:
+        offset = 0
+
+    AUDIO_EXTS = {".mp3", ".wav", ".m4a", ".ogg", ".flac"}
+    print(f"[telegram] Waiting up to {timeout_seconds // 3600}h for audio file...")
+    while time.time() < deadline:
+        remaining = int(deadline - time.time())
+        wait = min(30, remaining)
+        if wait <= 0:
+            break
+        try:
+            r = requests.get(_url("getUpdates"), params={
+                "offset": offset, "timeout": wait, "limit": 10,
+            }, timeout=wait + 5)
+            updates = r.json().get("result", [])
+        except Exception as e:
+            print(f"[telegram] Poll error: {e}")
+            time.sleep(5)
+            continue
+        for upd in updates:
+            offset = upd["update_id"] + 1
+            msg = upd.get("message", {})
+            audio = msg.get("audio") or msg.get("document")
+            if not audio:
+                continue
+            fname = audio.get("file_name", "clip_1.mp3").lower()
+            ext   = os.path.splitext(fname)[1] or ".mp3"
+            if ext not in AUDIO_EXTS:
+                continue
+            size_kb = audio.get("file_size", 0) // 1024
+            send_text(f"Downloading audio ({size_kb} KB)...")
+            save_path = os.path.join(draft_dir, f"clip_1{ext}")
+            _download_file(audio["file_id"], save_path)
+            size_mb = os.path.getsize(save_path) / 1_048_576
+            print(f"[telegram] Audio saved: {save_path} ({size_mb:.1f} MB)")
+            send_text(f"Audio saved ({size_mb:.1f} MB). Now send your background image.")
+            return save_path
+    print("[telegram] No audio file received (timeout).")
+    return None
+
+
+def wait_for_image_file(draft_dir: str, timeout_seconds: int = 86400) -> str | None:
+    """Poll for a photo or image document, save as image.<ext>. Returns path or None."""
+    deadline = time.time() + timeout_seconds
+    try:
+        r = requests.get(_url("getUpdates"), params={"limit": 1, "offset": -1}, timeout=10)
+        results = r.json().get("result", [])
+        offset = results[-1]["update_id"] + 1 if results else 0
+    except Exception:
+        offset = 0
+
+    IMAGE_EXTS = {".png", ".jpg", ".jpeg"}
+    print(f"[telegram] Waiting up to {timeout_seconds // 3600}h for image file...")
+    while time.time() < deadline:
+        remaining = int(deadline - time.time())
+        wait = min(30, remaining)
+        if wait <= 0:
+            break
+        try:
+            r = requests.get(_url("getUpdates"), params={
+                "offset": offset, "timeout": wait, "limit": 10,
+            }, timeout=wait + 5)
+            updates = r.json().get("result", [])
+        except Exception as e:
+            print(f"[telegram] Poll error: {e}")
+            time.sleep(5)
+            continue
+        for upd in updates:
+            offset = upd["update_id"] + 1
+            msg    = upd.get("message", {})
+            file_id, ext = None, ".jpg"
+            if msg.get("photo"):
+                file_id = msg["photo"][-1]["file_id"]   # highest resolution
+                ext = ".jpg"
+            elif msg.get("document"):
+                doc   = msg["document"]
+                fname = doc.get("file_name", "").lower()
+                fext  = os.path.splitext(fname)[1]
+                if fext in IMAGE_EXTS:
+                    file_id = doc["file_id"]
+                    ext = fext
+            if not file_id:
+                continue
+            send_text("Downloading image...")
+            save_path = os.path.join(draft_dir, f"image{ext}")
+            _download_file(file_id, save_path)
+            size_mb = os.path.getsize(save_path) / 1_048_576
+            print(f"[telegram] Image saved: {save_path} ({size_mb:.1f} MB)")
+            send_text(f"Image saved ({size_mb:.1f} MB).")
+            return save_path
+    print("[telegram] No image file received (timeout).")
+    return None
+
+
 def new_token() -> str:
     return uuid.uuid4().hex[:10].upper()
+
+
+def send_choice_prompt(token: str, text: str, options: list[tuple]) -> None:
+    """Send a compact inline keyboard with choice buttons.
+
+    `options` is a list of (label, code) tuples. Callback data is
+    formatted as `CHOICE_{token}_{code}`.
+    """
+    rows = []
+    row = []
+    for i, (label, code) in enumerate(options):
+        row.append({"text": label, "callback_data": f"CHOICE_{token}_{code}"})
+        # break rows every 2 buttons
+        if (i + 1) % 2 == 0:
+            rows.append(row)
+            row = []
+    if row:
+        rows.append(row)
+
+    requests.post(_url("sendMessage"), json={
+        "chat_id":      CHAT_ID,
+        "parse_mode":   "HTML",
+        "text":         text,
+        "reply_markup": json.dumps({"inline_keyboard": rows}),
+    }, timeout=15).raise_for_status()
+
+
+def wait_for_choice(token: str, timeout_seconds: int = 3600) -> str | None:
+    """Poll for a choice button tap sent via `send_choice_prompt`.
+    Returns the choice code (e.g. 'AUTOMATE'/'MANUAL') or None on timeout.
+    """
+    deadline = time.time() + timeout_seconds
+    try:
+        r = requests.get(_url("getUpdates"), params={"limit": 1, "offset": -1}, timeout=10)
+        results = r.json().get("result", [])
+        offset = results[-1]["update_id"] + 1 if results else 0
+    except Exception:
+        offset = 0
+
+    print(f"[telegram] Waiting up to {timeout_seconds // 60}min for choice...")
+    while time.time() < deadline:
+        remaining = int(deadline - time.time())
+        wait = min(30, remaining)
+        if wait <= 0:
+            break
+        try:
+            r = requests.get(_url("getUpdates"), params={
+                "offset": offset, "timeout": wait, "limit": 10,
+            }, timeout=wait + 5)
+            updates = r.json().get("result", [])
+        except Exception as e:
+            print(f"[telegram] Poll error: {e}")
+            time.sleep(5)
+            continue
+        for upd in updates:
+            offset = upd["update_id"] + 1
+            cq = upd.get("callback_query", {})
+            data = cq.get("data", "")
+            if data.startswith(f"CHOICE_{token}_"):
+                # acknowledge
+                try:
+                    requests.post(_url("answerCallbackQuery"), json={
+                        "callback_query_id": cq["id"], "text": "Choice received.",
+                    }, timeout=5)
+                except Exception:
+                    pass
+                code = data.split(f"CHOICE_{token}_", 1)[-1]
+                print(f"[telegram] Choice: {code}")
+                return code
+    print("[telegram] No choice received (timeout).")
+    return None

@@ -249,15 +249,87 @@ def do_draft(date_str: str):
         _tg_send(f"AUTO mode — starting {target_min}-min pipeline. Sit back!")
         _do_auto_steps(client, brain, draft_dir, target_min)
     else:
-        manual_msg = (
-            f"MANUAL mode — drop files into studio/drafts/{date_str}/\n"
-            f"  clip_1.mp3      (required)\n"
-            f"  clip_2.mp3      (optional)\n"
-            f"  background.png  (required)\n"
-            f"  thumbnail.png   (optional)\n\n"
-            f"Then run:\n  python studio/orchestrator.py --publish --date {date_str}"
-        )
-        _tg_send(manual_msg)
+        # Ask how user wants to provide files
+        if NO_TELEGRAM:
+            file_mode = "laptop"
+        else:
+            fm_token = tg.new_token()
+            tg.send_choice_prompt(
+                fm_token,
+                "<b>How will you provide music + image?</b>\n\n"
+                "📱 <b>Telegram</b> — send files here, pipeline runs automatically\n"
+                "💻 <b>Laptop</b> — drop files in draft folder, run --publish manually",
+                [("📱 Telegram", "TELEGRAM"), ("💻 Laptop", "LAPTOP")],
+            )
+            file_mode = (tg.wait_for_choice(fm_token, timeout_seconds=3600) or "LAPTOP").upper()
+
+        if file_mode == "TELEGRAM":
+            _tg_send(
+                f"Send your music file (.mp3, max 50MB) via Telegram now.\n"
+                f"<i>Tip: export from Suno as MP3, not WAV</i>"
+            )
+            music_file = tg.wait_for_audio_file(draft_dir, timeout_seconds=86400)
+            if not music_file:
+                _tg_send("No music received in 24h. Run --publish manually when ready.")
+            else:
+                _tg_send("Now send your background image (.png or .jpg) via Telegram.")
+                image_file = tg.wait_for_image_file(draft_dir, timeout_seconds=86400)
+                if not image_file:
+                    _tg_send("No image received in 24h. Run --publish manually when ready.")
+                else:
+                    dur_token = tg.new_token()
+                    tg.send_duration_prompt(dur_token)
+                    target_min = tg.wait_for_duration(dur_token)
+                    _tg_send(f"Files received! Starting {target_min}-min pipeline...")
+
+                    step02 = _load_step("02_extend.py")
+                    step02.run(draft_dir, target_min=target_min)
+                    _tg_send("Music extended. Assembling video (may take a few hours)...")
+
+                    step03 = _load_step("03_assemble.py")
+                    step03.run(brain, draft_dir)
+                    _tg_send("Video assembled! Sending for upload approval...")
+
+                    preview_image = next(
+                        (os.path.join(draft_dir, n)
+                         for n in ["thumbnail.png", "thumbnail.jpg", "image.png", "image.jpg"]
+                         if os.path.exists(os.path.join(draft_dir, n))),
+                        None,
+                    )
+                    token = tg.new_token()
+                    caption = (
+                        f"Ready to upload?\n\n"
+                        f"Raga: {brain.get('raga', '—')}\n"
+                        f"Instruments: {brain.get('instrument', '—')}\n\n"
+                        f"Title:\n{brain.get('title', '—')}"
+                    )
+                    tg.send_approval(preview_image, caption, token)
+                    decision = tg.wait_for_decision(token, timeout_seconds=21600)
+                    if decision != "rejected":
+                        sch_token = tg.new_token()
+                        tg.send_schedule_prompt(sch_token)
+                        publish_at = tg.wait_for_schedule(sch_token)
+                        step04   = _load_step("04_upload.py")
+                        video_id = step04.run(brain, draft_dir, publish_at=publish_at)
+                        if publish_at:
+                            from datetime import datetime as _dt
+                            label = f"Scheduled for {_dt.fromisoformat(publish_at).strftime('%d %b %Y %I:%M %p')} IST"
+                        else:
+                            label = "Live now"
+                        _tg_send(f"Uploaded! {label}\nhttps://youtu.be/{video_id}")
+                        print(f"\nDONE — https://youtu.be/{video_id}")
+                    else:
+                        _tg_send("Upload skipped.")
+        else:
+            manual_msg = (
+                f"MANUAL mode — drop files into studio/drafts/{date_str}/\n"
+                f"  clip_1.mp3      (required)\n"
+                f"  clip_2.mp3      (optional)\n"
+                f"  background.png  (required)\n"
+                f"  thumbnail.png   (optional)\n\n"
+                f"Then run:\n  python studio/orchestrator.py --publish --date {date_str}"
+            )
+            _tg_send(manual_msg)
 
     print("=" * 60)
     print(f"Draft saved: {draft_dir}")
