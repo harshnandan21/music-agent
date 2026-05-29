@@ -377,7 +377,41 @@ def do_publish(date_str: str):
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────
 
-def do_cleanup(days: int = 30):
+# Large generated files deleted after this many days (video uploaded, no longer needed locally)
+_LARGE_FILE_DAYS = 3
+_LARGE_FILES     = {"video.mp4", "music.mp3"}
+# Entire draft folder removed after this many days
+_FOLDER_DAYS     = 30
+
+
+def _auto_cleanup():
+    """Called automatically at startup: purge large files >3 days old, folders >30 days old."""
+    drafts_root = os.path.join(STUDIO_DIR, "drafts")
+    if not os.path.isdir(drafts_root):
+        return
+    today = date.today()
+    for name in sorted(os.listdir(drafts_root)):
+        folder = os.path.join(drafts_root, name)
+        if not os.path.isdir(folder):
+            continue
+        try:
+            folder_date = date.fromisoformat(name)
+        except ValueError:
+            continue
+        age = (today - folder_date).days
+        if age >= _FOLDER_DAYS:
+            shutil.rmtree(folder)
+            print(f"[cleanup] Removed old draft folder: {name}")
+        elif age >= _LARGE_FILE_DAYS:
+            for fname in _LARGE_FILES:
+                fpath = os.path.join(folder, fname)
+                if os.path.exists(fpath):
+                    size_mb = os.path.getsize(fpath) / 1_048_576
+                    os.remove(fpath)
+                    print(f"[cleanup] Deleted {fname} from {name} ({size_mb:.0f} MB freed)")
+
+
+def do_cleanup(days: int = _FOLDER_DAYS):
     drafts_root = os.path.join(STUDIO_DIR, "drafts")
     if not os.path.isdir(drafts_root):
         print("[cleanup] No drafts folder found.")
@@ -404,6 +438,7 @@ def do_cleanup(days: int = 30):
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def main():
+    _auto_cleanup()
     date_str = _get_date_arg()
 
     if "--draft" in sys.argv:
