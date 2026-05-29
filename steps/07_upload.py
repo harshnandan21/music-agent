@@ -48,20 +48,20 @@ def run(brain: dict, video_path: str, thumbnail_path: str, publish_at: str = Non
     def _yt_tag_len(tag):
         return len(tag) + (2 if " " in tag else 0)
 
-    BUDGET = 490  # leave 10-char safety margin below YouTube's 500-char limit
+    BUDGET = 470
 
     seen = set()
     candidates = []
     # 1. Curated tags[] first
     for t in brain.get("tags", []):
         t = t.strip()
-        if t and t.isascii() and len(t) <= 30 and t not in seen:
+        if t and t.isascii() and t not in seen:
             candidates.append(t)
             seen.add(t)
     # 2. Keywords string fills the rest
     for t in brain.get("keywords", "").split(","):
         t = t.strip()
-        if t and t.isascii() and len(t) <= 30 and t not in seen:
+        if t and t.isascii() and t not in seen:
             candidates.append(t)
             seen.add(t)
 
