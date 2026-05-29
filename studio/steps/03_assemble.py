@@ -26,6 +26,29 @@ SCALE_FILTER = (
 )
 
 
+def _stamp_logo(bg_path: str) -> str:
+    """Stamp DhunDetox circular brand logo at bottom-right of background image."""
+    from PIL import Image, ImageDraw
+    logo_path = os.path.join(ROOT_DIR, "assets", "logo.png")
+    if not os.path.exists(logo_path):
+        return bg_path
+    logo_size, padding = 160, 20
+    bg   = Image.open(bg_path).convert("RGBA")
+    logo = Image.open(logo_path).convert("RGBA")
+    logo = logo.resize((logo_size, logo_size), Image.LANCZOS)
+    # Circular crop — fully opaque
+    mask = Image.new("L", (logo_size, logo_size), 0)
+    ImageDraw.Draw(mask).ellipse((0, 0, logo_size - 1, logo_size - 1), fill=255)
+    r, g, b, a = logo.split()
+    logo.putalpha(mask)
+    x = bg.width - logo_size - padding
+    y = bg.height - logo_size - padding
+    bg.paste(logo, (x, y), logo)
+    out = bg_path.replace(".png", "_watermarked.png")
+    bg.convert("RGB").save(out, "PNG")
+    return out
+
+
 def _find_clip(draft_dir: str) -> str | None:
     p = os.path.join(draft_dir, "clip.mp4")
     return p if os.path.exists(p) else None
@@ -109,6 +132,7 @@ def run(brain: dict, draft_dir: str) -> str:
         _assemble_from_clip(clip_path, music_path, duration, out_path)
     else:
         image_path = _find_image(draft_dir)
+        image_path = _stamp_logo(image_path)
         print(f"[assemble] Audio={duration:.0f}s, image={os.path.basename(image_path)}")
         _assemble_from_image(image_path, music_path, duration, out_path)
 
