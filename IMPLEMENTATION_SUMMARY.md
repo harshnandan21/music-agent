@@ -12,32 +12,33 @@ The system has two layers:
 
 **Root layer** (`steps/`, `orchestrator.py`) — original pipeline, AI-generated music via Lyria + AI images via Imagen. Mostly replaced by the Studio layer for day-to-day use.
 
-**Studio layer** (`studio/`) — manual hybrid workflow. Gemini generates the idea/metadata; the user creates music on Suno and images on Gemini Pro; the pipeline extends, assembles, and uploads.
+**Studio layer** (`studio/`) — unified AUTO + MANUAL workflow. Gemini generates the idea/metadata; content is either AI-generated (AUTO) or user-provided via Suno/Gemini Pro (MANUAL); the pipeline extends, assembles, and uploads.
 
 ```
 Daily flow:
 
-[9 AM cron]
+[8 AM cron / manual --draft]
     │
-    └─► 01_brain.py (Gemini 2.5 Flash)
+    └─► 01_draft.py (Gemini 2.5 Flash)
             │  raga, title, description, keywords, image/music/video prompts
+            │  sends Telegram: APPROVE / REJECT
             ▼
-    studio/steps/01_draft.py
-            │  saves brain.json → sends Telegram (APPROVE/REJECT + prompts .txt)
-            │  waits 10h → auto-reject on timeout
-            ▼
-    [User creates on phone]
-            │  Suno (music) + Gemini Pro (background + thumbnail)
-            │  drops files into studio/drafts/YYYY-MM-DD/
-            ▼
-    python studio/orchestrator.py --publish
+    [User approves on Telegram]
             │
-            ├─► 02_extend.py  — extends clips to 20+ min (crossfade loop)
-            ├─► 03_assemble.py — assembles video (clip loop OR static image)
-            │   [Telegram: APPROVE / REJECT preview]
-            │   [Telegram: schedule buttons]
-            └─► 04_upload.py  — uploads to YouTube + sets thumbnail + playlist
-                    [Telegram: upload confirmation photo]
+            ├─► AUTO mode
+            │       │  Lyria generates music clips
+            │       │  Gemini generates background image
+            │       │  extend → assemble → upload
+            │
+            └─► MANUAL mode
+                    │
+                    ├─► 📱 Telegram files
+                    │       │  User sends .mp3 + image via Telegram
+                    │       │  Bot downloads, extend → assemble → upload
+                    │
+                    └─► 💻 Laptop drop
+                            │  Drop files in studio/drafts/YYYY-MM-DD/
+                            └─► python studio/orchestrator.py --publish
 ```
 
 ---
@@ -47,18 +48,27 @@ Daily flow:
 ```
 music-agent/
 ├── config.py                    # Weekly schedule, content seeds, API keys, models
+├── startup.py                   # Hetzner/Railway entry: decode base64 tokens → run --draft
+├── setup.sh                     # One-command Hetzner server setup
+├── deploy.sh                    # Re-deploy: git pull + pip update
+├── railway.toml                 # Railway cron config (2:30 AM UTC = 8 AM IST)
+├── nixpacks.toml                # Railway build config (ffmpeg + python312)
+├── assets/
+│   └── logo.png                 # DhunDetox circular brand logo (stamped on every video)
 ├── steps/
 │   ├── 01_brain.py              # Gemini idea generator (title, description, prompts)
-│   └── 07_upload.py             # YouTube upload (OAuth, video, thumbnail, playlist)
+│   └── 07_upload.py             # YouTube upload (OAuth, video, thumbnail, playlist, tags)
 ├── studio/
-│   ├── orchestrator.py          # Two-phase entrypoint: --draft / --publish / --cleanup
-│   ├── telegram.py              # Telegram Bot helpers
+│   ├── orchestrator.py          # Unified entrypoint: --draft / --publish / --cleanup
+│   ├── telegram.py              # Telegram Bot helpers (approval, schedule, file receiver)
 │   ├── utils.py                 # Shared: get_duration() via ffmpeg
 │   └── steps/
 │       ├── 01_draft.py          # Run brain + send Telegram prompts + wait for approval
-│       ├── 02_extend.py         # Extend music clips to 20 min
-│       ├── 03_assemble.py       # Assemble final video (clip loop or static image)
-│       └── 04_upload.py         # Thin wrapper → calls steps/07_upload.py
+│       ├── 02_extend.py         # Extend music clips to target duration
+│       ├── 03_assemble.py       # Assemble final video + stamp brand logo
+│       ├── 04_upload.py         # Thin wrapper → calls steps/07_upload.py
+│       ├── auto_music.py        # AUTO: generate Lyria clips
+│       └── auto_image.py        # AUTO: generate Gemini background image
 ```
 
 ---
@@ -75,7 +85,7 @@ Single source of truth for the entire pipeline.
 - **`VIDEO_ANIMATION_GUIDE`** — per-scene animation percentages for Veo video prompt guidance.
 - **`YOUTUBE_KEYWORDS`** — English + Hinglish keyword banks for tag generation.
 - **`PLAYLISTS`** — 5 themed playlists (morning, focus, stress, sleep, midnight). IDs loaded from `.env` env vars at runtime.
-- **`FFMPEG_DIR`** — injects Shotcut's ffmpeg into PATH so all subprocess calls resolve.
+- **`FFMPEG_DIR`** — injects Shotcut's ffmpeg into PATH on Windows only (`os.name == "nt"`).
 - **Models:** `BRAIN_MODEL = gemini-2.5-flash`, `MUSIC_MODEL = lyria-realtime-exp`, `IMAGEN_MODEL = gemini-3-pro-image-preview`
 
 ---
@@ -101,11 +111,9 @@ Calls Gemini 2.5 Flash to generate all post metadata.
 10. CTA (like, subscribe, comment question, save)
 11. Disclaimer + 15 hashtags
 
-**Keyword string:** 470-480 chars, comma-separated, no spaces after commas. Pattern: raga variations → instrument+raga combos → instrument alone → meditation/healing terms → emotion terms → `thelifemerit` (channel name) → Hindi keywords at end. No Hz frequency terms.
+**Keyword string:** 470-480 chars, comma-separated, no spaces after commas. Pattern: raga variations → instrument+raga combos → instrument alone → meditation/healing terms → emotion terms → channel name → Hindi keywords at end.
 
-**Tags:** 15 max, English only, each ≤30 chars, total <400 chars combined.
-
-**Validation:** prints a warning if keyword string is outside 470-480 chars.
+**Tags:** built from curated `tags[]` first, then keywords string fills remaining budget. Total budget: 470 chars. No per-tag character limit. English-only (ASCII filter).
 
 **Anti-repeat tracking:** last 20 published ideas loaded from `used_ideas.json`; titles + dates injected into prompt so Gemini avoids repeated angles.
 
@@ -115,8 +123,15 @@ Calls Gemini 2.5 Flash to generate all post metadata.
 
 Uploads to YouTube via Data API v3 with OAuth 2.0.
 
+**Tag building logic:**
+1. Start with curated `tags[]` array (priority, best terms)
+2. Fill remaining budget from `keywords` string
+3. ASCII filter (no Hindi tags — YouTube rejects them)
+4. Total budget: 470 chars (YouTube limit is 500 — 30-char safety margin)
+5. No per-tag length limit
+
 **Key behaviours:**
-- Parses the full `keywords` string (not the 15-item `tags` array) to build YouTube tags — filters non-ASCII, drops tags >30 chars, stops at 500-char YouTube limit.
+- Network retry: 5 attempts with exponential backoff (5s, 10s, 20s, 40s, 80s) on `ConnectionResetError` during large file upload.
 - Strips Markdown from description: removes `*`/`**`, replaces `---` with `────────────────────────────`.
 - Scheduling: if `publish_at` (RFC3339 IST string) is passed → `privacyStatus: private` + `publishAt`; otherwise → `public`.
 - Thumbnail: PIL JPEG compression loop (quality 85 → 70 → 55 → 40) to stay under YouTube's 2MB limit.
@@ -135,13 +150,27 @@ All Telegram Bot interactions via `requests` (long-polling, no webhook).
 | `send_photo(image_path, caption)` | Photo with caption, no buttons |
 | `send_approval(image_path, caption, token)` | Photo (or text) + APPROVE / REJECT inline buttons |
 | `wait_for_decision(token, timeout)` | Long-poll until button tapped. Returns `approved`/`rejected`/`timeout` |
-| `send_schedule_prompt(token)` | Schedule buttons: 1 min / 5 min / 30 min / 1 hour (relative from now) + Publish Now |
-| `wait_for_schedule(token, timeout=10800)` | Poll for schedule tap. Returns RFC3339 IST string (now + chosen offset) or `None` (publish now). 3h timeout → publish now |
-| `new_token()` | UUID hex (10 chars) — unique per approval/schedule session |
+| `send_duration_prompt(token)` | Duration buttons: 1/20/30/60 min + Custom |
+| `wait_for_duration(token, timeout=600)` | Poll for duration tap or typed number. Default 20 min on timeout |
+| `send_schedule_prompt(token)` | Schedule buttons: today at 9AM/12PM/6PM/9PM, tomorrow 9AM + Custom + Publish Now |
+| `wait_for_schedule(token, timeout=10800)` | Poll for schedule tap. Returns RFC3339 IST string or `None`. 3h timeout → publish now |
+| `send_choice_prompt(token, text, options)` | Generic inline keyboard with (label, code) pairs |
+| `wait_for_choice(token, timeout=3600)` | Poll for choice tap. Returns code string or None |
+| `wait_for_audio_file(draft_dir, timeout=86400)` | Poll for audio/document message, download, save as `clip_1.<ext>`. Returns path or None |
+| `wait_for_image_file(draft_dir, timeout=86400)` | Poll for photo/image document, download, save as `image.<ext>`. Returns path or None |
+| `_download_file(file_id, save_path)` | Downloads any Telegram file by file_id via getFile + streaming GET |
+| `new_token()` | UUID hex (10 chars) — unique per session |
 
 **Callback data formats:**
 - Approval: `APPROVE_{token}` / `REJECT_{token}`
 - Schedule: `SCH_{token}_{day_offset}_{hour}` or `PUB_NOW_{token}`
+- Choice: `CHOICE_{token}_{code}`
+- Duration: `DUR_{token}_{minutes}` or `DUR_{token}_custom`
+
+**File receiving (Telegram → server):**
+- Audio: accepts `audio` or `document` messages with `.mp3/.wav/.m4a/.ogg/.flac` extension
+- Image: accepts `photo` messages (highest resolution) or `document` with `.png/.jpg/.jpeg`
+- Telegram bot file size limit: 50MB — user should send MP3 (not WAV) for music
 
 **Image compression:** `_compress_for_telegram()` loops quality (85→70→55→40) until <9MB; last resort halves dimensions.
 
@@ -159,23 +188,20 @@ Phase 1 of the studio workflow.
    - **Gemini Pro — Background Image:** wraps `brain["image_prompt"]` from Gemini
    - **Gemini Pro — Thumbnail:** Madhubani 60/40 composition (instrument dead-centre, clear text space right), mood + hook/tagline overlay notes
 5. Waits 10 hours for APPROVE tap. Timeout → auto-rejected.
-6. On approval: sends drop-file instructions with exact filenames.
 
 ---
 
 ### `studio/steps/02_extend.py`
 
-Extends 1 or 2 user-provided clips to 20+ minutes.
+Extends 1 or 2 user-provided clips to target duration (default 20 min, configurable).
 
 **Algorithm:**
 1. Auto-discovers `.mp3`/`.wav` files in the draft folder (sorted by name, skips `music.mp3`).
 2. Strips silence from each clip (both ends, -50dB threshold).
-3. Builds an interleaved sequence (1 clip: `1→1→1…`, 2 clips: `1→2→1→2…`) until ≥21 minutes.
-4. Crossfade-merges segments **iteratively** (pair-wise, not one giant filter) — 6s `acrossfade` with `qsin` curve (natural for Indian classical).
-5. Final pass: `dynaudnorm` volume levelling + 3s fade-in + 8s fade-out.
+3. Builds an interleaved sequence (1 clip: `1→1→1…`, 2 clips: `1→2→1→2…`) until ≥ target + 60s.
+4. Crossfade-merges segments iteratively (pair-wise) — 6s `acrossfade` with `qsin` curve.
+5. Final pass: `dynaudnorm` volume levelling + 3s fade-in + 8s fade-out + trim to exact target.
 6. Output: `draft_dir/music.mp3`
-
-**Why iterative merge:** A single `filter_complex` with 50 inputs would exceed FFmpeg's filter graph limits and produce huge commands. Pair-wise chaining avoids this.
 
 ---
 
@@ -183,17 +209,21 @@ Extends 1 or 2 user-provided clips to 20+ minutes.
 
 Assembles the final `video.mp4`. Two modes:
 
-**Video clip mode (preferred)** — triggered when `clip.mp4` exists in the draft folder:
-1. `_make_loop_unit()` — bakes a 0.5s cross-dissolve at the loop point:
-   - Feeds the same clip to both FFmpeg inputs
-   - `xfade=transition=fade:duration=0.5:offset={dur-0.5}` blends the clip's end into its own beginning
-   - Trims output to `dur - 0.5s` so the dissolve is pre-baked into the unit
-   - Result: when stream_loop repeats the unit, clip[0] picks up seamlessly — no visible seam
-2. `_assemble_from_clip()` — uses `-stream_loop -1` on the loop unit + audio + scale/pad to 1920×1080 + 2s fade-in + 3s fade-out
+**Video clip mode (preferred)** — triggered when `clip.mp4` exists:
+- `-stream_loop -1` on the clip (Veo guarantees first == last frame, no dissolve needed)
+- Scale to 1920×1080 + 2s fade-in + 3s fade-out
 
-**Static image mode (fallback)** — triggered when no `clip.mp4`:
+**Static image mode (fallback)** — when no `clip.mp4`:
 - Auto-discovers `background.png/jpg` (skips `thumbnail.png/jpg`)
-- `-loop 1` on the image + audio + same scale/pad/fade filters
+- `-loop 1` on the image + same scale/fade filters
+
+**Logo stamping (`_stamp_logo`):**
+- Runs automatically before every static image assembly
+- Loads `assets/logo.png` — DhunDetox circular brand logo
+- Resizes to 160×160px, applies circular crop (fully opaque, no transparency)
+- Pastes at bottom-right corner with 20px padding
+- Saves as `image_watermarked.png` and uses that for assembly
+- Silently skips if `assets/logo.png` doesn't exist
 
 **Both modes produce:** 1920×1080, H.264, AAC 192k, `+faststart`, duration matches audio exactly.
 
@@ -202,41 +232,71 @@ Assembles the final `video.mp4`. Two modes:
 ### `studio/steps/04_upload.py`
 
 Thin wrapper: finds `video.mp4` + best available thumbnail → calls `steps/07_upload.py`.  
+Thumbnail priority: `thumbnail.png` → `thumbnail.jpg` → `background.png` → `background.jpg`.  
 Passes `publish_at` through for scheduled publishing.
 
 ---
 
 ### `studio/orchestrator.py`
 
-Two-phase entrypoint with three commands:
+Unified entrypoint with mode selection and auto-cleanup.
+
+**`_auto_cleanup()` — runs at every startup:**
+- Draft folders **≥3 days old**: deletes `video.mp4` + `music.mp3` (frees ~500MB per post, video already on YouTube)
+- Draft folders **≥30 days old**: deletes entire folder
+- Parses folder name as `YYYY-MM-DD` date to determine age
 
 **`--draft`**
-- Guards against overwriting: skips if `brain.json` exists unless `--force` passed.
-- Retry loop: up to 3 attempts on rejection; sends "Generating fresh idea..." between retries.
-- `--date YYYY-MM-DD` to draft for a specific date.
+1. Guards against overwriting: skips if `brain.json` exists unless `--force` passed.
+2. Retry loop: up to 3 attempts on rejection.
+3. After approval: asks **AUTO or MANUAL** via Telegram inline buttons.
 
-**`--publish`**
+**AUTO mode:**
+- Asks target duration → runs Lyria music generation → extends → Gemini image → assembles → upload approval → uploads.
+
+**MANUAL mode:**
+- Asks **📱 Telegram** or **💻 Laptop** via inline buttons:
+  - **Telegram:** bot waits for `.mp3` file → waits for image → asks duration → extend → assemble → upload approval → uploads. Fully hands-off after sending files.
+  - **Laptop:** sends drop-file instructions and exits. User runs `--publish` manually.
+
+**`--publish`** (laptop / AUTO resume)
 - Sends Telegram progress updates at each step.
 - Skip guards: skips extend if `music.mp3` exists; skips assemble if `video.mp4` is non-empty.
-- Corrupt video guard: if `video.mp4` exists but is 0 bytes → deletes and re-assembles.
-- After assembly: sends Telegram approval (preview image + metadata) with 6h timeout.
-- After approval: sends schedule prompt with tap buttons; 3h timeout → publish now.
-- After upload: sends Telegram confirmation photo with "Scheduled for…" or "Live now" label.
+- After assembly: sends Telegram approval (6h timeout) → schedule prompt (3h timeout) → uploads.
 - `--date YYYY-MM-DD` to publish a specific draft.
 
 **`--cleanup [--days N]`** (default 30 days)
-- Deletes `studio/drafts/YYYY-MM-DD/` folders older than N days.
+- Manually delete draft folders older than N days.
 
 ---
 
-### `studio/utils.py`
+### `startup.py`
 
-```python
-def get_duration(path: str) -> float:
-    # Runs ffmpeg -i, parses "Duration: HH:MM:SS.ms" from stderr
-```
+Entry point for cloud deployments (Hetzner / Railway).
 
-Shared by `02_extend.py` and `03_assemble.py`.
+1. Reads `YOUTUBE_TOKEN_JSON` env var → base64-decodes → writes `youtube_token.json`
+2. Reads `YOUTUBE_CLIENT_SECRET_JSON` env var → base64-decodes → writes `client_secret.json`
+3. Runs `studio/orchestrator.py --draft`
+
+Used by the daily cron job on the server.
+
+---
+
+### `setup.sh`
+
+One-command Hetzner server setup. Run as root: `bash setup.sh`
+
+Steps:
+1. Install system packages: Python 3.12, FFmpeg, Git, pip
+2. Clone repo from GitHub
+3. Create Python virtualenv + install `requirements.txt`
+4. Interactive prompt for all `.env` values (API keys, playlist IDs)
+5. Interactive prompt for base64-encoded `youtube_token.json` + `client_secret.json`
+6. Install cron job: `30 2 * * *` (2:30 AM UTC = 8 AM IST)
+
+### `deploy.sh`
+
+Re-deploy script for code updates: `git pull` + `pip install -r requirements.txt`.
 
 ---
 
@@ -270,15 +330,17 @@ Playlist IDs live in `.env` as `YT_PLAYLIST_MORNING`, `YT_PLAYLIST_FOCUS`, etc.
 
 ## Drop Files Reference
 
-Before running `--publish`, drop into `studio/drafts/YYYY-MM-DD/`:
+Before running `--publish` (or sending via Telegram), provide:
 
 | File | Required | Notes |
 |---|---|---|
-| `clip_1.mp3` | Yes | Primary Suno-generated music clip |
+| `clip_1.mp3` | Yes | Primary music clip (Suno or manual recording) |
 | `clip_2.mp3` | No | Second variation — interleaved with clip_1 |
 | `clip.mp4` | No | 8-second Veo loop — preferred over background image |
 | `background.png` | If no clip.mp4 | 1920×1080 Madhubani background (Gemini Pro) |
 | `thumbnail.png` | No | High-contrast thumbnail (Gemini Pro, 16:9) |
+
+When sending via **Telegram**: send `.mp3` file first, then image. Bot auto-names them `clip_1.mp3` and `image.png`.
 
 ---
 
@@ -297,27 +359,37 @@ YT_PLAYLIST_SLEEP=PLxxxxxxx
 YT_PLAYLIST_MIDNIGHT=PLxxxxxxx
 ```
 
+**Cloud deployments (Hetzner/Railway):** set these additional env vars (base64-encoded files):
+```
+YOUTUBE_TOKEN_JSON=<base64 of youtube_token.json>
+YOUTUBE_CLIENT_SECRET_JSON=<base64 of client_secret.json>
+```
+
 ---
 
 ## Key Design Decisions
 
 **Plain text descriptions** — YouTube renders `**bold**` and `---` as literal characters. All Markdown was removed from the brain prompt template and a safety strip (`re.sub`) was added in the upload step.
 
-**Keywords string over tags array** — The `keywords` string (~475 chars) contains more terms than the 15-item `tags` array. Upload now parses the full keywords string to maximise YouTube discoverability.
+**Tags: curated first, keywords fill** — The `tags[]` array (15 curated terms) takes priority. The `keywords` string fills remaining budget up to 470 chars. This ensures the best terms always appear while maximising discoverability. No per-tag character limit (YouTube only enforces total budget).
+
+**Network retry on upload** — Large video uploads (~400-500MB) occasionally hit `ConnectionResetError` mid-upload. Five attempts with exponential backoff (5→80s) recover without restarting the upload from scratch (resumable upload URI is preserved).
+
+**Brand logo stamp** — Gemini-generated images include a Gemini watermark. `_stamp_logo()` in `03_assemble.py` overlays the DhunDetox circular logo (fully opaque, 160px, bottom-right) before every video assembly, covering the Gemini mark and adding brand identity.
+
+**Auto-cleanup on startup** — Video files (~500MB each) are only needed until upload. `_auto_cleanup()` deletes `video.mp4` + `music.mp3` after 3 days, freeing ~1GB/week automatically. Brain.json and images are kept indefinitely.
+
+**Telegram file receiver** — On a headless server (Hetzner), users can send music and image files directly via Telegram. The bot downloads them, saves to the draft folder, and runs the full pipeline without any laptop interaction.
 
 **Cross-dissolve baked into loop unit** — Simply looping an 8-second clip creates a visible cut at the repeat point. The dissolve is pre-baked into the loop unit (last 0.5s blends into first 0.5s), so `stream_loop -1` produces a seamless 20-minute video.
 
 **Iterative pair-wise crossfade merge** — A single FFmpeg `filter_complex` with 50 audio inputs would exceed graph size limits. Sequential pair-wise merging keeps each FFmpeg call small and reliable.
 
-**Telegram .txt document for prompts** — Sending prompts as a `<pre>` block was hard to copy on mobile. Sending as a `.txt` file attachment lets the user tap → open in any text editor → select all.
-
-**Schedule tap buttons** — Typing `2026-05-25 21:00` on a phone is error-prone. Relative delay buttons (1 min / 5 min / 30 min / 1 hour / Publish Now) work regardless of time zone or what time of day the upload happens. The chosen offset is added to `datetime.now(IST)` at tap time, so the scheduled publish time is always accurate.
-
-**Force-merge locked config** — `data.update(locked)` runs after Gemini's JSON is parsed, so schedule overrides always win even if Gemini hallucinates a different value.
-
 **Draft overwrite guard** — Re-running `--draft` on a day that already has `brain.json` silently skips unless `--force` is passed, preventing accidental idea replacement.
 
 **Corrupt video guard** — FFmpeg can crash mid-write, leaving a 0-byte `video.mp4`. The orchestrator checks `os.path.getsize(video_path) > 0` and re-assembles if needed.
+
+**Windows-only PATH injection** — `config.py` only injects Shotcut's FFmpeg into PATH on Windows (`os.name == "nt"`). Linux servers (Hetzner) use system FFmpeg installed via `apt`.
 
 ---
 
@@ -333,11 +405,14 @@ python studio/orchestrator.py --draft --date 2026-05-27
 # Force-regenerate even if brain.json exists
 python studio/orchestrator.py --draft --force
 
-# Publish today's draft (after dropping files)
+# Publish today's draft (after dropping files on laptop)
 python studio/orchestrator.py --publish
 
 # Publish a specific date's draft
 python studio/orchestrator.py --publish --date 2026-05-25
+
+# Run without Telegram (auto-approve, default durations)
+python studio/orchestrator.py --draft --no-telegram
 
 # Delete draft folders older than 30 days
 python studio/orchestrator.py --cleanup
@@ -345,3 +420,24 @@ python studio/orchestrator.py --cleanup
 # Delete draft folders older than 14 days
 python studio/orchestrator.py --cleanup --days 14
 ```
+
+---
+
+## Deployment (Hetzner VPS)
+
+```bash
+# First-time setup (run as root on the server)
+bash setup.sh
+
+# Re-deploy after code changes
+bash /opt/music-agent/deploy.sh
+
+# Check cron logs
+tail -f /var/log/music-agent.log
+
+# Manual test run
+cd /opt/music-agent && venv/bin/python studio/orchestrator.py --draft
+```
+
+**Cron schedule:** `30 2 * * *` (2:30 AM UTC = 8:00 AM IST)  
+**Server spec:** Hetzner CX22 — 2 vCPU, 4GB RAM, ~€3.92/month
