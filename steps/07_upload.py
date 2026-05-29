@@ -42,28 +42,36 @@ def run(brain: dict, video_path: str, thumbnail_path: str, publish_at: str = Non
     creds = _get_credentials()
     youtube = build("youtube", "v3", credentials=creds)
 
-    # Build tags from full keywords string (more terms than the 15-item tags array).
-    # Build tags: prefer explicit tags[] array (curated, always valid).
-    # Fall back to keywords string only when tags[] is absent.
-    # YouTube counts tags with spaces as quoted (+2 chars) toward the 500-char limit.
+    # Build tags: start with curated tags[] (priority), then fill remaining
+    # budget from keywords string. YouTube limits: 500 chars total (tags with
+    # spaces count +2), max 30 chars per individual tag.
     def _yt_tag_len(tag):
         return len(tag) + (2 if " " in tag else 0)
 
-    explicit_tags = [t.strip() for t in brain.get("tags", [])
-                     if t.strip().isascii() and t.strip()]
-    if explicit_tags:
-        safe_tags = explicit_tags
-    else:
-        raw_kw = brain.get("keywords", "")
-        candidates = [k.strip() for k in raw_kw.split(",")
-                      if k.strip().isascii() and len(k.strip()) <= 30]
-        safe_tags, total = [], 0
-        for tag in candidates:
-            cost = _yt_tag_len(tag)
-            if total + cost > 500:
-                break
-            safe_tags.append(tag)
-            total += cost
+    BUDGET = 490  # leave 10-char safety margin below YouTube's 500-char limit
+
+    seen = set()
+    candidates = []
+    # 1. Curated tags[] first
+    for t in brain.get("tags", []):
+        t = t.strip()
+        if t and t.isascii() and len(t) <= 30 and t not in seen:
+            candidates.append(t)
+            seen.add(t)
+    # 2. Keywords string fills the rest
+    for t in brain.get("keywords", "").split(","):
+        t = t.strip()
+        if t and t.isascii() and len(t) <= 30 and t not in seen:
+            candidates.append(t)
+            seen.add(t)
+
+    safe_tags, total = [], 0
+    for tag in candidates:
+        cost = _yt_tag_len(tag)
+        if total + cost > BUDGET:
+            break
+        safe_tags.append(tag)
+        total += cost
 
     import re
     desc = brain.get("description", "")
