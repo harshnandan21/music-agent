@@ -36,3 +36,33 @@ def run(brain: dict, draft_dir: str, publish_at: str = None) -> str:
     upload_mod = _load_upload_mod()
     video_id = upload_mod.run(brain, video_path, thumbnail_path, publish_at=publish_at)
     return video_id
+
+
+def run_short(brain: dict, draft_dir: str) -> str | None:
+    """Upload draft_dir/short.mp4 as a YouTube Short. Returns video_id or None if skipped."""
+    short_path = os.path.join(draft_dir, "short.mp4")
+    if not os.path.exists(short_path):
+        print("[upload_short] short.mp4 not found — skipping.")
+        return None
+
+    raga      = brain.get("raga", "")
+    instr     = brain.get("instrument", "")
+    use_case  = brain.get("use_case", "").replace("_", " ").title()
+    raga_tag  = raga.replace(" ", "")
+
+    short_brain = dict(brain)
+    short_brain["title"] = f"{raga} · {instr} | {use_case} #Shorts"[:100]
+    main_id   = brain.get("main_video_id", "")
+    full_link = f"https://youtu.be/{main_id}" if main_id else "https://youtube.com/@DhunDetox"
+    short_brain["description"] = (
+        f"30-second preview of today's full Indian classical music.\n\n"
+        f"▶ Full version ({use_case.title()}): {full_link}\n\n"
+        f"#{raga_tag} #IndianClassical #Meditation #Shorts #YouTubeShorts"
+    )
+    short_brain["tags"] = (brain.get("tags") or [])[:5] + ["Shorts", "YouTubeShorts"]
+    short_brain["playlist"] = ""  # don't add Shorts to the long-form playlist
+
+    upload_mod = _load_upload_mod()
+    video_id = upload_mod.run(short_brain, short_path, thumbnail_path=None)
+    print(f"[upload_short] Short live: https://youtu.be/{video_id}")
+    return video_id

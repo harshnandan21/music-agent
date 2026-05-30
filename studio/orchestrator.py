@@ -94,6 +94,23 @@ def _save_brain(brain: dict, draft_dir: str):
         json.dump(brain, f, indent=2, ensure_ascii=False)
 
 
+# ── Short helper ─────────────────────────────────────────────────────────────
+
+def _do_short(brain: dict, draft_dir: str):
+    """Generate short.mp4 and upload it as a YouTube Short. Non-fatal on failure."""
+    try:
+        _tg_send("Generating 30-sec Short...")
+        step05   = _load_step("05_short.py")
+        step05.run(brain, draft_dir)
+        step04   = _load_step("04_upload.py")
+        short_id = step04.run_short(brain, draft_dir)
+        if short_id:
+            _tg_send(f"Short uploaded: https://youtu.be/{short_id}")
+    except Exception as e:
+        print(f"[orchestrator] Short failed (non-fatal): {e}")
+        _tg_send(f"Short skipped — {e}")
+
+
 # ── AUTO pipeline ─────────────────────────────────────────────────────────────
 
 def _do_auto_steps(client, brain: dict, draft_dir: str, target_min: int):
@@ -172,6 +189,9 @@ def _do_auto_steps(client, brain: dict, draft_dir: str, target_min: int):
     step04   = _load_step("04_upload.py")
     video_id = step04.run(brain, draft_dir, publish_at=publish_at)
 
+    brain["main_video_id"] = video_id
+    _save_brain(brain, draft_dir)
+
     if publish_at:
         from datetime import datetime
         dt    = datetime.fromisoformat(publish_at)
@@ -182,6 +202,8 @@ def _do_auto_steps(client, brain: dict, draft_dir: str, target_min: int):
     upload_msg = f"Uploaded! {label}\n\nhttps://youtu.be/{video_id}"
     _tg_send(upload_msg)
     print(f"\nDONE — https://youtu.be/{video_id}")
+
+    _do_short(brain, draft_dir)
 
 
 # ── Phase 1 ───────────────────────────────────────────────────────────────────
@@ -434,6 +456,9 @@ def do_publish(date_str: str):
     step04   = _load_step("04_upload.py")
     video_id = step04.run(brain, draft_dir, publish_at=publish_at)
 
+    brain["main_video_id"] = video_id
+    _save_brain(brain, draft_dir)
+
     if publish_at:
         from datetime import datetime
         dt    = datetime.fromisoformat(publish_at)
@@ -444,6 +469,8 @@ def do_publish(date_str: str):
     upload_caption = f"Uploaded! {label}\n\n{brain.get('title', '')}\n\nhttps://youtu.be/{video_id}"
     _tg_send(upload_caption)
     print(f"\nDONE — https://youtu.be/{video_id}")
+
+    _do_short(brain, draft_dir)
     print("=" * 60)
 
 
@@ -451,7 +478,7 @@ def do_publish(date_str: str):
 
 # Large generated files deleted after this many days (video uploaded, no longer needed locally)
 _LARGE_FILE_DAYS = 3
-_LARGE_FILES     = {"video.mp4", "music.mp3"}
+_LARGE_FILES     = {"video.mp4", "music.mp3", "short.mp4"}
 # Entire draft folder removed after this many days
 _FOLDER_DAYS     = 30
 
