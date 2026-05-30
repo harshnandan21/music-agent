@@ -118,14 +118,15 @@ def run(brain: dict, draft_dir: str) -> str:
 
     # Left margin for all card text
     LX = 55
-    # Text y positions — spread across full card height (1274→1900)
-    Y_HEADER = CARD_START + GOLD_LINE_H + 16   # 1290  "DHUNDETOX · RAGA"
-    Y_RAGA   = Y_HEADER + 42                   # 1332  raga name (big)
-    Y_INSTR  = Y_RAGA + 148                    # 1480  instruments
-    Y_MOOD   = Y_INSTR + 62                    # 1542  mood · hz
-    Y_DIV    = Y_MOOD + 62                     # 1604  divider
-    Y_CTA    = Y_DIV + 24                      # 1628  CTA
-    Y_LINK   = Y_CTA + 56                      # 1684  link
+    # Text y positions
+    Y_HEADER = CARD_START + GOLD_LINE_H + 18   # brand · raga header
+    Y_DECO   = Y_HEADER + 50                   # decorative ornament line
+    Y_RAGA   = Y_DECO   + 22                   # raga name (hero)
+    Y_INSTR  = Y_RAGA   + 162                  # instruments
+    Y_MOOD   = Y_INSTR  + 62                   # mood · hz
+    Y_DIV    = Y_MOOD   + 60                   # divider
+    Y_CTA    = Y_DIV    + 22                   # CTA
+    Y_LINK   = Y_CTA    + 56                   # link text
 
     try:
         parts = [
@@ -134,51 +135,63 @@ def run(brain: dict, draft_dir: str) -> str:
             # Overlay card (input 1)
             "[base][1:v]overlay=0:0[vg]",
 
-            # ── CARD TEXT (left-aligned) ──────────────────────────────────────
-            # Single header line: brand · category
+            # ── CARD TEXT ─────────────────────────────────────────────────────
+            # Header: brand · category
             f"[vg]drawtext=fontfile={_q(fp)}"
             f":text='DHUNDETOX   ·   RAGA'"
-            f":fontsize=32:fontcolor=0xFFD700@0.80"
+            f":fontsize=32:fontcolor=0xFFD700@0.78"
             f":x={LX}:y={Y_HEADER}"
-            f":shadowcolor=black@0.6:shadowx=1:shadowy=1[t0]",
+            f":shadowcolor=black@0.5:shadowx=1:shadowy=1[t0]",
 
-            # Raga name — dominant, large, warm shadow
-            f"[t0]drawtext=fontfile={_q(fp)}"
+            # Decorative ornament: ──── □ ────
+            f"[t0]drawbox=x={LX}:y={Y_DECO+3}:w=72:h=2:color=0xFFD700@0.50:t=fill[d1]",
+            f"[d1]drawbox=x={LX+80}:y={Y_DECO-1}:w=10:h=10:color=0xFFD700@0.65:t=fill[d2]",
+            f"[d2]drawbox=x={LX+98}:y={Y_DECO+3}:w=72:h=2:color=0xFFD700@0.50:t=fill[d3]",
+
+            # Raga title — 3D gold: depth layer (dark gold, offset 3px)
+            f"[d3]drawtext=fontfile={_q(fp)}"
             f":text={_q(raga)}"
-            f":fontsize=142:fontcolor=white"
-            f":x={LX}:y={Y_RAGA}"
-            f":shadowcolor=0x3D1F00@0.95:shadowx=5:shadowy=5[t1]",
+            f":fontsize=156:fontcolor=0x7A5200"
+            f":x={LX+3}:y={Y_RAGA+4}"
+            f":shadowcolor=black@0:shadowx=0:shadowy=0[ta]",
 
-            # Instruments — bright enough to read clearly
+            # Raga title — bright gold on top
+            f"[ta]drawtext=fontfile={_q(fp)}"
+            f":text={_q(raga)}"
+            f":fontsize=156:fontcolor=0xFFD700"
+            f":x={LX}:y={Y_RAGA}"
+            f":shadowcolor=0x0C0400@0.95:shadowx=4:shadowy=4[t1]",
+
+            # Instruments
             f"[t1]drawtext=fontfile={_q(fp)}"
             f":text={_q(instr)}"
-            f":fontsize=44:fontcolor=white@0.80"
+            f":fontsize=43:fontcolor=white@0.80"
             f":x={LX}:y={Y_INSTR}"
-            f":shadowcolor=black@0.5:shadowx=2:shadowy=2[t2]",
+            f":shadowcolor=black@0.4:shadowx=1:shadowy=1[t2]",
 
-            # Mood · Hz — slightly dimmer but still readable
+            # Mood · Hz
             f"[t2]drawtext=fontfile={_q(fp)}"
             f":text={_q(mood_hz)}"
-            f":fontsize=40:fontcolor=white@0.68"
+            f":fontsize=39:fontcolor=white@0.65"
             f":x={LX}:y={Y_MOOD}"
-            f":shadowcolor=black@0.4:shadowx=1:shadowy=1[t3]",
+            f":shadowcolor=black@0.3:shadowx=1:shadowy=1[t3]",
 
             # Thin divider
-            f"[t3]drawbox=x={LX}:y={Y_DIV}:w={1080-LX*2}:h=1:color=white@0.22:t=fill[t4]",
+            f"[t3]drawbox=x={LX}:y={Y_DIV}:w={1080-LX*2}:h=1:color=white@0.20:t=fill[t4]",
 
-            # CTA
+            # CTA — gold, prominent
             f"[t4]drawtext=fontfile={_q(fp)}"
             f":text='>> WATCH FULL VERSION'"
             f":fontsize=40:fontcolor=0xFFD700"
             f":x={LX}:y={Y_CTA}"
-            f":shadowcolor=black@0.7:shadowx=2:shadowy=2[t5]",
+            f":shadowcolor=black@0.6:shadowx=2:shadowy=2[t5]",
 
-            # Link — visible and readable
+            # Link text — subtle
             f"[t5]drawtext=fontfile={_q(fp)}"
             f":text={_q(link_line)}"
-            f":fontsize=34:fontcolor=white@0.72"
+            f":fontsize=33:fontcolor=white@0.65"
             f":x={LX}:y={Y_LINK}"
-            f":shadowcolor=black@0.5:shadowx=1:shadowy=1,"
+            f":shadowcolor=black@0.4:shadowx=1:shadowy=1,"
             f"fade=t=in:st=0:d=1,"
             f"fade=t=out:st={fade_out}:d=2[v]",
         ]

@@ -51,7 +51,7 @@ def run_short(brain: dict, draft_dir: str) -> str | None:
     raga_tag  = raga.replace(" ", "")
 
     short_brain = dict(brain)
-    short_brain["title"] = f"{raga} · {instr} | {use_case} #Shorts"[:100]
+    short_brain["title"] = f"{raga} - {instr} | {use_case} #Shorts"[:100]
     main_id   = brain.get("main_video_id", "")
     full_link = f"https://youtu.be/{main_id}" if main_id else ""
     full_line = f"\n▶ Full version: {full_link}" if full_link else ""
