@@ -53,10 +53,10 @@ def run_short(brain: dict, draft_dir: str) -> str | None:
     short_brain = dict(brain)
     short_brain["title"] = f"{raga} · {instr} | {use_case} #Shorts"[:100]
     main_id   = brain.get("main_video_id", "")
-    full_link = f"https://youtu.be/{main_id}" if main_id else "https://youtube.com/@DhunDetox"
+    full_link = f"https://youtu.be/{main_id}" if main_id else ""
+    full_line = f"\n▶ Full version: {full_link}" if full_link else ""
     short_brain["description"] = (
-        f"30-second preview of today's full Indian classical music.\n\n"
-        f"▶ Full version ({use_case.title()}): {full_link}\n\n"
+        f"30-second preview. Full {use_case.title()} music in description.{full_line}\n\n"
         f"#{raga_tag} #IndianClassical #Meditation #Shorts #YouTubeShorts"
     )
     short_brain["tags"] = (brain.get("tags") or [])[:5] + ["Shorts", "YouTubeShorts"]

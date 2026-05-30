@@ -109,11 +109,7 @@ def run(brain: dict, draft_dir: str) -> str:
     # Bottom info line: mood · hz
     mood_hz = f"{mood}  ·  {hz}" if hz else mood
 
-    # Link line
-    if main_id:
-        link_line = f"youtu.be/{main_id}"
-    else:
-        link_line = CHANNEL_HANDLE
+    link_line = "FULL VIDEO IN DESCRIPTION"
 
     logo_src  = os.path.join(ROOT_DIR, "assets", "logo.png")
     card_path = _make_card_png(logo_src if os.path.exists(logo_src) else None)
