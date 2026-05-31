@@ -298,7 +298,7 @@ Pattern: raga name variations → instrument + raga combos → instrument alone 
 Do NOT include Hz frequency terms in the keyword string.
 Example: raag {schedule['raga'].lower()},raga {schedule['raga'].lower()},{instruments_label.replace(' & ', ' ').replace(', ', ' ')},indian classical music,meditation music,healing music,...,thelifemerit,ध्यान संगीत,राग {schedule['raga'].lower()}
 
-TAGS GUIDANCE: Exactly 8 tags — English only, quality over quantity. Strategy: 1 primary exact-match (raag name), 2 broad category (e.g. "meditation music", "healing music"), 3 long-tail raag+benefit combos (e.g. "raag bhairavi for stress"), 1 channel brand ("dhundetox"). Total under 300 chars. First tag must be the primary keyword.
+TAGS GUIDANCE: Fill as close to 470 chars as possible (YouTube allows 500 total — use the budget). English only. First tag = primary keyword (raag name). Then: raga name variations, instrument+raga combos, instrument alone, broad categories (meditation music, healing music, stress relief), long-tail benefit combos (raag X for anxiety, X meditation), emotion/use-case terms, channel brand (dhundetox) last. Each tag with spaces counts +2 chars toward the budget. Aim for 18–22 quality tags.
 
 {{
   "title": "best of the 3 title_options below — pick the strongest SEO + CTR option",
