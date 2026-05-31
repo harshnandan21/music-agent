@@ -11,6 +11,7 @@ from config import YOUTUBE_CLIENT_SECRET_FILE, YOUTUBE_TOKEN_FILE, get_playlist_
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload",
     "https://www.googleapis.com/auth/youtube",
+    "https://www.googleapis.com/auth/youtube.force-ssl",  # required for comments
 ]
 
 
@@ -100,17 +101,15 @@ def run(brain: dict, video_path: str, thumbnail_path: str, publish_at: str = Non
 
     request = youtube.videos().insert(part=",".join(body.keys()), body=body, media_body=media)
     response = None
+    import time
     while response is None:
-        for attempt in range(5):
-            try:
-                status, response = request.next_chunk()
-                break
-            except Exception as e:
-                if attempt == 4:
-                    raise
-                wait = 2 ** attempt * 5
-                print(f"[upload] Network error ({e}) — retrying in {wait}s...")
-                import time; time.sleep(wait)
+        try:
+            status, response = request.next_chunk()
+        except Exception as e:
+            wait = 30
+            print(f"[upload] Network error ({e}) — retrying in {wait}s...")
+            time.sleep(wait)
+            continue
         if status:
             pct = int(status.progress() * 100)
             print(f"[upload] {pct}% uploaded...")

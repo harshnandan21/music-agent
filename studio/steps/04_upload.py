@@ -65,4 +65,33 @@ def run_short(brain: dict, draft_dir: str) -> str | None:
     upload_mod = _load_upload_mod()
     video_id = upload_mod.run(short_brain, short_path, thumbnail_path=None)
     print(f"[upload_short] Short live: https://youtu.be/{video_id}")
+
+    # Post a comment with the clickable full-video link
+    # (Shorts description links are not tappable on mobile; comments are)
+    if full_link:
+        try:
+            from googleapiclient.discovery import build
+            upload_mod = _load_upload_mod()
+            creds = upload_mod._get_credentials()
+            yt = build("youtube", "v3", credentials=creds)
+            yt.commentThreads().insert(
+                part="snippet",
+                body={
+                    "snippet": {
+                        "videoId": video_id,
+                        "topLevelComment": {
+                            "snippet": {
+                                "textOriginal": (
+                                    f"▶ Full version ({use_case.title()}):\n{full_link}\n\n"
+                                    f"Subscribe for daily Indian classical music 🎵"
+                                )
+                            }
+                        }
+                    }
+                }
+            ).execute()
+            print(f"[upload_short] Pinnable comment posted with full video link.")
+        except Exception as e:
+            print(f"[upload_short] Comment post failed (non-fatal): {e}")
+
     return video_id
