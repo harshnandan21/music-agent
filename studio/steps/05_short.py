@@ -86,7 +86,30 @@ def _short_mood(use_case: str, hook: str) -> str:
 
 def _instr_display(instrument: str) -> str:
     parts = re.split(r"[,&/]| and ", instrument, flags=re.IGNORECASE)
-    return "  ·  ".join(p.strip().upper() for p in parts if p.strip())
+    cleaned = []
+    for p in parts:
+        p = p.strip().upper()
+        # Drop redundant qualifier words that bloat the line
+        p = re.sub(r'\b(FLUTE|GUITAR|VIOLIN|DRUM)\b', '', p).strip()
+        if p:
+            cleaned.append(p)
+    return "  ·  ".join(cleaned)
+
+
+def _raga_fontsize(raga: str, max_width: int = 960, base: int = 156) -> int:
+    """Scale raga font down so it fits within max_width pixels."""
+    estimated_px_per_char = 0.56  # BebasNeue condensed at 1px
+    estimated_width = len(raga) * estimated_px_per_char * base
+    if estimated_width <= max_width:
+        return base
+    return max(80, int(max_width / (len(raga) * estimated_px_per_char)))
+
+
+def _instr_fontsize(instr: str, max_width: int = 960, base: int = 43) -> int:
+    estimated_px_per_char = 0.52
+    if len(instr) * estimated_px_per_char * base <= max_width:
+        return base
+    return max(28, int(max_width / (len(instr) * estimated_px_per_char)))
 
 
 def run(brain: dict, draft_dir: str) -> str:
@@ -111,10 +134,13 @@ def run(brain: dict, draft_dir: str) -> str:
 
     link_line = "FULL VIDEO IN DESCRIPTION"
 
-    logo_src  = os.path.join(ROOT_DIR, "assets", "logo.png")
-    card_path = _make_card_png(logo_src if os.path.exists(logo_src) else None)
-    fp        = FONT_REL
-    fade_out  = CLIP_DUR - 2
+    logo_src   = os.path.join(ROOT_DIR, "assets", "logo.png")
+    card_path  = _make_card_png(logo_src if os.path.exists(logo_src) else None)
+    fp         = FONT_REL
+    fade_out   = CLIP_DUR - 2
+    raga_fs    = _raga_fontsize(raga)
+    instr_fs   = _instr_fontsize(instr)
+    raga_depth = max(60, raga_fs - 10)   # depth layer slightly smaller
 
     # Left margin for all card text
     LX = 55
@@ -122,8 +148,8 @@ def run(brain: dict, draft_dir: str) -> str:
     Y_HEADER = CARD_START + GOLD_LINE_H + 18   # brand · raga header
     Y_DECO   = Y_HEADER + 50                   # decorative ornament line
     Y_RAGA   = Y_DECO   + 22                   # raga name (hero)
-    Y_INSTR  = Y_RAGA   + 162                  # instruments
-    Y_MOOD   = Y_INSTR  + 62                   # mood · hz
+    Y_INSTR  = Y_RAGA   + raga_fs + 10        # instruments (adapts to raga font size)
+    Y_MOOD   = Y_INSTR  + instr_fs + 18       # mood · hz
     Y_DIV    = Y_MOOD   + 60                   # divider
     Y_CTA    = Y_DIV    + 22                   # CTA
     Y_LINK   = Y_CTA    + 56                   # link text
@@ -148,24 +174,24 @@ def run(brain: dict, draft_dir: str) -> str:
             f"[d1]drawbox=x={LX+80}:y={Y_DECO-1}:w=10:h=10:color=0xFFD700@0.65:t=fill[d2]",
             f"[d2]drawbox=x={LX+98}:y={Y_DECO+3}:w=72:h=2:color=0xFFD700@0.50:t=fill[d3]",
 
-            # Raga title — 3D gold: depth layer (dark gold, offset 3px)
+            # Raga title — 3D gold: depth layer (dark gold, offset)
             f"[d3]drawtext=fontfile={_q(fp)}"
             f":text={_q(raga)}"
-            f":fontsize=156:fontcolor=0x7A5200"
+            f":fontsize={raga_depth}:fontcolor=0x7A5200"
             f":x={LX+3}:y={Y_RAGA+4}"
             f":shadowcolor=black@0:shadowx=0:shadowy=0[ta]",
 
             # Raga title — bright gold on top
             f"[ta]drawtext=fontfile={_q(fp)}"
             f":text={_q(raga)}"
-            f":fontsize=156:fontcolor=0xFFD700"
+            f":fontsize={raga_fs}:fontcolor=0xFFD700"
             f":x={LX}:y={Y_RAGA}"
             f":shadowcolor=0x0C0400@0.95:shadowx=4:shadowy=4[t1]",
 
-            # Instruments
+            # Instruments — dynamic size
             f"[t1]drawtext=fontfile={_q(fp)}"
             f":text={_q(instr)}"
-            f":fontsize=43:fontcolor=white@0.80"
+            f":fontsize={instr_fs}:fontcolor=white@0.80"
             f":x={LX}:y={Y_INSTR}"
             f":shadowcolor=black@0.4:shadowx=1:shadowy=1[t2]",
 
