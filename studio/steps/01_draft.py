@@ -160,6 +160,28 @@ def run(client, draft_dir: str) -> tuple[dict, str]:
             f"  thumbnail.png   (optional)\n\n"
             f"Then run:\npython studio/orchestrator.py --publish"
         )
+        # Offer automation: run full automated pipeline into the draft folder
+        try:
+            choice_token = tg.new_token()
+            tg.send_choice_prompt(choice_token,
+                "<b>Would you like to automate generation now?</b>\nGenerate music, image, assemble & upload automatically.",
+                [("⚡ Automate now", "AUTOMATE"), ("📝 Manual — I'll add files", "MANUAL")]
+            )
+            choice = tg.wait_for_choice(choice_token, timeout_seconds=3600)
+            if choice == "AUTOMATE":
+                tg.send_text("Starting automated generation now — I'll report back when done.")
+                try:
+                    import studio.auto_publish as auto_pub
+                    auto_pub.run(brain, draft_dir)
+                    tg.send_text("Automated pipeline finished. Check draft folder or YouTube for result.")
+                    decision = "automated"
+                except Exception as e:
+                    tg.send_text(f"Automation failed: {e}")
+            else:
+                tg.send_text("OK — keep files in the draft folder and run --publish when ready.")
+        except Exception:
+            # Non-fatal — keep original manual instructions
+            pass
     else:
         tg.send_text(f"Idea for {date_label} rejected / timed out. Run --draft again for a new idea.")
 
