@@ -27,11 +27,18 @@ def run(brain: dict, draft_dir: str, publish_at: str = None) -> str:
         raise FileNotFoundError(f"[upload] video.mp4 not found in {draft_dir}")
 
     thumbnail_path = None
+    SKIP = {"thumbnail.png", "thumbnail.jpg", "image_watermarked.png"}
+    # Check fixed names first, then fall back to any PNG/JPG in the folder
     for name in ["thumbnail.png", "thumbnail.jpg", "background.png", "background.jpg"]:
         p = os.path.join(draft_dir, name)
         if os.path.exists(p):
             thumbnail_path = p
             break
+    if not thumbnail_path:
+        for f in sorted(os.listdir(draft_dir)):
+            if f.lower().endswith((".png", ".jpg", ".jpeg")) and f not in SKIP:
+                thumbnail_path = os.path.join(draft_dir, f)
+                break
 
     upload_mod = _load_upload_mod()
     video_id = upload_mod.run(brain, video_path, thumbnail_path, publish_at=publish_at)

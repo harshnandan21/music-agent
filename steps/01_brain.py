@@ -243,50 +243,52 @@ Rules:
 - Flames: 5%, water ripples: 3-5%, sky glow: 2%, leaves: 3%, smoke: 80%, birds/clouds: drifting slowly (no %)
 - List every frozen element explicitly so nothing gets accidentally animated
 
-DESCRIPTION TEMPLATE — follow this structure exactly:
+DESCRIPTION TEMPLATE — follow this structure exactly. Target: 300–400 words total.
 
-{{emoji matching use case}} {{SEO title repeat}}
+SECTION 1 — First 125 characters (CRITICAL — shown before "Show more" button. Keywords first, NO emoji at start):
+Write as: "Raag {{raga}} {{hz_frequency}} for {{primary benefit}}. {{instruments}} {{use case}} meditation music."
+Example: "Raag Bhairavi 432Hz for morning cortisol reset. Bansuri & Tanpura deep meditation music for stress relief."
 
-{{2-3 sentence hook: address the pain point directly, short and punchy}}
-
-This deeply meditative composition in Raag {schedule['raga']} blends the healing resonance of {{hz_frequency}} — known for {{hz benefit}} — with soulful {instruments_label} to {{use case benefits}}.
+SECTION 2 — Hook (2–3 sentences, punchy, addresses the pain point):
+{{emotional hook}}
 
 "{{hook_phrase}}"
 
-{{2-3 sentences: cultural/historical context of Raag {schedule['raga']}, what it does to the nervous system}}
+SECTION 3 — CHAPTERS (REQUIRED — paste exactly, YouTube indexes each line as a keyword):
+0:00 Introduction — Setting the Intention
+5:00 Alap — Free Exploration of Raag {schedule['raga']}
+15:00 Vilambit — Slow & Deep Meditation
+35:00 Madhya Laya — Deepening the Stillness
+52:00 Samapti — Resolution & Inner Peace
+58:00 Outro — Carry the Calm Forward
 
+SECTION 4 — Raga context (2–3 sentences max):
+{{Cultural/historical context of Raag {schedule['raga']}, what it does to the nervous system, Hz benefit}}
+
+SECTION 5 — PERFECT FOR (6 bullets, specific):
 {{emoji}} PERFECT FOR:
-- {{8 specific use cases as bullet points}}
+- {{6 specific use cases}}
 
+SECTION 6 — WHY IT HEALS (2 sentences, concise):
 🎵 WHY RAAG {schedule['raga'].upper()} HEALS:
-{{2-3 sentences: parasympathetic nervous system, raga science, Hz frequency benefit if applicable}}
-
-🎧 HOW TO USE THIS MUSIC:
-1. Use headphones at a comfortable, low volume
-2. Dim the lights or turn them off completely
-3. Lie down or sit comfortably with eyes closed
-4. Take 3 slow deep breaths — exhale longer than you inhale
-5. Let the {{primary instrument}} guide your thoughts into softness
-6. Let the {{secondary instrument}} slow your breath
-7. Let the {{third instrument or rhythm}} ground you in peace
-8. Stay for at least 15–20 minutes for the full effect
+{{2 sentences — parasympathetic nervous system, raga science}}
 
 ────────────────────────────
 
 🇮🇳 हिंदी में:
-{{3-4 lines in Hindi describing raga, instruments, use case}}
-"{{hook_phrase translated to Hindi}}"
+{{3–4 lines in Hindi describing raga, instruments, use case}}
+"{{hook_phrase in Hindi}}"
 
 ────────────────────────────
 
-💛 If this music brought you stillness tonight, please LIKE, SUBSCRIBE, and SHARE with someone who needs peace.
-🔔 Subscribe to DhunDetox for more healing frequencies, Indian classical meditation music, raga therapy, and mindful sound journeys.
-💬 Comment below: {{engaging question related to this video's theme}}
+💛 If this music brought you stillness, please LIKE, SUBSCRIBE, and SHARE with someone who needs peace.
+🔔 Subscribe to DhunDetox for daily Indian classical healing music, raga therapy, and mindful sound journeys.
+💬 Comment below: {{one engaging question for this video's theme}}
 🌿 Save this video for when you need it most.
 
 ────────────────────────────
 
-⚠️ Disclaimer: This music is intended for relaxation, meditation, and wellness purposes. It is not a substitute for professional medical or psychological treatment.
+⚠️ Disclaimer: This music is intended for relaxation and wellness. Not a substitute for professional medical treatment.
 
 {hashtag_str}
 
@@ -296,7 +298,7 @@ Pattern: raga name variations → instrument + raga combos → instrument alone 
 Do NOT include Hz frequency terms in the keyword string.
 Example: raag {schedule['raga'].lower()},raga {schedule['raga'].lower()},{instruments_label.replace(' & ', ' ').replace(', ', ' ')},indian classical music,meditation music,healing music,...,thelifemerit,ध्यान संगीत,राग {schedule['raga'].lower()}
 
-TAGS GUIDANCE: Exactly 15 tags max — English only, each max 30 chars, total under 400 chars combined. Parse from the English keywords above (exclude Hindi).
+TAGS GUIDANCE: Exactly 8 tags — English only, quality over quantity. Strategy: 1 primary exact-match (raag name), 2 broad category (e.g. "meditation music", "healing music"), 3 long-tail raag+benefit combos (e.g. "raag bhairavi for stress"), 1 channel brand ("dhundetox"). Total under 300 chars. First tag must be the primary keyword.
 
 {{
   "title": "best of the 3 title_options below — pick the strongest SEO + CTR option",
@@ -305,9 +307,17 @@ TAGS GUIDANCE: Exactly 15 tags max — English only, each max 30 chars, total un
     "option 2 — outcome-first: raga + hz + instruments + benefit, lead with the result",
     "option 3 — atmosphere-led: scene or mood first, then raga + instruments"
   ],
-  "description": "Full YouTube description following the 11-section template above, including Hindi section, CTA, disclaimer, and 15 hashtags at end",
+  "description": "Full YouTube description following the template above (300–400 words). First 125 chars must be keyword-first. Chapters at section 3. Hindi section, CTA, disclaimer, hashtags at end.",
   "keywords": "comma-separated keyword string, 470-480 chars, no spaces after commas, for YouTube tags field",
-  "tags": ["15 tags parsed from keywords, English only, each max 30 chars"],
+  "tags": ["8 tags — primary keyword first, then broad, then long-tail, then dhundetox"],
+  "chapters": [
+    {{"time": "0:00", "title": "Introduction — Setting the Intention"}},
+    {{"time": "5:00", "title": "Alap — Free Exploration of Raag {{raga}}"}},
+    {{"time": "15:00", "title": "Vilambit — Slow & Deep Meditation"}},
+    {{"time": "35:00", "title": "Madhya Laya — Deepening the Stillness"}},
+    {{"time": "52:00", "title": "Samapti — Resolution & Inner Peace"}},
+    {{"time": "58:00", "title": "Outro — Carry the Calm Forward"}}
+  ],
   "music_prompt": "Detailed Lyria prompt per music guidance above",
   "image_prompt": "Madhubani painting scene per image guidance above",
   "video_prompt": "Veo 8-second seamless loop per video guidance above",
