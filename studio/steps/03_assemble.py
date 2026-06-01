@@ -23,7 +23,11 @@ SCALE_FILTER = (
     "scale=1920:1080:force_original_aspect_ratio=decrease,"
     "pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black"
 )
-LOGO_SIZE    = 160   # large enough to fully cover Gemini watermark
+LOGO_SIZE    = 180   # covers Gemini watermark; safe after 1920x1080 video scaling
+# Gemini watermark sits at ~96-97% of image dims.
+# After scaling to 1080p, logo must stay within frame — use 95.5% x, 93% y.
+LOGO_CX_PCT  = 0.955
+LOGO_CY_PCT  = 0.930
 XFADE_DUR    = 0.5
 
 
@@ -44,16 +48,16 @@ def _make_circular_logo(size: int = LOGO_SIZE) -> str | None:
 
 
 def _stamp_logo(bg_path: str) -> str:
-    """Stamp circular brand logo centered on the Gemini watermark position (97% from corners)."""
+    """Stamp circular logo to cover Gemini watermark. Positioned so logo stays fully
+    within the 1920x1080 video frame after FFmpeg scaling."""
     from PIL import Image
     logo_overlay = _make_circular_logo(LOGO_SIZE)
     if not logo_overlay:
         return bg_path
     bg   = Image.open(bg_path).convert("RGBA")
     logo = Image.open(logo_overlay).convert("RGBA")
-    # Center logo at 97% of image width/height — matches Gemini watermark position
-    cx = int(bg.width  * 0.97)
-    cy = int(bg.height * 0.97)
+    cx = int(bg.width  * LOGO_CX_PCT)
+    cy = int(bg.height * LOGO_CY_PCT)
     x  = cx - LOGO_SIZE // 2
     y  = cy - LOGO_SIZE // 2
     bg.paste(logo, (x, y), logo)
@@ -124,10 +128,8 @@ def _assemble_from_clip(clip_path: str, music_path: str, duration: float, out_pa
 
     # Logo overlay
     if has_logo:
-        # Center logo at 97% of frame to cover Gemini watermark
-        cx = "trunc(W*0.97)"
-        cy = "trunc(H*0.97)"
-        parts.append(f"[vfade][{logo_idx}:v]overlay=x={cx}-w/2:y={cy}-h/2:format=auto[v]")
+        # Center logo at 95.5% x / 93% y — covers Gemini watermark, stays in frame
+        parts.append(f"[vfade][{logo_idx}:v]overlay=x=trunc(W*0.955)-w/2:y=trunc(H*0.930)-h/2:format=auto[v]")
         video_map = "[v]"
     else:
         video_map = "[vfade]"
