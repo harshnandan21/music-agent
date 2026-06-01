@@ -23,37 +23,39 @@ SCALE_FILTER = (
     "scale=1920:1080:force_original_aspect_ratio=decrease,"
     "pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black"
 )
-LOGO_SIZE    = 80
-LOGO_PADDING = 20
+LOGO_SIZE    = 160   # large enough to fully cover Gemini watermark
 XFADE_DUR    = 0.5
 
 
-def _make_circular_logo() -> str | None:
-    """Create/cache 80px circular logo PNG. Returns path or None if logo missing."""
+def _make_circular_logo(size: int = LOGO_SIZE) -> str | None:
+    """Create circular logo PNG at given size. Returns path or None if logo missing."""
     from PIL import Image, ImageDraw
     src = os.path.join(ROOT_DIR, "assets", "logo.png")
     if not os.path.exists(src):
         return None
-    out = os.path.join(ROOT_DIR, "assets", "logo_overlay.png")
+    out = os.path.join(ROOT_DIR, "assets", f"logo_{size}px.png")
     logo = Image.open(src).convert("RGBA")
-    logo = logo.resize((LOGO_SIZE, LOGO_SIZE), Image.LANCZOS)
-    mask = Image.new("L", (LOGO_SIZE, LOGO_SIZE), 0)
-    ImageDraw.Draw(mask).ellipse((0, 0, LOGO_SIZE - 1, LOGO_SIZE - 1), fill=255)
+    logo = logo.resize((size, size), Image.LANCZOS)
+    mask = Image.new("L", (size, size), 0)
+    ImageDraw.Draw(mask).ellipse((0, 0, size - 1, size - 1), fill=255)
     logo.putalpha(mask)
     logo.save(out, "PNG")
     return out
 
 
 def _stamp_logo(bg_path: str) -> str:
-    """Stamp circular brand logo at bottom-right of background image."""
+    """Stamp circular brand logo centered on the Gemini watermark position (97% from corners)."""
     from PIL import Image
-    logo_overlay = _make_circular_logo()
+    logo_overlay = _make_circular_logo(LOGO_SIZE)
     if not logo_overlay:
         return bg_path
     bg   = Image.open(bg_path).convert("RGBA")
     logo = Image.open(logo_overlay).convert("RGBA")
-    x = bg.width  - LOGO_SIZE - LOGO_PADDING
-    y = bg.height - LOGO_SIZE - LOGO_PADDING
+    # Center logo at 97% of image width/height — matches Gemini watermark position
+    cx = int(bg.width  * 0.97)
+    cy = int(bg.height * 0.97)
+    x  = cx - LOGO_SIZE // 2
+    y  = cy - LOGO_SIZE // 2
     bg.paste(logo, (x, y), logo)
     out = bg_path.replace(".png", "_watermarked.png")
     bg.convert("RGB").save(out, "PNG")
@@ -122,7 +124,10 @@ def _assemble_from_clip(clip_path: str, music_path: str, duration: float, out_pa
 
     # Logo overlay
     if has_logo:
-        parts.append(f"[vfade][{logo_idx}:v]overlay=W-w-{LOGO_PADDING}:H-h-{LOGO_PADDING}:format=auto[v]")
+        # Center logo at 97% of frame to cover Gemini watermark
+        cx = "trunc(W*0.97)"
+        cy = "trunc(H*0.97)"
+        parts.append(f"[vfade][{logo_idx}:v]overlay=x={cx}-w/2:y={cy}-h/2:format=auto[v]")
         video_map = "[v]"
     else:
         video_map = "[vfade]"
@@ -144,18 +149,40 @@ def _assemble_from_clip(clip_path: str, music_path: str, duration: float, out_pa
     subprocess.run(cmd, check=True, stdin=subprocess.DEVNULL)
 
 
-def _assemble_from_image(image_path: str, music_path: str, duration: float, out_path: str):
-    filter_complex = (
-        f"[0:v]{SCALE_FILTER},"
-        f"fade=t=in:st=0:d=2,"
-        f"fade=t=out:st={duration - 3}:d=3[v]"
-    )
+def _assemble_from_image(image_path: str, music_path: str | list, duration: float, out_path: str):
+    """music_path can be a single file path or a list of paths (crossfaded together)."""
+    CROSSFADE_DUR = 5  # seconds of overlap between consecutive audio clips
+
+    audio_paths = music_path if isinstance(music_path, list) else [music_path]
+    n_audio = len(audio_paths)
+
+    cmd_inputs = ["-loop", "1", "-i", image_path]
+    for ap in audio_paths:
+        cmd_inputs += ["-i", ap]
+
+    # Video filter
+    vf = f"[0:v]{SCALE_FILTER},fade=t=in:st=0:d=2,fade=t=out:st={duration - 3}:d=3[v]"
+
+    # Audio filter: acrossfade between clips, then loop
+    if n_audio == 1:
+        audio_filter = f"[1:a]aloop=loop=-1:size=2147483647[a]"
+    else:
+        parts = []
+        prev = "[1:a]"
+        for i in range(1, n_audio):
+            out_label = f"[ac{i}]"
+            parts.append(f"{prev}[{i+1}:a]acrossfade=d={CROSSFADE_DUR}{out_label}")
+            prev = out_label
+        parts.append(f"{prev}aloop=loop=-1:size=2147483647[a]")
+        audio_filter = ";".join(parts)
+
+    filter_complex = f"{vf};{audio_filter}"
+
     cmd = [
         "ffmpeg", "-y",
-        "-loop", "1", "-i", image_path,
-        "-i", music_path,
+    ] + cmd_inputs + [
         "-filter_complex", filter_complex,
-        "-map", "[v]", "-map", "1:a",
+        "-map", "[v]", "-map", "[a]",
         "-c:v", "libx264", "-tune", "stillimage", "-preset", "fast", "-crf", "20",
         "-c:a", "aac", "-b:a", "256k",
         "-pix_fmt", "yuv420p",
