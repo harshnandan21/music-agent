@@ -151,42 +151,60 @@ def _assemble_from_clip(clip_path: str, music_path: str, duration: float, out_pa
     subprocess.run(cmd, check=True, stdin=subprocess.DEVNULL)
 
 
-def _assemble_from_image(image_path: str, music_path: str | list, duration: float, out_path: str):
-    """music_path can be a single file path or a list of paths (crossfaded together)."""
-    CROSSFADE_DUR = 5  # seconds of overlap between consecutive audio clips
+def _prepare_audio(audio_paths: list, duration: float, tmp_dir: str) -> str:
+    """Crossfade multiple audio clips, loop to target duration, return path to final AAC file.
+    Pre-encoding avoids aloop filter which causes YouTube processing to get stuck."""
+    import tempfile
+    CROSSFADE_DUR = 5
 
-    audio_paths = music_path if isinstance(music_path, list) else [music_path]
-    n_audio = len(audio_paths)
-
-    cmd_inputs = ["-loop", "1", "-i", image_path]
-    for ap in audio_paths:
-        cmd_inputs += ["-i", ap]
-
-    # Video filter
-    vf = f"[0:v]{SCALE_FILTER},fade=t=in:st=0:d=2,fade=t=out:st={duration - 3}:d=3[v]"
-
-    # Audio filter: acrossfade between clips, then loop
-    if n_audio == 1:
-        audio_filter = f"[1:a]aloop=loop=-1:size=2147483647[a]"
+    if len(audio_paths) == 1:
+        combined = audio_paths[0]
     else:
-        parts = []
-        prev = "[1:a]"
-        for i in range(1, n_audio):
-            out_label = f"[ac{i}]"
-            parts.append(f"{prev}[{i+1}:a]acrossfade=d={CROSSFADE_DUR}{out_label}")
-            prev = out_label
-        parts.append(f"{prev}aloop=loop=-1:size=2147483647[a]")
-        audio_filter = ";".join(parts)
+        combined = os.path.join(tmp_dir, "combined_audio.wav")
+        n = len(audio_paths)
+        inputs = []
+        for p in audio_paths:
+            inputs += ["-i", p]
+        fc_parts = []
+        prev = "[0:a]"
+        for i in range(1, n):
+            label = f"[ac{i}]"
+            fc_parts.append(f"{prev}[{i}:a]acrossfade=d={CROSSFADE_DUR}{label}")
+            prev = label
+        subprocess.run(
+            ["ffmpeg", "-y"] + inputs + ["-filter_complex", ";".join(fc_parts), "-map", prev, combined],
+            check=True, stdin=subprocess.DEVNULL, capture_output=True,
+        )
 
-    filter_complex = f"{vf};{audio_filter}"
+    out_aac = os.path.join(tmp_dir, "audio_final.m4a")
+    subprocess.run(
+        ["ffmpeg", "-y", "-stream_loop", "-1", "-t", str(duration), "-i", combined,
+         "-c:a", "aac", "-b:a", "256k", "-t", str(duration), out_aac],
+        check=True, stdin=subprocess.DEVNULL, capture_output=True,
+    )
+    return out_aac
 
+
+def _assemble_from_image(image_path: str, music_path: str | list, duration: float, out_path: str):
+    """music_path can be a single file path or a list of paths (crossfaded + looped)."""
+    import tempfile
+    audio_paths = music_path if isinstance(music_path, list) else [music_path]
+    tmp_dir = os.path.dirname(out_path)
+
+    print("[assemble] Preparing audio (crossfade + loop)...")
+    audio_file = _prepare_audio(audio_paths, duration, tmp_dir)
+
+    vf = (f"{SCALE_FILTER},"
+          f"fade=t=in:st=0:d=2,"
+          f"fade=t=out:st={duration - 3}:d=3")
     cmd = [
         "ffmpeg", "-y",
-    ] + cmd_inputs + [
-        "-filter_complex", filter_complex,
-        "-map", "[v]", "-map", "[a]",
+        "-loop", "1", "-i", image_path,
+        "-i", audio_file,
+        "-vf", vf,
+        "-map", "0:v", "-map", "1:a",
         "-c:v", "libx264", "-tune", "stillimage", "-preset", "fast", "-crf", "20",
-        "-c:a", "aac", "-b:a", "256k",
+        "-c:a", "copy",
         "-pix_fmt", "yuv420p",
         "-t", str(duration),
         "-movflags", "+faststart",
