@@ -86,7 +86,7 @@ r = subprocess.run(
     ['ffmpeg', '-y'] + inputs_s + [
         '-filter_complex', ';'.join(parts),
         '-map', prev,
-        '-c:v', 'libx264', '-preset', 'fast', '-crf', '26', '-pix_fmt', 'yuv420p',
+        '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-pix_fmt', 'yuv420p',
         '-movflags', '+faststart', segment
     ], capture_output=True, text=True
 )
@@ -105,7 +105,7 @@ r = subprocess.run([
     '-i', audio_final,
     '-map', '0:v', '-map', '1:a',
     '-t', '3600',
-    '-c:v', 'libx264', '-preset', 'fast', '-crf', '26', '-pix_fmt', 'yuv420p',
+    '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-pix_fmt', 'yuv420p',
     '-c:a', 'copy',
     '-movflags', '+faststart',
     f'{draft}/video.mp4'

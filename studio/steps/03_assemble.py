@@ -140,7 +140,7 @@ def _assemble_from_clip(clip_path: str, music_path: str, duration: float, out_pa
         "-filter_complex", ";".join(parts),
         "-map", video_map,
         "-map", f"{music_idx}:a",
-        "-c:v", "libx264", "-preset", "fast", "-crf", "26",
+        "-c:v", "libx264", "-preset", "fast", "-crf", "20",
         "-c:a", "aac", "-b:a", "256k",
         "-pix_fmt", "yuv420p",
         "-t", str(duration),
