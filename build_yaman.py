@@ -60,49 +60,58 @@ if r.returncode != 0:
     print('Audio loop ERROR:', r.stderr[-500:]); sys.exit(1)
 print(f'Audio ready: {os.path.getsize(audio_final)/1e6:.1f} MB')
 
-# ── Build video: animated clip looped with xfade dissolve ────────────────
-duration   = 3600.0
-eff_dur    = clip_dur - XFADE_DUR
-n_clips    = max(2, math.ceil((duration - clip_dur) / eff_dur) + 1)
-scale      = ('scale=1920:1080:force_original_aspect_ratio=decrease,'
-              'pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black')
+# ── Stage 1: Build ~5min segment (32 clips) with xfade dissolve ──────────
+N_SEG   = 32
+eff_dur = clip_dur - XFADE_DUR
+scale   = ('scale=1920:1080:force_original_aspect_ratio=decrease,'
+           'pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black')
+segment = f'{draft}/segment_5min.mp4'
 
-print(f'Building video: {n_clips} clips with {XFADE_DUR}s dissolve...')
+print(f'Stage 1: Building 5-min segment from {N_SEG} clips...')
 sys.stdout.flush()
 
-inputs = []
-for _ in range(n_clips):
-    inputs += ['-i', clip_path]
-inputs += ['-i', audio_final]
-inputs += ['-i', img_out]  # logo already stamped on image — not needed separately
+inputs_s = []
+for _ in range(N_SEG):
+    inputs_s += ['-i', clip_path]
 
-# Scale + xfade chain
-parts = [f'[{i}:v]{scale}[sv{i}]' for i in range(n_clips)]
+parts = [f'[{i}:v]{scale}[sv{i}]' for i in range(N_SEG)]
 prev = '[sv0]'
-for i in range(1, n_clips):
+for i in range(1, N_SEG):
     offset = i * eff_dur
     label = f'[xf{i}]'
     parts.append(f'{prev}[sv{i}]xfade=transition=dissolve:duration={XFADE_DUR}:offset={offset:.3f}{label}')
     prev = label
-fade_out = duration - 3
-parts.append(f'{prev}fade=t=in:st=0:d=2,fade=t=out:st={fade_out:.1f}:d=3[v]')
 
-music_idx = n_clips
-fc = ';'.join(parts)
+r = subprocess.run(
+    ['ffmpeg', '-y'] + inputs_s + [
+        '-filter_complex', ';'.join(parts),
+        '-map', prev,
+        '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-pix_fmt', 'yuv420p',
+        '-movflags', '+faststart', segment
+    ], capture_output=True, text=True
+)
+if r.returncode != 0:
+    print('Segment ERROR:', r.stderr[-500:]); sys.exit(1)
+seg_size = os.path.getsize(segment)/1e6
+print(f'Segment done: {seg_size:.0f} MB')
 
-cmd = ['ffmpeg', '-y'] + inputs + [
-    '-filter_complex', fc,
-    '-map', '[v]', '-map', f'{music_idx}:a',
-    '-t', str(duration),
-    '-c:v', 'libx264', '-preset', 'fast', '-crf', '20',
+# ── Stage 2: Loop segment to 60 min + pre-encoded audio ──────────────────
+print('Stage 2: Building 60-min final video...')
+sys.stdout.flush()
+
+r = subprocess.run([
+    'ffmpeg', '-y',
+    '-stream_loop', '-1', '-t', '3600', '-i', segment,
+    '-i', audio_final,
+    '-map', '0:v', '-map', '1:a',
+    '-t', '3600',
+    '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-pix_fmt', 'yuv420p',
     '-c:a', 'copy',
-    '-pix_fmt', 'yuv420p',
     '-movflags', '+faststart',
     f'{draft}/video.mp4'
-]
-result = subprocess.run(cmd, capture_output=True, text=True)
-if result.returncode != 0:
-    print('Video ERROR:', result.stderr[-1000:]); sys.exit(1)
+], capture_output=True, text=True)
+if r.returncode != 0:
+    print('Final video ERROR:', r.stderr[-1000:]); sys.exit(1)
 
 size = os.path.getsize(f'{draft}/video.mp4') / 1e9
 print(f'Done! {size:.2f} GB — ready to upload.')
