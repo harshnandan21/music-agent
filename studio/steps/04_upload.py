@@ -62,15 +62,15 @@ def run_short(brain: dict, draft_dir: str) -> str | None:
     # Hook-driven title
     uc = use_case.lower()
     if any(w in uc for w in ("overthink", "overactive", "racing")):
-        yt_title = f"Can't quiet your mind? 🌙 Raga {raga} #Shorts"
+        yt_title = f"Mind racing at midnight? Raga {raga} 396Hz #Shorts"
     elif any(w in uc for w in ("sleep", "insomnia")):
-        yt_title = f"Can't fall asleep? 🌙 Raga {raga} #Shorts"
+        yt_title = f"Cannot fall asleep? Raga {raga} for deep sleep #Shorts"
     elif any(w in uc for w in ("stress", "anxiety", "cortisol")):
-        yt_title = f"Feeling overwhelmed? 🎵 Raga {raga} #Shorts"
+        yt_title = f"Feeling overwhelmed? Raga {raga} for calm #Shorts"
     elif any(w in uc for w in ("morning", "prana", "reset", "energy")):
-        yt_title = f"Need a morning reset? ☀️ Raga {raga} #Shorts"
+        yt_title = f"Need a morning reset? Raga {raga} #Shorts"
     elif any(w in uc for w in ("focus", "study", "clarity")):
-        yt_title = f"Need to focus? 🎵 Raga {raga} #Shorts"
+        yt_title = f"Need to focus? Raga {raga} #Shorts"
     elif hook:
         yt_title = f"{hook} | Raga {raga} #Shorts"
     else:
