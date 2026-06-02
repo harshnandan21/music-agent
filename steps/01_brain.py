@@ -93,8 +93,24 @@ def run(client) -> dict:
         title_instruction = f'Use exactly this title: "{locked["title"]}"'
     else:
         title_instruction = (
-            "Write the best SEO title (≤70 chars): name the raga + instruments, "
-            "address a real pain point, include hz_frequency if provided."
+            "Generate 8 SEO-optimised title options (≤70 chars each). "
+            "Pick the strongest as 'title'. Put all 8 in 'title_options'.\n\n"
+            "SEO TITLE PATTERNS (from top meditation channels research):\n"
+            "  Pattern A — Benefit-first:   'Melt Evening Stress | Raga X | Sitar & Bansuri 174Hz'\n"
+            "  Pattern B — Hz-first:        '174Hz Cortisol Drop | Raga X | Sitar & Bansuri Evening'\n"
+            "  Pattern C — Intent-first:    'Unwind After Work | Yaman Kalyan Sitar & Bansuri | 174Hz'\n"
+            "  Pattern D — Compound phrase: 'Evening Raga for Stress Relief | Raga X | Sitar 174Hz'\n"
+            "  Pattern E — Emotional hook:  'Release the Day 🌆 Raag X 174Hz | Sitar & Bansuri'\n"
+            "  Pattern F — Proven keyword:  'Lower Cortisol with Raga X | 174Hz Sitar & Bansuri'\n"
+            "  Pattern G — Frequency-first: '174Hz Evening Calm | Raag X | Indian Sitar & Flute'\n"
+            "  Pattern H — Compressed hook: 'Stress Melt 🌆 Raag X 174Hz | Sitar & Bansuri Evening'\n\n"
+            "RULES:\n"
+            "  · Each title must include: raga name + Hz + instruments + use-case benefit\n"
+            "  · Lead with either: emotional hook, benefit keyword, Hz frequency, or use-case intent\n"
+            "  · Use pipe | to separate clauses\n"
+            "  · Max 1 emoji per title, placed after the first clause\n"
+            "  · Vary the 8 patterns — don't repeat same structure\n"
+            "  · All ≤70 chars\n"
         )
 
     seeds_outcomes  = ", ".join(CONTENT_SEEDS["outcome_hooks"][:14])
@@ -301,11 +317,16 @@ Example: raag {schedule['raga'].lower()},raga {schedule['raga'].lower()},{instru
 TAGS GUIDANCE: Target 440–460 chars (YouTube shows 500 but rejects above ~465 in practice). English only. First tag = primary keyword (raag name). Then: raga name variations, instrument+raga combos, instrument alone, broad categories (meditation music, healing music, stress relief), long-tail benefit combos (raag X for anxiety, X meditation), emotion/use-case terms, channel brand (dhundetox) last. Each tag with spaces counts +2 chars toward the budget. Aim for 22–26 quality tags.
 
 {{
-  "title": "best of the 3 title_options below — pick the strongest SEO + CTR option",
+  "title": "strongest of the 8 options — best SEO + CTR combination",
   "title_options": [
-    "option 1 — emotional/vulnerable hook: When... / For the... / Some nights... formula",
-    "option 2 — outcome-first: raga + hz + instruments + benefit, lead with the result",
-    "option 3 — atmosphere-led: scene or mood first, then raga + instruments"
+    "Pattern A — Benefit-first: 'Melt [use case] | Raga X | Instruments Hz'",
+    "Pattern B — Hz-first: '174Hz [benefit] | Raga X | Instruments [time of day]'",
+    "Pattern C — Intent-first: '[Specific intent] | Raga X Instruments | Hz'",
+    "Pattern D — Compound phrase: '[Time] Raga for [benefit] | Raga X | Instruments Hz'",
+    "Pattern E — Emotional hook: '[Hook] 🌆 Raag X Hz | Instruments [benefit]'",
+    "Pattern F — Proven keyword: 'Lower Cortisol / Deep Sleep / etc with Raga X | Hz Instruments'",
+    "Pattern G — Frequency-first: 'Hz [Time/Mood] | Raag X | Indian Instruments'",
+    "Pattern H — Compressed hook: '[2-word hook] 🌆 Raag X Hz | Instruments [use case]'"
   ],
   "description": "Full YouTube description following the template above (300–400 words). First 125 chars must be keyword-first. Chapters at section 3. Hindi section, CTA, disclaimer, hashtags at end.",
   "keywords": "comma-separated keyword string, 470-480 chars, no spaces after commas, for YouTube tags field",
