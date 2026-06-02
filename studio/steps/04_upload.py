@@ -54,16 +54,45 @@ def run_short(brain: dict, draft_dir: str) -> str | None:
 
     raga      = brain.get("raga", "")
     instr     = brain.get("instrument", "")
-    use_case  = brain.get("use_case", "").replace("_", " ").title()
+    use_case  = brain.get("use_case", "").replace("_", " ")
     raga_tag  = raga.replace(" ", "")
+    hook      = brain.get("thumbnail_hook", "").strip()
+    tagline   = brain.get("thumbnail_tagline", "").strip()
 
-    short_brain = dict(brain)
-    short_brain["title"] = f"{raga} - {instr} | {use_case} #Shorts"[:100]
+    # Hook-driven title
+    uc = use_case.lower()
+    if any(w in uc for w in ("overthink", "overactive", "racing")):
+        yt_title = f"Can't quiet your mind? 🌙 Raga {raga} #Shorts"
+    elif any(w in uc for w in ("sleep", "insomnia")):
+        yt_title = f"Can't fall asleep? 🌙 Raga {raga} #Shorts"
+    elif any(w in uc for w in ("stress", "anxiety", "cortisol")):
+        yt_title = f"Feeling overwhelmed? 🎵 Raga {raga} #Shorts"
+    elif any(w in uc for w in ("morning", "prana", "reset", "energy")):
+        yt_title = f"Need a morning reset? ☀️ Raga {raga} #Shorts"
+    elif any(w in uc for w in ("focus", "study", "clarity")):
+        yt_title = f"Need to focus? 🎵 Raga {raga} #Shorts"
+    elif hook:
+        yt_title = f"{hook} | Raga {raga} #Shorts"
+    else:
+        yt_title = f"Raga {raga} | 30 sec #Shorts"
+
     main_id   = brain.get("main_video_id", "")
     full_link = f"https://youtu.be/{main_id}" if main_id else ""
-    full_line = f"\n▶ Full version: {full_link}" if full_link else ""
+    full_line = f"\n\n▶ Full version: {full_link}" if full_link else ""
+
+    # Hook-driven description
+    if tagline:
+        desc_hook = tagline
+    elif hook:
+        desc_hook = hook.title()
+    else:
+        desc_hook = use_case.title()
+
+    short_brain = dict(brain)
+    short_brain["title"] = yt_title[:100]
     short_brain["description"] = (
-        f"30-second preview. Full {use_case.title()} music in description.{full_line}\n\n"
+        f"{desc_hook}\n\n"
+        f"30-second preview of the full Indian classical music experience.{full_line}\n\n"
         f"#{raga_tag} #IndianClassical #Meditation #Shorts #YouTubeShorts"
     )
     short_brain["tags"] = (brain.get("tags") or [])[:5] + ["Shorts", "YouTubeShorts"]

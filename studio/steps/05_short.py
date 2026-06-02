@@ -1,9 +1,9 @@
 """
 Studio Step 5 — Short
-"Now Playing" card layout:
-  - Full-bleed image (top 62%)
-  - Gradient fade into dark warm card (bottom 38%)
-  - Left-aligned text: channel brand, raga, instruments, mood, Hz, link
+Layout:
+  - Full-bleed image (entire frame)
+  - TOP: Hook question (2 lines, centered, with text-box bg) — grabs attention
+  - BOTTOM: Now Playing card — raga, instruments, mood, CTA
 Output: draft_dir/short.mp4
 """
 
@@ -12,37 +12,38 @@ import os, re, subprocess, sys, tempfile
 STUDIO_DIR = os.path.dirname(os.path.dirname(__file__))
 ROOT_DIR   = os.path.dirname(STUDIO_DIR)
 
-CLIP_START   = 30
-CLIP_DUR     = 30
-FONT_REL     = "assets/fonts/BebasNeue-Regular.ttf"
+CLIP_START     = 30
+CLIP_DUR       = 30
+FONT_REL       = "assets/fonts/BebasNeue-Regular.ttf"
 CHANNEL_HANDLE = "@DhunDetox"
 
 # Card geometry (pixels in 1080x1920)
-FADE_START   = 880    # where gradient fade begins (longer cinematic blend)
-CARD_START   = 1190   # where solid dark card begins (gold line here)
-GOLD_LINE_H  = 5      # height of accent line
-CARD_BG      = (16, 9, 3, 222)   # warm amber-black
-GOLD_COLOR   = (255, 210, 0, 235)
-LOGO_SIZE    = 58     # circular logo diameter in the card
+FADE_START  = 860
+CARD_START  = 1190
+GOLD_LINE_H = 5
+CARD_BG     = (16, 9, 3, 225)
+GOLD_COLOR  = (255, 210, 0, 235)
+LOGO_SIZE   = 56
 
 
 def _q(s: str) -> str:
-    return "'" + s.replace("'", "\\'") + "'"
+    # Strip apostrophes and other chars that break FFmpeg's single-quote parser
+    s = re.sub(r"['‘’“”]", "", s)
+    return "'" + s + "'"
 
 
 def _make_card_png(logo_src: str | None = None) -> str:
-    """PIL overlay: subtle top fade + warm dark card + gold line + optional logo."""
     import numpy as np
     from PIL import Image, ImageDraw
 
     arr = np.zeros((1920, 1080, 4), dtype=np.uint8)
 
-    # Subtle top fade
-    top_h = 180
+    # Top fade (darkens just the top edge for hook text readability)
+    top_h = 420
     ys = np.arange(top_h)
-    arr[:top_h, :, 3] = (150 * (1 - ys / top_h))[:, None].astype(np.uint8)
+    arr[:top_h, :, 3] = (185 * (1 - ys / top_h))[:, None].astype(np.uint8)
 
-    # Gradient fade transparent → card opacity
+    # Gradient fade transparent → card
     fade_h = CARD_START - FADE_START
     ys2 = np.arange(fade_h)
     alpha_fade = (CARD_BG[3] * ys2 / fade_h).astype(np.uint8)
@@ -61,24 +62,49 @@ def _make_card_png(logo_src: str | None = None) -> str:
 
     img = Image.fromarray(arr, mode="RGBA")
 
-    # Circular logo — top-right of card header
+    # Circular logo — top-right of card
     if logo_src and os.path.exists(logo_src):
+        from PIL import ImageDraw as _ID
         logo = Image.open(logo_src).convert("RGBA")
         logo = logo.resize((LOGO_SIZE, LOGO_SIZE), Image.LANCZOS)
         mask = Image.new("L", (LOGO_SIZE, LOGO_SIZE), 0)
-        ImageDraw.Draw(mask).ellipse((0, 0, LOGO_SIZE - 1, LOGO_SIZE - 1), fill=255)
+        _ID.Draw(mask).ellipse((0, 0, LOGO_SIZE - 1, LOGO_SIZE - 1), fill=255)
         logo.putalpha(mask)
-        logo_x = 1080 - LOGO_SIZE - 50
-        logo_y = CARD_START + GOLD_LINE_H + 14
-        img.paste(logo, (logo_x, logo_y), logo)
+        img.paste(logo, (1080 - LOGO_SIZE - 50, CARD_START + GOLD_LINE_H + 14), logo)
 
     tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
     img.save(tmp.name, "PNG")
     return tmp.name
 
 
-def _short_mood(use_case: str, hook: str) -> str:
-    hook = (hook or "").strip().upper()
+# ── Text helpers ──────────────────────────────────────────────────────────────
+
+def _hook_lines(use_case: str, thumbnail_hook: str) -> tuple[str, str]:
+    """Return two punchy apostrophe-free hook lines based on the use case."""
+    uc = use_case.lower()
+    if any(w in uc for w in ("overthink", "overactive", "racing")):
+        return ("MIND RACING", "AT MIDNIGHT?")
+    if any(w in uc for w in ("sleep", "insomnia", "night")):
+        return ("WAKE UP", "AT 3AM AGAIN?")
+    if any(w in uc for w in ("stress", "anxiety", "cortisol", "nervous")):
+        return ("FEELING", "OVERWHELMED?")
+    if any(w in uc for w in ("morning", "prana", "reset", "energy")):
+        return ("NEED A", "MORNING RESET?")
+    if any(w in uc for w in ("focus", "study", "clarity", "brain")):
+        return ("NEED TO", "FOCUS NOW?")
+    if any(w in uc for w in ("meditat", "yoga", "mindful")):
+        return ("TIME TO", "MEDITATE?")
+    if any(w in uc for w in ("relax", "unwind", "calm", "relief")):
+        return ("NEED TO", "UNWIND?")
+    # fallback: use thumbnail_hook, strip apostrophes
+    hook = re.sub(r"['\"]", "", thumbnail_hook.strip().upper())
+    words = hook.split()
+    mid = max(1, len(words) // 2)
+    return (" ".join(words[:mid]), " ".join(words[mid:]))
+
+
+def _short_mood(use_case: str, thumbnail_hook: str) -> str:
+    hook = (thumbnail_hook or "").strip().upper()
     if hook and len(hook) <= 22:
         return hook
     return " ".join(use_case.replace("_", " ").split()[:3]).upper()
@@ -89,28 +115,27 @@ def _instr_display(instrument: str) -> str:
     cleaned = []
     for p in parts:
         p = p.strip().upper()
-        # Drop redundant qualifier words that bloat the line
         p = re.sub(r'\b(FLUTE|GUITAR|VIOLIN|DRUM)\b', '', p).strip()
         if p:
             cleaned.append(p)
-    return "  ·  ".join(cleaned)
+    return "  -  ".join(cleaned)
 
 
-def _raga_fontsize(raga: str, max_width: int = 960, base: int = 156) -> int:
-    """Scale raga font down so it fits within max_width pixels."""
-    estimated_px_per_char = 0.56  # BebasNeue condensed at 1px
-    estimated_width = len(raga) * estimated_px_per_char * base
-    if estimated_width <= max_width:
+def _raga_fontsize(raga: str, max_width: int = 960, base: int = 148) -> int:
+    est = len(raga) * 0.56 * base
+    if est <= max_width:
         return base
-    return max(80, int(max_width / (len(raga) * estimated_px_per_char)))
+    return max(80, int(max_width / (len(raga) * 0.56)))
 
 
-def _instr_fontsize(instr: str, max_width: int = 960, base: int = 43) -> int:
-    estimated_px_per_char = 0.52
-    if len(instr) * estimated_px_per_char * base <= max_width:
+def _instr_fontsize(instr: str, max_width: int = 960, base: int = 42) -> int:
+    est = len(instr) * 0.52 * base
+    if est <= max_width:
         return base
-    return max(28, int(max_width / (len(instr) * estimated_px_per_char)))
+    return max(28, int(max_width / (len(instr) * 0.52)))
 
+
+# ── Main ──────────────────────────────────────────────────────────────────────
 
 def run(brain: dict, draft_dir: str) -> str:
     video_path = os.path.join(draft_dir, "video.mp4")
@@ -127,68 +152,84 @@ def run(brain: dict, draft_dir: str) -> str:
     hz_num    = re.sub(r"[^0-9]", "", hz_raw)
     hz        = f"{hz_num} Hz" if hz_num else ""
     mood      = _short_mood(use_case, hook)
-    main_id   = brain.get("main_video_id", "")
-
-    # Bottom info line: mood · hz
-    mood_hz = f"{mood}  ·  {hz}" if hz else mood
-
+    mood_hz   = f"{mood}  -  {hz}" if hz else mood
     link_line = "FULL VIDEO IN DESCRIPTION"
 
-    logo_src   = os.path.join(ROOT_DIR, "assets", "logo.png")
-    card_path  = _make_card_png(logo_src if os.path.exists(logo_src) else None)
-    fp         = FONT_REL
-    fade_out   = CLIP_DUR - 2
-    raga_fs    = _raga_fontsize(raga)
-    instr_fs   = _instr_fontsize(instr)
-    raga_depth = max(60, raga_fs - 10)   # depth layer slightly smaller
+    hook1, hook2 = _hook_lines(use_case, hook)
+    raga_fs   = _raga_fontsize(raga)
+    instr_fs  = _instr_fontsize(instr)
 
-    # Left margin for all card text
-    LX = 55
-    # Text y positions
-    Y_HEADER = CARD_START + GOLD_LINE_H + 18   # brand · raga header
-    Y_DECO   = Y_HEADER + 50                   # decorative ornament line
-    Y_RAGA   = Y_DECO   + 22                   # raga name (hero)
-    Y_INSTR  = Y_RAGA   + raga_fs + 10        # instruments (adapts to raga font size)
-    Y_MOOD   = Y_INSTR  + instr_fs + 18       # mood · hz
-    Y_DIV    = Y_MOOD   + 60                   # divider
-    Y_CTA    = Y_DIV    + 22                   # CTA
-    Y_LINK   = Y_CTA    + 56                   # link text
+    logo_src  = os.path.join(ROOT_DIR, "assets", "logo.png")
+    card_path = _make_card_png(logo_src if os.path.exists(logo_src) else None)
+    fp        = FONT_REL
+    fade_out  = CLIP_DUR - 2
+
+    # ── Y positions ───────────────────────────────────────────────────────────
+    # Hook text (top of image)
+    Y_HOOK1  = 62
+    Y_HOOK2  = Y_HOOK1 + 112
+
+    # Card text (left-aligned, LX margin)
+    LX       = 55
+    Y_HEADER = CARD_START + GOLD_LINE_H + 18
+    Y_DECO   = Y_HEADER + 48
+    Y_RAGA   = Y_DECO + 20
+    Y_INSTR  = Y_RAGA + raga_fs + 12
+    Y_MOOD   = Y_INSTR + instr_fs + 16
+    Y_DIV    = Y_MOOD + 54
+    Y_CTA    = Y_DIV + 22
+    Y_LINK   = Y_CTA + 54
 
     try:
         parts = [
             # Full-bleed center crop
             "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[base]",
-            # Overlay card (input 1)
+            # Overlay card + top fade (input 1)
             "[base][1:v]overlay=0:0[vg]",
 
-            # ── CARD TEXT ─────────────────────────────────────────────────────
+            # ── TOP HOOK TEXT ─────────────────────────────────────────────────
+            # Dark bg strip behind both hook lines
+            f"[vg]drawbox=x=0:y=30:w=1080:h=270:color=black@0.48:t=fill[hbg]",
+            # Line 1 — white
+            f"[hbg]drawtext=fontfile={_q(fp)}"
+            f":text={_q(hook1)}"
+            f":fontsize=105:fontcolor=white"
+            f":x=(w-text_w)/2:y={Y_HOOK1}"
+            f":shadowcolor=black@0.9:shadowx=4:shadowy=4[h1]",
+            # Line 2 — gold
+            f"[h1]drawtext=fontfile={_q(fp)}"
+            f":text={_q(hook2)}"
+            f":fontsize=105:fontcolor=0xFFD700"
+            f":x=(w-text_w)/2:y={Y_HOOK2}"
+            f":shadowcolor=black@0.9:shadowx=4:shadowy=4[h2]",
+
+            # ── CARD TEXT (left-aligned) ──────────────────────────────────────
             # Header: brand · category
-            f"[vg]drawtext=fontfile={_q(fp)}"
-            f":text='DHUNDETOX   ·   RAGA'"
-            f":fontsize=32:fontcolor=0xFFD700@0.78"
+            f"[h2]drawtext=fontfile={_q(fp)}"
+            f":text='DHUNDETOX   -   RAGA'"
+            f":fontsize=30:fontcolor=0xFFD700@0.75"
             f":x={LX}:y={Y_HEADER}"
             f":shadowcolor=black@0.5:shadowx=1:shadowy=1[t0]",
 
-            # Decorative ornament: ──── □ ────
-            f"[t0]drawbox=x={LX}:y={Y_DECO+3}:w=72:h=2:color=0xFFD700@0.50:t=fill[d1]",
-            f"[d1]drawbox=x={LX+80}:y={Y_DECO-1}:w=10:h=10:color=0xFFD700@0.65:t=fill[d2]",
-            f"[d2]drawbox=x={LX+98}:y={Y_DECO+3}:w=72:h=2:color=0xFFD700@0.50:t=fill[d3]",
+            # Decorative ornament ──── □ ────
+            f"[t0]drawbox=x={LX}:y={Y_DECO+3}:w=68:h=2:color=0xFFD700@0.45:t=fill[d1]",
+            f"[d1]drawbox=x={LX+76}:y={Y_DECO-1}:w=10:h=10:color=0xFFD700@0.60:t=fill[d2]",
+            f"[d2]drawbox=x={LX+94}:y={Y_DECO+3}:w=68:h=2:color=0xFFD700@0.45:t=fill[d3]",
 
-            # Raga title — 3D gold: depth layer (dark gold, offset)
+            # Raga name — 3D gold
             f"[d3]drawtext=fontfile={_q(fp)}"
             f":text={_q(raga)}"
-            f":fontsize={raga_depth}:fontcolor=0x7A5200"
+            f":fontsize={max(60, raga_fs - 10)}:fontcolor=0x7A5200"
             f":x={LX+3}:y={Y_RAGA+4}"
             f":shadowcolor=black@0:shadowx=0:shadowy=0[ta]",
 
-            # Raga title — bright gold on top
             f"[ta]drawtext=fontfile={_q(fp)}"
             f":text={_q(raga)}"
             f":fontsize={raga_fs}:fontcolor=0xFFD700"
             f":x={LX}:y={Y_RAGA}"
             f":shadowcolor=0x0C0400@0.95:shadowx=4:shadowy=4[t1]",
 
-            # Instruments — dynamic size
+            # Instruments
             f"[t1]drawtext=fontfile={_q(fp)}"
             f":text={_q(instr)}"
             f":fontsize={instr_fs}:fontcolor=white@0.80"
@@ -198,24 +239,24 @@ def run(brain: dict, draft_dir: str) -> str:
             # Mood · Hz
             f"[t2]drawtext=fontfile={_q(fp)}"
             f":text={_q(mood_hz)}"
-            f":fontsize=39:fontcolor=white@0.65"
+            f":fontsize=38:fontcolor=white@0.65"
             f":x={LX}:y={Y_MOOD}"
             f":shadowcolor=black@0.3:shadowx=1:shadowy=1[t3]",
 
-            # Thin divider
+            # Divider
             f"[t3]drawbox=x={LX}:y={Y_DIV}:w={1080-LX*2}:h=1:color=white@0.20:t=fill[t4]",
 
-            # CTA — gold, prominent
+            # CTA
             f"[t4]drawtext=fontfile={_q(fp)}"
             f":text='>> WATCH FULL VERSION'"
             f":fontsize=40:fontcolor=0xFFD700"
             f":x={LX}:y={Y_CTA}"
             f":shadowcolor=black@0.6:shadowx=2:shadowy=2[t5]",
 
-            # Link text — subtle
+            # Link text
             f"[t5]drawtext=fontfile={_q(fp)}"
             f":text={_q(link_line)}"
-            f":fontsize=33:fontcolor=white@0.65"
+            f":fontsize=32:fontcolor=white@0.62"
             f":x={LX}:y={Y_LINK}"
             f":shadowcolor=black@0.4:shadowx=1:shadowy=1,"
             f"fade=t=in:st=0:d=1,"
@@ -238,7 +279,8 @@ def run(brain: dict, draft_dir: str) -> str:
             out_path,
         ]
 
-        print("[short] Generating Short (Now Playing card layout)...")
+        print(f"[short] Hook: '{hook1} / {hook2}'  Raga font: {raga_fs}px  Instr font: {instr_fs}px")
+        print("[short] Generating Short...")
         subprocess.run(cmd, check=True, stdin=subprocess.DEVNULL, cwd=ROOT_DIR)
 
         size_mb = os.path.getsize(out_path) / 1_048_576
