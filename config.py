@@ -56,7 +56,7 @@ WEEKLY_SCHEDULE = {
         # ── overrides ────────────────────────────────────────────────────────
         "hz_frequency":       "741Hz",
         "title":              None,
-        "thumbnail_hook":     "MIDNIGHT FOCUS",
+        "thumbnail_hook":     "MIND WON'T FOCUS?",
         "thumbnail_instr":    "VEENA & TABLA · RAAG CHANDRAKAUNS",
         "thumbnail_tagline":  "Dissolve Brain Fog & Think With Clarity",
         "playlist":           "focus",
@@ -82,7 +82,7 @@ WEEKLY_SCHEDULE = {
         # ── overrides ────────────────────────────────────────────────────────
         "hz_frequency":       "174Hz",
         "title":              None,
-        "thumbnail_hook":     "CORTISOL DROP",
+        "thumbnail_hook":     "TOO MUCH STRESS?",
         "thumbnail_instr":    "SITAR & BANSURI · RAAG YAMAN KALYAN",
         "thumbnail_tagline":  "Drop Your Cortisol & Unwind After a Long Day",
         "playlist":           "stress",
@@ -109,7 +109,7 @@ WEEKLY_SCHEDULE = {
         # ── overrides ────────────────────────────────────────────────────────
         "hz_frequency":       "528Hz",
         "title":              None,
-        "thumbnail_hook":     "OVERTHINKING OFF",
+        "thumbnail_hook":     "ANXIETY WON'T GO?",
         "thumbnail_instr":    "BANSURI FLUTE · RAAG BAGESHRI",
         "thumbnail_tagline":  "Stop Overthinking & Let Your Mind Finally Rest",
         "playlist":           "stress",
@@ -137,7 +137,7 @@ WEEKLY_SCHEDULE = {
         # ── overrides ────────────────────────────────────────────────────────
         "hz_frequency":       "432Hz",
         "title":              None,
-        "thumbnail_hook":     "DEEP SLEEP NOW",
+        "thumbnail_hook":     "CAN'T FALL ASLEEP?",
         "thumbnail_instr":    "SANTOOR & TANPURA · RAAG YAMAN",
         "thumbnail_tagline":  "432Hz to Release Melatonin & Fall Asleep Fast",
         "playlist":           "sleep",
@@ -165,9 +165,9 @@ WEEKLY_SCHEDULE = {
         # ── overrides ────────────────────────────────────────────────────────
         "hz_frequency":       "432Hz",
         "title":              None,
-        "thumbnail_hook":     "MORNING PRANA",
+        "thumbnail_hook":     "MORNING ANXIETY?",
         "thumbnail_instr":    "SITAR, SAROD & TABLA · RAAG BHUPALI",
-        "thumbnail_tagline":  "Morning Prana Flow to Reset Cortisol & Awaken Your Body",
+        "thumbnail_tagline":  "Reset Morning Cortisol & Start Your Day with Calm Energy",
         "playlist":           "morning",
     },
 
@@ -192,7 +192,7 @@ WEEKLY_SCHEDULE = {
         # ── overrides ────────────────────────────────────────────────────────
         "hz_frequency":       "396Hz",
         "title":              None,
-        "thumbnail_hook":     "MIDNIGHT CALM",
+        "thumbnail_hook":     "MIND WON'T STOP?",
         "thumbnail_instr":    "SITAR, BANSURI & TABLA · RAAG DARBARI",
         "thumbnail_tagline":  "Silence an Overactive Mind & Reset Your Nervous System",
         "playlist":           "midnight",
@@ -219,7 +219,7 @@ WEEKLY_SCHEDULE = {
         # ── overrides ────────────────────────────────────────────────────────
         "hz_frequency":       "432Hz",
         "title":              None,
-        "thumbnail_hook":     "CORTISOL CALM",
+        "thumbnail_hook":     "MORNING ANXIETY?",
         "thumbnail_instr":    "BANSURI & TANPURA · RAAG BHAIRAVI",
         "thumbnail_tagline":  "Lower Morning Cortisol & Reset for the Week Ahead",
         "playlist":           "morning",
@@ -236,6 +236,11 @@ CONTENT_SEEDS = {
         # Science-backed hooks — high search intent, proven in healing music niche
         "Lower Cortisol", "Parasympathetic Reset", "Melatonin Boost", "HRV Calm",
         "Cortisol Relief", "Nervous System Reset", "Deep Nervous System Healing",
+        # Competitor-validated high-view hooks (SoulfulBreathscape, ShantiofSitar)
+        "Mental Health", "Sitar for Mental Health", "Calm Your Nervous System",
+        "Calm Stress & Quiet Overthinking", "Calm Mind & Gentle Focus",
+        "Calm, Clarity & Mental Peace", "Positive Energy & Peace",
+        "Stress Relief & Deep Focus", "Relaxation & Clarity",
     ],
     "atmosphere_hooks": [
         "Monsoon Rain", "Temple at Dawn", "Candlelight", "Midnight Stillness",
@@ -243,9 +248,19 @@ CONTENT_SEEDS = {
         "Desert Night", "River Fog",
     ],
     "title_patterns": [
-        # Top formula — pain point + emoji + raga + hz + instruments + benefit
+        # ── HIGHEST PERFORMING (competitor-validated) ─────────────────────────
+        # Question hook — SoulfulBreathscape gets 643K, 195K, 187K with this
+        # Format: "Morning Anxiety? 🌱 | Raag X inspired Bansuri to Calm Stress"
+        "{question_hook}? {emoji} | Raag {raga} inspired {instrument} to {benefit}",
+        "{question_hook}? {emoji} | Raag {raga} inspired {instrument} for {use_case}",
+        # Instrument-first — ShantiofSitar gets 220K, 121K with this
+        # Format: "Sitar to Start Your Day | Indian Classical | Music Meditation"
+        "{instrument} for {mental_health_term} | Raag {raga} | {hz} Indian Classical",
+        "1 Hour {instrument} | Raag {raga} {hz} | {outcome}",
+        # ── PROVEN PATTERNS (our existing) ───────────────────────────────────
+        # Pain point + emoji + raga + hz + instruments + benefit
         "{pain_point} {emoji} Raag {raga} at {hz} | {instruments} for {use_case}",
-        # Emotional / vulnerable hooks (perform best for late-night & anxiety content)
+        # Emotional / vulnerable hooks
         "When Your {pain_noun} Won't {verb} {emoji} Raag {raga} {hz} | {instruments} for {use_case}",
         "For the {atmosphere} {emoji} Raag {raga} at {hz} | Healing {instruments}",
         "Some Nights Your Mind Won't Slow Down {emoji} {raga} {hz} {instrument1} | Deep {outcome}",
@@ -255,7 +270,34 @@ CONTENT_SEEDS = {
         # Atmosphere-led
         "{atmosphere} {emoji} {instruments} | Raag {raga} for {outcome}",
     ],
+    # Question hooks that drive clicks (competitor-validated)
+    "question_hooks": {
+        "morning":  ["Morning Anxiety", "Can't Start Your Day", "Morning Feel Heavy",
+                     "Mind Already Racing", "Cortisol Too High This Morning"],
+        "stress":   ["Too Much Stress", "Anxiety Won't Go", "Mind Won't Calm Down",
+                     "Can't Relax After Work", "Body Still Tense"],
+        "sleep":    ["Can't Fall Asleep", "Mind Won't Stop at Night", "Sleep Won't Come",
+                     "Lying Awake Again", "Overthinking at Night"],
+        "focus":    ["Mind Won't Focus", "Brain Fog Won't Lift", "Stuck in Your Thoughts",
+                     "Can't Concentrate", "Mind Keeps Wandering"],
+        "midnight": ["Mind Won't Settle", "Overactive Mind Tonight", "Thoughts Won't Stop",
+                     "Can't Quiet Your Mind", "Overthinking Before Bed"],
+    },
+    # Mental health terms (ShantiofSitar pattern)
+    "mental_health_terms": [
+        "Mental Health", "Mental Clarity", "Nervous System Calm",
+        "Deep Focus", "Stress Relief", "Inner Peace", "Deep Sleep",
+        "Anxiety Relief", "Emotional Healing", "Mind & Soul",
+    ],
     "hook_phrases": [
+        # ── Question hooks (competitor-validated — SoulfulBreathscape) ────────
+        "Morning anxiety? This is your reset.",
+        "Too much stress? Let this raga absorb it.",
+        "Mind won't stop? Let the sitar do what sleep can't.",
+        "Anxiety won't go? Ancient strings know this feeling.",
+        "Stuck in your thoughts? This is the way out.",
+        "Can't fall asleep? Let this raga carry you.",
+        # ── Original hooks ───────────────────────────────────────────────────
         # Stress / anxiety
         "Your stress ends here.",
         "Put the world down. For now, nothing is your problem.",

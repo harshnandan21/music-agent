@@ -113,10 +113,19 @@ def run(client) -> dict:
             "  · All ≤70 chars\n"
         )
 
-    seeds_outcomes  = ", ".join(CONTENT_SEEDS["outcome_hooks"][:14])
+    seeds_outcomes  = ", ".join(CONTENT_SEEDS["outcome_hooks"][:18])
     seeds_atmos     = ", ".join(CONTENT_SEEDS["atmosphere_hooks"][:8])
     seeds_patterns  = "\n".join(f"  · {p}" for p in CONTENT_SEEDS["title_patterns"])
-    seeds_hooks     = "\n".join(f"  · {p}" for p in CONTENT_SEEDS["hook_phrases"][:8])
+    seeds_hooks     = "\n".join(f"  · {p}" for p in CONTENT_SEEDS["hook_phrases"][:12])
+    # Question hooks for this day's use case
+    use_case_key = schedule.get("use_case", "")
+    q_key = ("morning" if "morning" in use_case_key else
+             "sleep" if "sleep" in use_case_key else
+             "focus" if "focus" in use_case_key or "study" in use_case_key else
+             "midnight" if "midnight" in use_case_key or "overactive" in use_case_key else
+             "stress")
+    q_hooks = ", ".join(CONTENT_SEEDS.get("question_hooks", {}).get(q_key, []))
+    mh_terms = ", ".join(CONTENT_SEEDS.get("mental_health_terms", [])[:6])
     seeds_avoid     = ", ".join(CONTENT_SEEDS["avoid_generic"])
     hz_note         = f"Hz frequency for this post: {locked['hz_frequency']}" if "hz_frequency" in locked else ""
 
@@ -142,15 +151,27 @@ TODAY'S POST CONFIG (from weekly schedule):
 
 CONTENT SEEDS (weave 1-2 naturally):
 - Outcome hooks: {seeds_outcomes}
+- Mental health terms (ShantiofSitar pattern): {mh_terms}
+- Question hooks for today's use case (SoulfulBreathscape pattern — 643K views): {q_hooks}
 - Atmosphere hooks: {seeds_atmos}
 - Title patterns (emotional/vulnerable hook preferred — highest CTR for this niche):
 {seeds_patterns}
-- Real examples of winning titles:
-  · "Late Night Anxiety Relief 🌙 Raag Darbari Kanada at 396Hz | Sitar, Bansuri & Tabla for Overthinking"
+- Real examples of winning titles (competitor research — actual view counts):
+  · "Morning Anxiety? 🌱 | Raag Bhairavi inspired Bansuri to Calm Stress & Quiet Overthinking"  ← 643K views
+  · "Morning Anxiety? 🌱 | Raag Bhairavi inspired Bansuri (Complete Version) for Calm & Clarity"  ← 195K views
+  · "Morning Peace 🌱 | Raag Bhupali inspired Bansuri for Calm Mind & Gentle Focus"  ← 187K views
+  · "Too Much Stress? 🌱 | Raag Chandrakauns inspired Sitar for Calm, Clarity & Mental Peace"  ← 53K views
+  · "Sitar to Start Your Day | Indian Classical | Music Meditation"  ← 220K views
+  · "1 hour of Indian Classical Meditation Music | Sitar for Mental Health"  ← 121K views
+  · "Anxiety Wont Go? 🌱 | Raag Yaman inspired Sitar & Bansuri for Stress Relief"  ← 16K views
   · "When Your Mind Won't Sleep 🌙 Raag Darbari Kanada 396Hz | Sitar for Anxiety & Overthinking"
-  · "For the Sleepless Nights 🌙 Raag Darbari Kanada at 396Hz | Healing Sitar, Bansuri & Tabla"
   · "Some Nights Your Mind Won't Slow Down 🌙 Darbari Kanada 396Hz Sitar | Deep Anxiety Relief"
-  Rule: pain point or relatable moment first → emoji → Raag name + Hz → instruments → benefit
+
+  WINNING PATTERNS (use these frequently):
+  1. Question hook: "{Question}? {emoji} | Raag X inspired {instrument} to/for {benefit}"
+  2. Instrument-first: "{Instrument} for {Mental Health Term} | Raag X | {Hz} Indian Classical"
+  3. "1 Hour" explicit: "1 Hour {Instrument} | Raag X {Hz} | {Outcome}"
+  4. Emotion hook: "Morning Anxiety / Too Much Stress / Mind Won't Stop" → triggers instant self-identification
 - Emotional hook openers for description (pick the most fitting):
 {seeds_hooks}
 
