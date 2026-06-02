@@ -20,7 +20,7 @@ Daily flow:
 [8 AM cron / manual --draft]
     │
     └─► 01_draft.py (Gemini 2.5 Flash)
-            │  raga, title, description, keywords, image/music/video prompts
+            │  raga, title, 8 SEO titles, description, keywords, chapters, image/music/video prompts
             │  sends Telegram: APPROVE / REJECT
             ▼
     [User approves on Telegram]
@@ -54,9 +54,10 @@ music-agent/
 ├── railway.toml                 # Railway cron config (2:30 AM UTC = 8 AM IST)
 ├── nixpacks.toml                # Railway build config (ffmpeg + python312)
 ├── assets/
-│   └── logo.png                 # DhunDetox circular brand logo (stamped on every video)
+│   ├── logo.png                 # DhunDetox circular brand logo (source)
+│   └── logo_Npx.png             # Cached circular logo at specific size (generated)
 ├── steps/
-│   ├── 01_brain.py              # Gemini idea generator (title, description, prompts)
+│   ├── 01_brain.py              # Gemini idea generator (title, description, prompts, chapters)
 │   └── 07_upload.py             # YouTube upload (OAuth, video, thumbnail, playlist, tags)
 ├── studio/
 │   ├── orchestrator.py          # Unified entrypoint: --draft / --publish / --cleanup
@@ -69,6 +70,10 @@ music-agent/
 │       ├── 04_upload.py         # Thin wrapper → calls steps/07_upload.py
 │       ├── auto_music.py        # AUTO: generate Lyria clips
 │       └── auto_image.py        # AUTO: generate Gemini background image
+├── build_chandrakauns.py        # One-off build script for 2026-06-01 post
+├── build_yaman.py               # One-off build script for 2026-06-02 post
+├── update_tags.py               # Utility: backfill tags on existing YouTube videos
+├── update_bhupali.py            # Utility: backfill SEO improvements for Bhupali post
 ```
 
 ---
@@ -94,26 +99,47 @@ Single source of truth for the entire pipeline.
 
 Calls Gemini 2.5 Flash to generate all post metadata.
 
-**What Gemini writes:** title (if not locked), description, keywords, tags, music_prompt, image_prompt, video_prompt, hook_angle, hook_phrase, thumbnail_hook, thumbnail_tagline.
+**What Gemini writes:** title (if not locked), 8 SEO-optimised title options, description, keywords, tags, chapters, music_prompt, image_prompt, video_prompt, hook_angle, hook_phrase, thumbnail_hook, thumbnail_tagline.
 
 **Hard constraints:** any field set in `WEEKLY_SCHEDULE` is passed in a `LOCKED VALUES` section and then force-merged into the output via `data.update(locked)` — Gemini cannot override them.
 
-**Description template (11 sections, plain text — no Markdown):**
-1. Emoji + SEO title repeat
-2. 2-3 sentence hook (pain point, punchy)
-3. Raga + Hz benefit + instrument paragraph
-4. Hook phrase (quoted)
-5. Cultural/historical context of the raga
-6. PERFECT FOR: 8 bullet points
-7. WHY RAAG X HEALS: parasympathetic + Hz science
-8. HOW TO USE: 8-step numbered list
-9. Hindi section (3-4 lines + translated hook phrase)
-10. CTA (like, subscribe, comment question, save)
-11. Disclaimer + 15 hashtags
+**8 SEO Title Patterns (competitor research-based):**
+Each title ≤70 chars, includes raga + Hz + instruments + use-case benefit. 8 patterns generated per post:
+- Pattern A: Benefit-first — `"Melt Evening Stress | Raga X | Sitar & Bansuri 174Hz"`
+- Pattern B: Hz-first — `"174Hz Cortisol Drop | Raga X | Sitar & Bansuri Evening"`
+- Pattern C: Intent-first — `"Unwind After Work | Yaman Kalyan Sitar & Bansuri | 174Hz"`
+- Pattern D: Compound phrase — `"Evening Raga for Stress Relief | Raga X | Sitar 174Hz"`
+- Pattern E: Emotional hook — `"Release the Day 🌆 Raag X 174Hz | Sitar & Bansuri"`
+- Pattern F: Proven keyword — `"Lower Cortisol with Raga X | 174Hz Sitar & Bansuri"`
+- Pattern G: Frequency-first — `"174Hz Evening Calm | Raag X | Indian Sitar & Flute"`
+- Pattern H: Compressed hook — `"Stress Melt 🌆 Raag X 174Hz | Sitar & Bansuri Evening"`
+
+**Description template (300–400 words, 9 sections):**
+1. First 125 chars: keyword-first (no emoji at start) — shown before "Show More"
+2. 2–3 sentence hook (pain point, punchy)
+3. Hook phrase (quoted)
+4. Chapters (0:00 → 58:00) — YouTube indexes these as keywords
+5. Raga cultural context (2–3 sentences)
+6. PERFECT FOR: 6 bullet points
+7. WHY RAAG X HEALS: 2 sentences (parasympathetic + Hz science)
+8. Hindi section (3–4 lines + translated hook phrase)
+9. CTA + Disclaimer + 15 hashtags
+
+**`chapters` field in brain.json:**
+```json
+"chapters": [
+  {"time": "0:00", "title": "Introduction — Setting the Intention"},
+  {"time": "5:00", "title": "Alap — Free Exploration of Raag X"},
+  {"time": "15:00", "title": "Vilambit — Slow & Deep Meditation"},
+  {"time": "35:00", "title": "Madhya Laya — Deepening the Stillness"},
+  {"time": "52:00", "title": "Samapti — Resolution & Inner Peace"},
+  {"time": "58:00", "title": "Outro — Carry the Calm Forward"}
+]
+```
 
 **Keyword string:** 470-480 chars, comma-separated, no spaces after commas. Pattern: raga variations → instrument+raga combos → instrument alone → meditation/healing terms → emotion terms → channel name → Hindi keywords at end.
 
-**Tags:** built from curated `tags[]` first, then keywords string fills remaining budget. Total budget: 470 chars. No per-tag character limit. English-only (ASCII filter).
+**Tags:** 20–24 quality tags, targeting 440–460 chars total budget (YouTube allows 500 but rejects above ~465 in practice). English-only (ASCII filter). First tag = primary keyword (raag name).
 
 **Anti-repeat tracking:** last 20 published ideas loaded from `used_ideas.json`; titles + dates injected into prompt so Gemini avoids repeated angles.
 
@@ -127,15 +153,16 @@ Uploads to YouTube via Data API v3 with OAuth 2.0.
 1. Start with curated `tags[]` array (priority, best terms)
 2. Fill remaining budget from `keywords` string
 3. ASCII filter (no Hindi tags — YouTube rejects them)
-4. Total budget: 470 chars (YouTube limit is 500 — 30-char safety margin)
+4. Total budget: 470 chars (YouTube hard-rejects above ~465 in practice)
 5. No per-tag length limit
 
 **Key behaviours:**
-- Network retry: 5 attempts with exponential backoff (5s, 10s, 20s, 40s, 80s) on `ConnectionResetError` during large file upload.
+- Network retry: infinite retries with 30s wait on any network error (keeps resumable upload URI alive through connection drops).
 - Strips Markdown from description: removes `*`/`**`, replaces `---` with `────────────────────────────`.
-- Scheduling: if `publish_at` (RFC3339 IST string) is passed → `privacyStatus: private` + `publishAt`; otherwise → `public`.
+- Scheduling: if `publish_at` (RFC3339 UTC string) is passed → `privacyStatus: private` + `publishAt`; otherwise → `public`. Must set during initial upload (cannot reschedule a video that's already public).
 - Thumbnail: PIL JPEG compression loop (quality 85 → 70 → 55 → 40) to stay under YouTube's 2MB limit.
 - Playlist: looks up playlist ID by key from `brain["playlist"]` → calls `playlistItems().insert()`.
+- Scopes include `youtube.force-ssl` for comment posting support.
 
 ---
 
@@ -161,18 +188,10 @@ All Telegram Bot interactions via `requests` (long-polling, no webhook).
 | `_download_file(file_id, save_path)` | Downloads any Telegram file by file_id via getFile + streaming GET |
 | `new_token()` | UUID hex (10 chars) — unique per session |
 
-**Callback data formats:**
-- Approval: `APPROVE_{token}` / `REJECT_{token}`
-- Schedule: `SCH_{token}_{day_offset}_{hour}` or `PUB_NOW_{token}`
-- Choice: `CHOICE_{token}_{code}`
-- Duration: `DUR_{token}_{minutes}` or `DUR_{token}_custom`
-
 **File receiving (Telegram → server):**
 - Audio: accepts `audio` or `document` messages with `.mp3/.wav/.m4a/.ogg/.flac` extension
 - Image: accepts `photo` messages (highest resolution) or `document` with `.png/.jpg/.jpeg`
 - Telegram bot file size limit: 50MB — user should send MP3 (not WAV) for music
-
-**Image compression:** `_compress_for_telegram()` loops quality (85→70→55→40) until <9MB; last resort halves dimensions.
 
 ---
 
@@ -182,11 +201,11 @@ Phase 1 of the studio workflow.
 
 1. Runs `steps/01_brain.py` via `importlib.util` (handles digit-prefixed module names).
 2. Saves `brain.json` to `studio/drafts/YYYY-MM-DD/`.
-3. Sends Telegram approval message with idea summary.
-4. Sends a `.txt` document with all three prompts bundled (easy copy-paste on phone):
-   - **Suno Custom Mode:** style field (raga, instruments, BPM, time_tag, no vocals) + structural lyrics markers (Alap → Vilambit Gat → Extended Meditation → Fade)
-   - **Gemini Pro — Background Image:** wraps `brain["image_prompt"]` from Gemini
-   - **Gemini Pro — Thumbnail:** Madhubani 60/40 composition (instrument dead-centre, clear text space right), mood + hook/tagline overlay notes
+3. Sends Telegram approval message with idea summary + all 8 title options.
+4. Sends a `.txt` document with all prompts bundled (easy copy-paste on phone):
+   - **Suno Custom Mode:** style field + structural lyrics markers
+   - **Gemini Pro — Background Image:** wraps `brain["image_prompt"]`
+   - **Veo — Video Prompt:** 8-second seamless loop animation guide
 5. Waits 10 hours for APPROVE tap. Timeout → auto-rejected.
 
 ---
@@ -210,29 +229,33 @@ Extends 1 or 2 user-provided clips to target duration (default 20 min, configura
 Assembles the final `video.mp4`. Two modes:
 
 **Video clip mode (preferred)** — triggered when `clip.mp4` exists:
-- `-stream_loop -1` on the clip (Veo guarantees first == last frame, no dissolve needed)
-- Scale to 1920×1080 + 2s fade-in + 3s fade-out
+- Two-stage build to avoid Windows command-line length limits:
+  - Stage 1: 32 clips × xfade dissolve (0.5s) → `segment_5min.mp4` (~5 min)
+  - Stage 2: `stream_loop -1` on segment → 60-min final video
+- Pre-encodes audio separately (crossfade clips → loop to duration as AAC) before combining — avoids `aloop` filter which causes YouTube processing to get stuck
+- Logo overlay via FFmpeg: centered at 95.5% x / 93% y of frame
 
 **Static image mode (fallback)** — when no `clip.mp4`:
-- Auto-discovers `background.png/jpg` (skips `thumbnail.png/jpg`)
-- `-loop 1` on the image + same scale/fade filters
+- Accepts single path or list of audio files
+- Pre-encodes audio: `acrossfade=d=5` between clips → loop to full duration as AAC file → `-c:a copy` in final video
+- `-loop 1` on the watermarked image + scale/fade filters
+- Uses `-vf` (simple filter) for video, `-map 1:a` for pre-encoded audio stream
 
 **Logo stamping (`_stamp_logo`):**
 - Runs automatically before every static image assembly
-- Loads `assets/logo.png` — DhunDetox circular brand logo
-- Resizes to 160×160px, applies circular crop (fully opaque, no transparency)
-- Pastes at bottom-right corner with 20px padding
-- Saves as `image_watermarked.png` and uses that for assembly
+- `LOGO_SIZE = 180px` — large enough to fully cover Gemini/AI watermarks
+- Position: centered at `cx = width × 95.5%`, `cy = height × 93%` — mathematically ensures logo stays fully within 1920×1080 video frame after FFmpeg scaling (bottom: 1051/1080px, right: 1895/1920px)
+- `_make_circular_logo(size)` — creates circular PNG from `assets/logo.png`, cached as `assets/logo_Npx.png`
 - Silently skips if `assets/logo.png` doesn't exist
 
-**Both modes produce:** 1920×1080, H.264, AAC 192k, `+faststart`, duration matches audio exactly.
+**Both modes produce:** 1920×1080, H.264 CRF 20, AAC 256kbps, `+faststart`.
 
 ---
 
 ### `studio/steps/04_upload.py`
 
 Thin wrapper: finds `video.mp4` + best available thumbnail → calls `steps/07_upload.py`.  
-Thumbnail priority: `thumbnail.png` → `thumbnail.jpg` → `background.png` → `background.jpg`.  
+Thumbnail priority: `thumbnail.png` → `thumbnail.jpg` → `background.png` → `background.jpg` → any PNG/JPG in draft folder.  
 Passes `publish_at` through for scheduled publishing.
 
 ---
@@ -242,31 +265,14 @@ Passes `publish_at` through for scheduled publishing.
 Unified entrypoint with mode selection and auto-cleanup.
 
 **`_auto_cleanup()` — runs at every startup:**
-- Draft folders **≥3 days old**: deletes `video.mp4` + `music.mp3` (frees ~500MB per post, video already on YouTube)
+- Draft folders **≥3 days old**: deletes `video.mp4` + `music.mp3` (frees ~500MB per post)
 - Draft folders **≥30 days old**: deletes entire folder
-- Parses folder name as `YYYY-MM-DD` date to determine age
 
-**`--draft`**
-1. Guards against overwriting: skips if `brain.json` exists unless `--force` passed.
-2. Retry loop: up to 3 attempts on rejection.
-3. After approval: asks **AUTO or MANUAL** via Telegram inline buttons.
+**`--draft`** → Gemini generates idea → Telegram approval → AUTO or MANUAL mode selection
 
-**AUTO mode:**
-- Asks target duration → runs Lyria music generation → extends → Gemini image → assembles → upload approval → uploads.
+**MANUAL mode** → **📱 Telegram** or **💻 Laptop** sub-choice
 
-**MANUAL mode:**
-- Asks **📱 Telegram** or **💻 Laptop** via inline buttons:
-  - **Telegram:** bot waits for `.mp3` file → waits for image → asks duration → extend → assemble → upload approval → uploads. Fully hands-off after sending files.
-  - **Laptop:** sends drop-file instructions and exits. User runs `--publish` manually.
-
-**`--publish`** (laptop / AUTO resume)
-- Sends Telegram progress updates at each step.
-- Skip guards: skips extend if `music.mp3` exists; skips assemble if `video.mp4` is non-empty.
-- After assembly: sends Telegram approval (6h timeout) → schedule prompt (3h timeout) → uploads.
-- `--date YYYY-MM-DD` to publish a specific draft.
-
-**`--cleanup [--days N]`** (default 30 days)
-- Manually delete draft folders older than N days.
+**`--publish`** → extend → assemble → Telegram upload approval → schedule prompt → upload
 
 ---
 
@@ -278,25 +284,25 @@ Entry point for cloud deployments (Hetzner / Railway).
 2. Reads `YOUTUBE_CLIENT_SECRET_JSON` env var → base64-decodes → writes `client_secret.json`
 3. Runs `studio/orchestrator.py --draft`
 
-Used by the daily cron job on the server.
-
 ---
 
-### `setup.sh`
+## YouTube SEO Strategy
 
-One-command Hetzner server setup. Run as root: `bash setup.sh`
+### Tags
+- **Budget:** 440–460 chars (YouTube shows 500 but rejects above ~465 in practice)
+- **Count:** 20–24 quality tags
+- **Order:** primary keyword first, then raga variations, instruments, broad categories, long-tail combos, brand last
+- **No Hz terms** in the keywords string (YouTube may flag medical/frequency claims)
 
-Steps:
-1. Install system packages: Python 3.12, FFmpeg, Git, pip
-2. Clone repo from GitHub
-3. Create Python virtualenv + install `requirements.txt`
-4. Interactive prompt for all `.env` values (API keys, playlist IDs)
-5. Interactive prompt for base64-encoded `youtube_token.json` + `client_secret.json`
-6. Install cron job: `30 2 * * *` (2:30 AM UTC = 8 AM IST)
+### Description
+- **First 125 chars:** keyword-first, no emoji at start — shown before "Show More" button
+- **Chapters:** baked in after the hook — YouTube indexes each chapter title as a mini-keyword
+- **Length:** 300–400 words (not 1000+ — shorter descriptions get better engagement)
+- **Hindi section:** kept — unique SEO advantage, captures Hindi search traffic competitors miss
+- **Hashtags:** exactly 15 (YouTube ignores all if >15)
 
-### `deploy.sh`
-
-Re-deploy script for code updates: `git pull` + `pip install -r requirements.txt`.
+### Title Patterns
+8 options generated per post across patterns: benefit-first, Hz-first, intent-first, compound phrase, emotional hook, proven keyword, frequency-first, compressed hook.
 
 ---
 
@@ -324,23 +330,17 @@ Re-deploy script for code updates: `git pull` + `pip install -r requirements.txt
 | `sleep` | Sleep & Deep Rest |
 | `midnight` | Midnight Calm |
 
-Playlist IDs live in `.env` as `YT_PLAYLIST_MORNING`, `YT_PLAYLIST_FOCUS`, etc.
-
 ---
 
 ## Drop Files Reference
 
-Before running `--publish` (or sending via Telegram), provide:
-
 | File | Required | Notes |
 |---|---|---|
-| `clip_1.mp3` | Yes | Primary music clip (Suno or manual recording) |
+| `clip_1.mp3` | Yes (static mode) | Primary music clip (Suno) |
 | `clip_2.mp3` | No | Second variation — interleaved with clip_1 |
-| `clip.mp4` | No | 8-second Veo loop — preferred over background image |
-| `background.png` | If no clip.mp4 | 1920×1080 Madhubani background (Gemini Pro) |
-| `thumbnail.png` | No | High-contrast thumbnail (Gemini Pro, 16:9) |
-
-When sending via **Telegram**: send `.mp3` file first, then image. Bot auto-names them `clip_1.mp3` and `image.png`.
+| `clip.mp4` | No | 8–10s animated loop (Kling/Veo) — preferred for richer visuals |
+| `background.png` | If no clip.mp4 | 16:9 Madhubani background (Gemini Pro) |
+| `thumbnail.png` | No | High-contrast thumbnail with baked-in text |
 
 ---
 
@@ -369,27 +369,27 @@ YOUTUBE_CLIENT_SECRET_JSON=<base64 of client_secret.json>
 
 ## Key Design Decisions
 
-**Plain text descriptions** — YouTube renders `**bold**` and `---` as literal characters. All Markdown was removed from the brain prompt template and a safety strip (`re.sub`) was added in the upload step.
+**Pre-encoded audio (no aloop filter)** — The FFmpeg `aloop` filter creates non-standard audio streams that cause YouTube to get stuck in "processing" state for hours. All builds now pre-encode audio in two steps: (1) crossfade clips → combined WAV, (2) loop to target duration as AAC file, then use `-c:a copy` in the final video. This produces standard streams YouTube processes within minutes.
 
-**Tags: curated first, keywords fill** — The `tags[]` array (15 curated terms) takes priority. The `keywords` string fills remaining budget up to 470 chars. This ensures the best terms always appear while maximising discoverability. No per-tag character limit (YouTube only enforces total budget).
+**Logo covers AI watermark** — AI image generators (Gemini, ChatGPT, Kling) embed watermarks at ~96-97% of image dimensions. Logo size 180px centered at `width × 95.5% / height × 93%` covers the watermark while keeping the full circle visible in the 1080p video frame (math: bottom at 1051/1080px, right at 1895/1920px after FFmpeg scaling).
 
-**Network retry on upload** — Large video uploads (~400-500MB) occasionally hit `ConnectionResetError` mid-upload. Five attempts with exponential backoff (5→80s) recover without restarting the upload from scratch (resumable upload URI is preserved).
+**Two-stage animated video build** — 379 FFmpeg inputs (for 60-min from a 10s clip) exceeds Windows command-line length limit (32,767 chars). Solution: build a ~5-min segment from 32 clips with xfade dissolve, then use `stream_loop -1` on the segment for the full 60-min video.
 
-**Brand logo stamp** — Gemini-generated images include a Gemini watermark. `_stamp_logo()` in `03_assemble.py` overlays the DhunDetox circular logo (fully opaque, 160px, bottom-right) before every video assembly, covering the Gemini mark and adding brand identity.
+**8 SEO title patterns** — Research from top channels (Meditative Mind, Greenred Productions, Yellow Brick Cinema) showed benefit-first and Hz-first titles outperform emotional/poetic hooks for discoverability. Gemini now generates 8 options per post across all proven patterns.
 
-**Auto-cleanup on startup** — Video files (~500MB each) are only needed until upload. `_auto_cleanup()` deletes `video.mp4` + `music.mp3` after 3 days, freeing ~1GB/week automatically. Brain.json and images are kept indefinitely.
+**Audio crossfade between clips (5s)** — `acrossfade=d=5` between Suno-generated clips creates a smooth 5-second overlap instead of an abrupt join. Used in both the pre-encode step (multi-clip audio) and the extend step.
 
-**Telegram file receiver** — On a headless server (Hetzner), users can send music and image files directly via Telegram. The bot downloads them, saves to the draft folder, and runs the full pipeline without any laptop interaction.
+**Tags: 440–460 chars safe zone** — YouTube's API rejects tags above ~465 chars despite showing "500/500" limit in Studio. Discovered empirically. Brain prompt targets 440–460 to stay safe.
 
-**Cross-dissolve baked into loop unit** — Simply looping an 8-second clip creates a visible cut at the repeat point. The dissolve is pre-baked into the loop unit (last 0.5s blends into first 0.5s), so `stream_loop -1` produces a seamless 20-minute video.
+**Description chapters** — YouTube indexes each chapter title as a searchable keyword. Adding 6 chapters per video (0:00 → 58:00) effectively adds 6 more keyword-rich entries to YouTube's index for free.
 
-**Iterative pair-wise crossfade merge** — A single FFmpeg `filter_complex` with 50 audio inputs would exceed graph size limits. Sequential pair-wise merging keeps each FFmpeg call small and reliable.
+**Quality first, CRF 20** — Audio and video quality is the primary product. CRF 20 (high quality) is maintained for all output. File size (5GB for animated 60-min) is accepted as the trade-off.
 
-**Draft overwrite guard** — Re-running `--draft` on a day that already has `brain.json` silently skips unless `--force` is passed, preventing accidental idea replacement.
+**Network retry on upload** — Infinite retry with 30s wait on any network error preserves the resumable upload URI through connection drops. Previous 5-attempt limit was too aggressive for large files on unstable connections.
 
-**Corrupt video guard** — FFmpeg can crash mid-write, leaving a 0-byte `video.mp4`. The orchestrator checks `os.path.getsize(video_path) > 0` and re-assembles if needed.
+**Plain text descriptions** — YouTube renders `**bold**` and `---` as literal characters. All Markdown removed from brain prompt; safety strip (`re.sub`) in upload step handles any leftovers.
 
-**Windows-only PATH injection** — `config.py` only injects Shotcut's FFmpeg into PATH on Windows (`os.name == "nt"`). Linux servers (Hetzner) use system FFmpeg installed via `apt`.
+**Auto-cleanup on startup** — Video files (~500MB–5GB each) only needed until upload. `_auto_cleanup()` deletes `video.mp4` + `music.mp3` after 3 days, freeing space automatically.
 
 ---
 
