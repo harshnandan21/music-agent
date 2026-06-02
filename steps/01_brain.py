@@ -95,21 +95,32 @@ def run(client) -> dict:
         title_instruction = (
             "Generate 8 SEO-optimised title options (≤70 chars each). "
             "Pick the strongest as 'title'. Put all 8 in 'title_options'.\n\n"
-            "SEO TITLE PATTERNS (from top meditation channels research):\n"
-            "  Pattern A — Benefit-first:   'Melt Evening Stress | Raga X | Sitar & Bansuri 174Hz'\n"
-            "  Pattern B — Hz-first:        '174Hz Cortisol Drop | Raga X | Sitar & Bansuri Evening'\n"
-            "  Pattern C — Intent-first:    'Unwind After Work | Yaman Kalyan Sitar & Bansuri | 174Hz'\n"
-            "  Pattern D — Compound phrase: 'Evening Raga for Stress Relief | Raga X | Sitar 174Hz'\n"
-            "  Pattern E — Emotional hook:  'Release the Day 🌆 Raag X 174Hz | Sitar & Bansuri'\n"
-            "  Pattern F — Proven keyword:  'Lower Cortisol with Raga X | 174Hz Sitar & Bansuri'\n"
-            "  Pattern G — Frequency-first: '174Hz Evening Calm | Raag X | Indian Sitar & Flute'\n"
+            "SEO TITLE PATTERNS — use ALL 8, one per pattern:\n\n"
+            "  ★ HIGHEST PERFORMING (competitor-validated view counts):\n"
+            "  Pattern A — Question hook (643K views): '{Question}? 🌱 | Raag X inspired {Instrument} to {benefit}'\n"
+            "    Examples: 'Morning Anxiety? 🌱 | Raag Bhairavi inspired Bansuri to Calm Stress'\n"
+            "              'Too Much Stress? 🌱 | Raag Chandrakauns inspired Sitar for Clarity'\n"
+            "              'Anxiety Wont Go? 🌱 | Raag Yaman inspired Sitar & Bansuri for Peace'\n"
+            "    → Use the question hooks provided in CONTENT SEEDS for today's use case\n\n"
+            "  Pattern B — Instrument-first (220K views): '{Instrument} for {Mental Health Term} | Raag X | {Hz}'\n"
+            "    Examples: 'Sitar for Mental Health | Raag Yaman Kalyan | 174Hz Indian Classical'\n"
+            "              'Bansuri for Stress Relief | Raag Bhairavi | 432Hz Meditation'\n\n"
+            "  Pattern C — 1 Hour explicit (121K views): '1 Hour {Instrument} | Raag X {Hz} | {Outcome}'\n"
+            "    Examples: '1 Hour Sitar | Raag Darbari 396Hz | Deep Midnight Calm'\n"
+            "              '1 Hour Bansuri | Raag Bhairavi 432Hz | Morning Cortisol Reset'\n\n"
+            "  ★ PROVEN PATTERNS (our channel):\n"
+            "  Pattern D — Benefit-first:   'Melt Evening Stress | Raag X | Sitar & Bansuri 174Hz'\n"
+            "  Pattern E — Hz-first:        '174Hz Cortisol Drop | Raag X | Sitar & Bansuri Evening'\n"
+            "  Pattern F — Intent-first:    'Unwind After Work | Yaman Kalyan Sitar & Bansuri | 174Hz'\n"
+            "  Pattern G — Emotional hook:  'Release the Day 🌆 Raag X 174Hz | Sitar & Bansuri'\n"
             "  Pattern H — Compressed hook: 'Stress Melt 🌆 Raag X 174Hz | Sitar & Bansuri Evening'\n\n"
             "RULES:\n"
+            "  · Patterns A, B, C MUST be included — they have the highest proven view counts\n"
             "  · Each title must include: raga name + Hz + instruments + use-case benefit\n"
-            "  · Lead with either: emotional hook, benefit keyword, Hz frequency, or use-case intent\n"
+            "  · Pattern A: use 'Raag X inspired' phrasing (broader audience appeal)\n"
+            "  · Pattern A: use question hooks from CONTENT SEEDS matching today's use case\n"
             "  · Use pipe | to separate clauses\n"
-            "  · Max 1 emoji per title, placed after the first clause\n"
-            "  · Vary the 8 patterns — don't repeat same structure\n"
+            "  · Max 1 emoji per title\n"
             "  · All ≤70 chars\n"
         )
 
@@ -338,15 +349,15 @@ Example: raag {schedule['raga'].lower()},raga {schedule['raga'].lower()},{instru
 TAGS GUIDANCE: Target 440–460 chars (YouTube shows 500 but rejects above ~465 in practice). English only. First tag = primary keyword (raag name). Then: raga name variations, instrument+raga combos, instrument alone, broad categories (meditation music, healing music, stress relief), long-tail benefit combos (raag X for anxiety, X meditation), emotion/use-case terms, channel brand (dhundetox) last. Each tag with spaces counts +2 chars toward the budget. Aim for 22–26 quality tags.
 
 {{
-  "title": "strongest of the 8 options — best SEO + CTR combination",
+  "title": "strongest of the 8 options — prioritise Pattern A (question hook) or B (instrument-first) as they have highest view counts",
   "title_options": [
-    "Pattern A — Benefit-first: 'Melt [use case] | Raga X | Instruments Hz'",
-    "Pattern B — Hz-first: '174Hz [benefit] | Raga X | Instruments [time of day]'",
-    "Pattern C — Intent-first: '[Specific intent] | Raga X Instruments | Hz'",
-    "Pattern D — Compound phrase: '[Time] Raga for [benefit] | Raga X | Instruments Hz'",
-    "Pattern E — Emotional hook: '[Hook] 🌆 Raag X Hz | Instruments [benefit]'",
-    "Pattern F — Proven keyword: 'Lower Cortisol / Deep Sleep / etc with Raga X | Hz Instruments'",
-    "Pattern G — Frequency-first: 'Hz [Time/Mood] | Raag X | Indian Instruments'",
+    "Pattern A — Question hook (643K views): '[Question]? 🌱 | Raag X inspired [Instrument] to/for [benefit]'",
+    "Pattern B — Instrument-first (220K views): '[Instrument] for [Mental Health Term] | Raag X | [Hz] Indian Classical'",
+    "Pattern C — 1 Hour explicit (121K views): '1 Hour [Instrument] | Raag X [Hz] | [Outcome]'",
+    "Pattern D — Benefit-first: 'Melt [use case] | Raag X | Instruments Hz'",
+    "Pattern E — Hz-first: '[Hz] [benefit] | Raag X | Instruments [time of day]'",
+    "Pattern F — Intent-first: '[Specific intent] | Raga X Instruments | Hz'",
+    "Pattern G — Emotional hook: '[Hook] 🌆 Raag X Hz | Instruments [benefit]'",
     "Pattern H — Compressed hook: '[2-word hook] 🌆 Raag X Hz | Instruments [use case]'"
   ],
   "description": "Full YouTube description following the template above (300–400 words). First 125 chars must be keyword-first. Chapters at section 3. Hindi section, CTA, disclaimer, hashtags at end.",
