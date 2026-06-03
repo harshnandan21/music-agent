@@ -219,7 +219,7 @@ WEEKLY_SCHEDULE = {
         # ── overrides ────────────────────────────────────────────────────────
         "hz_frequency":       "432Hz",
         "title":              None,
-        "thumbnail_hook":     "MORNING ANXIETY?",
+        "thumbnail_hook":     "CORTISOL CALM",
         "thumbnail_instr":    "BANSURI & TANPURA · RAAG BHAIRAVI",
         "thumbnail_tagline":  "Lower Morning Cortisol & Reset for the Week Ahead",
         "playlist":           "morning",
@@ -405,6 +405,11 @@ PLAYLISTS = {
         "name":   "Midnight Calm",
         "desc":   "For the nights your mind won't stop — late-night raga to silence an overactive mind, reset the nervous system, and find stillness.",
         "env":    "YT_PLAYLIST_MIDNIGHT",
+    },
+    "shorts": {
+        "name":   "Shorts",
+        "desc":   "30-60 second previews of DhunDetox Indian classical music.",
+        "env":    "YT_PLAYLIST_SHORTS",
     },
 }
 

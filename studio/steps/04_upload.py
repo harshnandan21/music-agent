@@ -96,7 +96,7 @@ def run_short(brain: dict, draft_dir: str) -> str | None:
         f"#{raga_tag} #IndianClassical #Meditation #Shorts #YouTubeShorts"
     )
     short_brain["tags"] = (brain.get("tags") or [])[:5] + ["Shorts", "YouTubeShorts"]
-    short_brain["playlist"] = ""  # don't add Shorts to the long-form playlist
+    short_brain["playlist"] = "shorts"  # DhunDetox Shorts playlist
 
     upload_mod = _load_upload_mod()
     video_id = upload_mod.run(short_brain, short_path, thumbnail_path=None)
