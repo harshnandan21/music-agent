@@ -179,9 +179,9 @@ CONTENT SEEDS (weave 1-2 naturally):
   · "Some Nights Your Mind Won't Slow Down 🌙 Darbari Kanada 396Hz Sitar | Deep Anxiety Relief"
 
   WINNING PATTERNS (use these frequently):
-  1. Question hook: "{Question}? {emoji} | Raag X inspired {instrument} to/for {benefit}"
-  2. Instrument-first: "{Instrument} for {Mental Health Term} | Raag X | {Hz} Indian Classical"
-  3. "1 Hour" explicit: "1 Hour {Instrument} | Raag X {Hz} | {Outcome}"
+  1. Question hook: "{{Question}}? {{emoji}} | Raag X inspired {{instrument}} to/for {{benefit}}"
+  2. Instrument-first: "{{Instrument}} for {{Mental Health Term}} | Raag X | {{Hz}} Indian Classical"
+  3. "1 Hour" explicit: "1 Hour {{Instrument}} | Raag X {{Hz}} | {{Outcome}}"
   4. Emotion hook: "Morning Anxiety / Too Much Stress / Mind Won't Stop" → triggers instant self-identification
 - Emotional hook openers for description (pick the most fitting):
 {seeds_hooks}
@@ -203,36 +203,46 @@ MUSIC PROMPT GUIDANCE (for Lyria — think like Indian classical recording engin
 - Anti-patterns to explicitly exclude: no Western instruments, no percussion fills, no sudden dynamics
 - Base on: {schedule['music_hints']}
 
-IMAGE PROMPT GUIDANCE (16:9 video background — rich Indian painterly style):
-Style: Rich Indian painting — Mughal miniature meets regional folk art (Madhubani, Pahari, Pattachitra).
-NOT flat/digital. Painterly, textured, deeply detailed, illustrative. Warm earthy pigments on aged parchment.
-Intricate hand-painted feel with fine crosshatching and stippling. Ornate botanical borders on all edges.
+IMAGE PROMPT GUIDANCE — AUTHENTIC MADHUBANI HEALING ART:
 
-Scene base to work from: {schedule['image_hints']}
+Structure the image_prompt exactly like this template — it must have all four sections:
 
-COMPOSITION — invent a fresh, polished approach that fits the raga and use case. Some archetypes:
-- Immersive landscape: musician(s) fully embedded in a rich atmospheric setting — river at dawn, monsoon garden,
-  moonlit terrace, forest clearing — with visible sound/music flowing outward as wisps, ripples, or light
-- The living scene: musician at centre surrounded by the raga's nature world — peacocks, deer, lotus,
-  birds — all gathered as if drawn by the music, rich foliage framing
-- The contemplative portrait: musician large in frame, instrument prominent, atmospheric landscape
-  behind them — painterly like a classical Indian miniature painting, mood-heavy
-- The two-world: one half of the scene shows tension/stillness (dark sky, bare branches, still water),
-  the other half shows bloom/relief (golden light, flowers opening, birds in flight) — musician at threshold
-- Or invent a composition entirely fitting to the specific raga, instruments, and emotion
+SECTION 1 — OPENING STYLE DECLARATION (word for word):
+"Create a breathtaking, authentic Madhubani (Mithila) folk-art masterpiece for a YouTube healing music video background. The artwork should feel sacred, calming, spiritual, and deeply connected to Indian culture and wellness traditions. Authentic Madhubani painting style, handmade folk-art appearance, museum-quality Mithila artwork, intricate black outlines, dense decorative patterns, traditional Indian aesthetics. Masterpiece, ultra-detailed, 8K, professional artwork, highly intricate patterns, elegant composition, timeless Indian folk-art beauty."
 
-Key rules:
-- Central figure: the {instruments_label} player(s), eyes closed or deeply focused, serene
-- Music flows visibly — as wisps, smoke, notes, light rays, ripples — from the instrument into the scene
-- Raga's signature nature elements must be present (peacock=Bageshri/Darbari, deer=Yaman, lotus=Bhairavi,
-  crescent moon=Chandrakauns, sunrise birds=Bhupali, river heron=water scenes)
-- Colour palette derived from raga mood and time of day:
-    monsoon/night → deep indigo, stormy teal, rose, silver
-    dawn → saffron, warm gold, ivory, fresh green
-    dusk → amber, crimson, peacock teal, turmeric
-    midnight → dark navy, deep violet, gold lamp-glow
-- Warm golden glow or soft halo behind the central musician
-- No text, no watermarks, no letters anywhere. Pure illustration only.
+SECTION 2 — CENTRAL SCENE (build from today's schedule and emotional direction):
+- Describe the central figure: a serene Indian musician ({instruments_label} player) OR a meditating figure depending on the scene
+  → Seated in a traditional posture, eyes closed, wearing an ornate saree or kurta decorated with Madhubani patterns, fish symbols, and geometric motifs. Radiating inner peace and healing energy.
+- Describe the setting derived from schedule image_hints: {schedule['image_hints']}
+- Describe the instruments: {instruments_label} richly decorated with traditional Madhubani linework and folk-art detailing, placed near the central figure
+- Emotional direction based on use case "{schedule['use_case']}":
+    deep sleep / melatonin → luminous crescent moon in deep indigo sky, moonlight reflecting on still water, deer resting nearby, lotus flowers closed for night, absolute stillness
+    stress relief / cortisol drop → dusk scene with warm golden light, flowing river, mango tree canopy, birds settling into branches, diyas reflecting in water
+    overthinking / anxiety → monsoon scene with ornamental rain, lone musician under an arched doorway, peacock sheltering under leaves, single candlelight
+    focus / deep work → moonlit midnight corner, oil lamp casting warm circle of light, geometric stars and moon outside window, instruments waiting in silence
+    morning / cortisol reset → radiant sunrise with concentric golden rings, birds in V-formation across sky, open terrace, flowering trees, sacred energy rising
+    overactive mind / midnight → deep midnight garden, crescent moon, three musicians under flowering tree, oil lamps in semicircle, animals listening in stillness
+- Include raga-specific nature elements:
+    Chandrakauns / Darbari → peacock as symbol of mystery, midnight geometry, crescent moon
+    Yaman / Santoor → graceful deer, twilight terrace, lotus pond with moonlight reflections
+    Bageshri → monsoon rain with teardrop motifs, peacock sheltering, candlelight
+    Bhairavi → Ganges riverbank at dawn, birds in flight, sunrise lotus
+    Bhupali → mountain terrace at sunrise, three musicians, radiant birds
+    Yaman Kalyan → lakeside at dusk, sitar and bansuri, diyas reflected in still water
+
+SECTION 3 — SCENE DETAILS AND ATMOSPHERE:
+- Background architecture: ancient Indian temple pavilion or natural landscape richly decorated with traditional Madhubani linework
+- Large sacred trees with patterned leaves arching across the scene, filled with birds and symbolic nature motifs
+- Sky filled with celestial patterns — crescent moon or rising sun with traditional Mithila symbolism
+- Riverbank or pond filled with lotus flowers, peacocks, deer, fish, and glowing fireflies
+- Every element contains authentic Madhubani decorative patterns and intricate hand-drawn textures
+- Soft ambient lighting — moonlit glow OR sunrise gold — magical dreamlike atmosphere with subtle golden highlights
+- Composition: large open central area with clean space for future text overlay; visually balanced and complete
+
+SECTION 4 — BORDER AND CLOSING (word for word):
+"Frame the entire artwork with an exquisite Madhubani border featuring peacocks, lotus flowers, fish motifs, sacred vines, geometric Mithila patterns, traditional floral elements, and fine black linework.
+Color palette: deep indigo blue, moonlit silver, earthy terracotta, warm ochre, emerald green, lotus pink, traditional Madhubani red, natural yellow pigments, subtle gold highlights.
+Negative prompt: No text, no title, no words, no frequency numbers, no logo, no watermark, no channel name, no labels, no duration stamp, no UI elements, no modern objects, no photorealism, no 3D render, no cartoon style, no anime, no blurry details, no empty background, no AI artifacts."
 
 THUMBNAIL PROMPT GUIDANCE (16:9 YouTube thumbnail — rich painterly style):
 Generate thumbnail_prompt as a SEPARATE image from the background. This is the YouTube thumbnail — it must have baked-in text and strong visual storytelling. Be creative with the composition — do NOT repeat the same layout every time.

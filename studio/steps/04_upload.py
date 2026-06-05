@@ -6,6 +6,16 @@ Thin wrapper around the root-level steps/07_upload.py.
 """
 
 import importlib.util, os, sys
+from datetime import datetime, timezone, timedelta
+
+
+def _tonight_11pm_ist() -> str:
+    ist    = timezone(timedelta(hours=5, minutes=30))
+    now    = datetime.now(ist)
+    target = now.replace(hour=23, minute=0, second=0, microsecond=0)
+    if target <= now:
+        target += timedelta(days=1)
+    return target.isoformat()
 
 STUDIO_DIR = os.path.dirname(os.path.dirname(__file__))
 ROOT_DIR   = os.path.dirname(STUDIO_DIR)
@@ -74,7 +84,7 @@ def run_short(brain: dict, draft_dir: str) -> str | None:
     elif hook:
         yt_title = f"{hook} | Raga {raga} #Shorts"
     else:
-        yt_title = f"Raga {raga} | 30 sec #Shorts"
+        yt_title = f"Raga {raga} | 60 sec #Shorts"
 
     main_id   = brain.get("main_video_id", "")
     full_link = f"https://youtu.be/{main_id}" if main_id else ""
@@ -92,15 +102,18 @@ def run_short(brain: dict, draft_dir: str) -> str | None:
     short_brain["title"] = yt_title[:100]
     short_brain["description"] = (
         f"{desc_hook}\n\n"
-        f"30-second preview of the full Indian classical music experience.{full_line}\n\n"
+        f"60-second preview of the full Indian classical music experience.{full_line}\n\n"
         f"#{raga_tag} #IndianClassical #Meditation #Shorts #YouTubeShorts"
     )
     short_brain["tags"] = (brain.get("tags") or [])[:5] + ["Shorts", "YouTubeShorts"]
     short_brain["playlist"] = "shorts"  # DhunDetox Shorts playlist
 
     upload_mod = _load_upload_mod()
-    video_id = upload_mod.run(short_brain, short_path, thumbnail_path=None)
-    print(f"[upload_short] Short live: https://youtu.be/{video_id}")
+    publish_at = _tonight_11pm_ist()
+    video_id   = upload_mod.run(short_brain, short_path, thumbnail_path=None, publish_at=publish_at)
+    from datetime import datetime as _dt
+    label = _dt.fromisoformat(publish_at).strftime('%d %b %Y %I:%M %p')
+    print(f"[upload_short] Short scheduled for {label} IST: https://youtu.be/{video_id}")
 
     # Post comment with the full-video link
     # Note: description links not tappable on mobile for newer channels;

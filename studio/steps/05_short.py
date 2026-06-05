@@ -13,7 +13,7 @@ STUDIO_DIR = os.path.dirname(os.path.dirname(__file__))
 ROOT_DIR   = os.path.dirname(STUDIO_DIR)
 
 CLIP_START = 30   # seconds into the audio to start the clip
-CLIP_DUR   = 30   # Short duration in seconds
+CLIP_DUR   = 60   # Short duration in seconds
 
 
 # ── Image generation ──────────────────────────────────────────────────────────

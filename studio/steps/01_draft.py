@@ -30,27 +30,12 @@ def _parse_instruments(instrument_str: str) -> list[str]:
 
 
 def _suno_prompt(brain: dict) -> str:
-    raga   = brain.get("raga", "Unknown")
     parts  = _parse_instruments(brain.get("instrument", "sitar"))
     instr1 = parts[0] if parts else "sitar"
     instr2 = parts[1] if len(parts) > 1 else ""
 
-    nocturnal_ragas = {"chandrakauns", "darbari", "bageshri", "yaman", "bhairavi", "malkauns", "kedar"}
-    time_tag = "nocturnal raga" if any(w in raga.lower() for w in nocturnal_ragas) else "meditative raga"
-
-    style_parts = [
-        "Indian classical instrumental",
-        f"Raag {raga}",
-        f"{instr1} lead",
-    ]
-    if instr2:
-        style_parts.append(f"{instr2} accompaniment")
-    style_parts += [
-        "45 BPM", time_tag,
-        "analog warmth", "long reverb tails",
-        "sparse arrangement", "no vocals",
-        "no Western instruments", "loop-friendly",
-    ]
+    # Use the rich Gemini-generated music_prompt as the Suno style field
+    style = brain.get("music_prompt", "")
 
     lyrics = (
         f"[Slow Alap - {instr1.title()} Solo]\n"
@@ -64,7 +49,7 @@ def _suno_prompt(brain: dict) -> str:
 
     return (
         f"SUNO CUSTOM MODE\n\n"
-        f"STYLE FIELD:\n{', '.join(style_parts)}\n\n"
+        f"STYLE FIELD:\n{style}\n\n"
         f"LYRICS FIELD:\n{lyrics}\n\n"
         f"TIP: Generate 2-3 clips. Use the one with the most silence and gravity. "
         f"Avoid clips that build to a dramatic climax."
@@ -72,7 +57,21 @@ def _suno_prompt(brain: dict) -> str:
 
 
 def _gemini_bg_prompt(brain: dict) -> str:
-    return f"GEMINI PRO — BACKGROUND IMAGE (16:9)\n\n{brain.get('image_prompt', '')}"
+    title    = brain.get("title", "")
+    hook     = brain.get("thumbnail_hook", "")
+    tagline  = brain.get("thumbnail_tagline", "")
+    prompt   = brain.get("image_prompt", "")
+    preamble = (
+        f"GEMINI PRO — BACKGROUND IMAGE (16:9)\n\n"
+        f"Context for this image:\n"
+        f"  Video title:  {title}\n"
+        f"  Hook:         {hook}\n"
+        f"  Tagline:      {tagline}\n\n"
+        f"The image must visually express the emotional state of the title above.\n"
+        f"A viewer should FEEL the use case just from looking — no text needed.\n\n"
+        f"IMAGE PROMPT:\n{prompt}"
+    )
+    return preamble
 
 
 def _veo_video_prompt(brain: dict) -> str:

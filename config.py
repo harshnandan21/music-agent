@@ -329,15 +329,16 @@ CONTENT_SEEDS = {
 
 # ── Madhubani visual style (shared by image + thumbnail prompts) ──────────────
 MADHUBANI_STYLE = (
-    "Madhubani folk painting style from Mithila, Bihar, India. "
-    "16:9 widescreen format. "
-    "Flat 2D perspective with bold hand-drawn black outlines. "
-    "Hand-painted texture on aged parchment or natural fabric. "
-    "Vibrant natural pigments: deep red, saffron yellow, peacock teal, forest green, "
-    "ivory white, turmeric gold. "
-    "Characteristic nature motifs: peacocks, lotus flowers, mango leaves, fish, deer, birds. "
-    "Intricate geometric and floral borders with elephants and paisley. "
-    "No text, no watermarks, no 3D shading, no photorealism, no Western art influence."
+    "Authentic Madhubani (Mithila) folk-art masterpiece. "
+    "Sacred, calming, spiritual, deeply connected to Indian culture and wellness traditions. "
+    "Authentic Madhubani painting style, handmade folk-art appearance, museum-quality Mithila artwork. "
+    "Intricate black outlines, dense decorative patterns, traditional Indian aesthetics. "
+    "Every element contains authentic Madhubani decorative patterns and intricate hand-drawn textures. "
+    "Exquisite Madhubani border featuring peacocks, lotus flowers, fish motifs, sacred vines, geometric Mithila patterns. "
+    "Color palette: deep indigo blue, moonlit silver, earthy terracotta, warm ochre, emerald green, "
+    "lotus pink, traditional Madhubani red, natural yellow pigments, subtle gold highlights. "
+    "Masterpiece, ultra-detailed, 8K, professional artwork, highly intricate patterns, timeless Indian folk-art beauty. "
+    "No text, no watermarks, no letters, no modern objects, no photorealism, no 3D render, no cartoon style."
 )
 
 # ── Video animation elements by scene type (for Veo/video_prompt guidance) ────

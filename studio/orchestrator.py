@@ -94,12 +94,63 @@ def _save_brain(brain: dict, draft_dir: str):
         json.dump(brain, f, indent=2, ensure_ascii=False)
 
 
+# ── Manual prompts helper ─────────────────────────────────────────────────────
+
+def _send_manual_prompts(brain: dict, date_str: str, file_mode: str = "LAPTOP"):
+    """Output Suno + Gemini prompts — to terminal if LAPTOP, to Telegram if TELEGRAM.
+    Reuses 01_draft.py's prompt builders so quality matches the draft .txt file."""
+    draft_step = _load_step("01_draft.py")
+    suno_text  = draft_step._suno_prompt(brain)
+    bg_text    = draft_step._gemini_bg_prompt(brain)
+
+    use_tg = (file_mode.upper() == "TELEGRAM")
+
+    def _out(plain: str, html: str = ""):
+        if use_tg:
+            tg.send_text(html or plain)
+        else:
+            print(plain)
+
+    # ── 1. SUNO custom mode ───────────────────────────────────────────────────
+    _out(
+        f"\n{'='*60}\n{suno_text}\n",
+        f"<b>🎵 SUNO — Custom Mode</b>\n\n<code>{suno_text}</code>",
+    )
+
+    # ── 2. Gemini background image ────────────────────────────────────────────
+    _out(
+        f"\n{'='*60}\n{bg_text}\n",
+        f"<b>🖼️ Gemini — Background Image</b>\n\n<code>{bg_text}</code>",
+    )
+
+    drop_plain = (
+        f"\n{'='*60}\n📂 Drop files into: studio/drafts/{date_str}/\n{'='*60}\n"
+        f"  clip_1.mp3 or .wav  (required)\n"
+        f"  clip_2.mp3 or .wav  (optional)\n"
+        f"  background.png      (required)\n"
+        f"  clip.mp4            (optional — 8s Veo loop)\n\n"
+        f"Then run:\n"
+        f"  python studio/orchestrator.py --publish --date {date_str}\n"
+    )
+    drop_html = (
+        f"<b>📂 Drop files into:</b>\n"
+        f"<code>studio/drafts/{date_str}/</code>\n\n"
+        f"  clip_1.mp3 or .wav  (required)\n"
+        f"  clip_2.mp3 or .wav  (optional)\n"
+        f"  background.png      (required)\n"
+        f"  clip.mp4            (optional — 8s Veo loop)\n\n"
+        f"Then run:\n"
+        f"<code>python studio/orchestrator.py --publish --date {date_str}</code>"
+    )
+    _out(drop_plain, drop_html)
+
+
 # ── Short helper ─────────────────────────────────────────────────────────────
 
 def _do_short(brain: dict, draft_dir: str):
     """Generate short.mp4 and upload it as a YouTube Short. Non-fatal on failure."""
     try:
-        _tg_send("Generating 30-sec Short...")
+        _tg_send("Generating 60-sec Short (scheduled 11 PM)...")
         step05   = _load_step("05_short.py")
         step05.run(brain, draft_dir)
         step04   = _load_step("04_upload.py")
@@ -240,25 +291,33 @@ def do_draft(date_str: str):
         print("=" * 60)
         return
 
-    # ── Mode selection ────────────────────────────────────────────────────────
+    # ── Mode selection (single prompt) ───────────────────────────────────────
     if NO_TELEGRAM:
-        mode = "manual"
-        print("[orchestrator] --no-telegram: defaulting to MANUAL mode.")
+        mode      = "manual"
+        file_mode = "LAPTOP"
+        print("[orchestrator] --no-telegram: defaulting to MANUAL/LAPTOP mode.")
     else:
         mode_token = tg.new_token()
         tg.send_choice_prompt(
             mode_token,
             "<b>How would you like to create today's content?</b>\n\n"
             "🤖 <b>AUTO</b> — Lyria generates music, Gemini generates image (~40 min, hands-off)\n"
-            "✋ <b>MANUAL</b> — You provide clips + background, then run --publish",
-            [("🤖 AUTO", "AUTO"), ("✋ MANUAL", "MANUAL")],
+            "📱 <b>MANUAL via Telegram</b> — send files here, pipeline runs automatically\n"
+            "💻 <b>MANUAL via Laptop</b> — drop files in draft folder, run --publish manually",
+            [("🤖 AUTO", "AUTO"), ("📱 Telegram", "MANUAL_TELEGRAM"), ("💻 Laptop", "MANUAL_LAPTOP")],
         )
-        mode = (tg.wait_for_choice(mode_token, timeout_seconds=3600) or "MANUAL").lower()
+        choice = (tg.wait_for_choice(mode_token, timeout_seconds=3600) or "MANUAL_LAPTOP").upper()
+        if choice == "AUTO":
+            mode, file_mode = "auto", "LAPTOP"
+        elif choice == "MANUAL_TELEGRAM":
+            mode, file_mode = "manual", "TELEGRAM"
+        else:
+            mode, file_mode = "manual", "LAPTOP"
 
     brain = _load_brain(draft_dir)
     brain["mode"] = mode
     _save_brain(brain, draft_dir)
-    print(f"[orchestrator] Mode: {mode}")
+    print(f"[orchestrator] Mode: {mode} / {file_mode}")
 
     if mode == "auto":
         if NO_TELEGRAM:
@@ -271,19 +330,6 @@ def do_draft(date_str: str):
         _tg_send(f"AUTO mode — starting {target_min}-min pipeline. Sit back!")
         _do_auto_steps(client, brain, draft_dir, target_min)
     else:
-        # Ask how user wants to provide files
-        if NO_TELEGRAM:
-            file_mode = "laptop"
-        else:
-            fm_token = tg.new_token()
-            tg.send_choice_prompt(
-                fm_token,
-                "<b>How will you provide music + image?</b>\n\n"
-                "📱 <b>Telegram</b> — send files here, pipeline runs automatically\n"
-                "💻 <b>Laptop</b> — drop files in draft folder, run --publish manually",
-                [("📱 Telegram", "TELEGRAM"), ("💻 Laptop", "LAPTOP")],
-            )
-            file_mode = (tg.wait_for_choice(fm_token, timeout_seconds=3600) or "LAPTOP").upper()
 
         if file_mode == "TELEGRAM":
             _tg_send(
@@ -343,15 +389,7 @@ def do_draft(date_str: str):
                     else:
                         _tg_send("Upload skipped.")
         else:
-            manual_msg = (
-                f"MANUAL mode — drop files into studio/drafts/{date_str}/\n"
-                f"  clip_1.mp3      (required)\n"
-                f"  clip_2.mp3      (optional)\n"
-                f"  background.png  (required)\n"
-                f"  thumbnail.png   (optional)\n\n"
-                f"Then run:\n  python studio/orchestrator.py --publish --date {date_str}"
-            )
-            _tg_send(manual_msg)
+            _send_manual_prompts(brain, date_str, file_mode)
 
     print("=" * 60)
     print(f"Draft saved: {draft_dir}")
@@ -418,12 +456,21 @@ def do_publish(date_str: str):
         _tg_send("Assembling video (clip + music)... (takes 2-4 min)")
         step03 = _load_step("03_assemble.py")
         step03.run(brain, draft_dir)
-        _tg_send("Video assembled. Sending for approval...")
+        _tg_send("Video assembled.")
 
-    # Approval
+    # Generate thumbnail (skip if already exists)
+    thumb_path = os.path.join(draft_dir, "thumbnail.png")
+    if not os.path.exists(thumb_path):
+        try:
+            step06 = _load_step("06_thumbnail.py")
+            step06.run(brain, draft_dir)
+        except Exception as e:
+            print(f"[orchestrator] Thumbnail generation failed (non-fatal): {e}")
+
+    # Approval — show thumbnail as preview image
     preview_image = next(
         (os.path.join(draft_dir, n)
-         for n in ["thumbnail.png", "thumbnail.jpg", "background.png", "background.jpg"]
+         for n in ["thumbnail.png", "thumbnail.jpg", "background_watermarked.png", "background.png"]
          if os.path.exists(os.path.join(draft_dir, n))),
         None,
     )
