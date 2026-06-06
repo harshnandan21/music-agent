@@ -7,7 +7,7 @@ With 2 clips : interleaves as clip_1 → clip_2 → clip_1 → clip_2 → ... un
 
 Crossfade 6s between every segment (qsin curve — natural for Indian classical).
 Final pass: dynaudnorm volume levelling + 3s fade-in + 8s fade-out.
-Output: draft_dir/music.mp3
+Output: draft_dir/music.flac
 """
 
 import os, shutil, subprocess, sys, tempfile
@@ -34,7 +34,7 @@ def _strip_silence(src: str, dst: str) -> str:
         "areverse"
     )
     subprocess.run(
-        ["ffmpeg", "-y", "-i", src, "-af", af, "-c:a", "libmp3lame", "-b:a", "192k", dst],
+        ["ffmpeg", "-y", "-i", src, "-af", af, "-c:a", "flac", dst],
         check=True, stdin=subprocess.DEVNULL, capture_output=True,
     )
     return dst
@@ -56,7 +56,7 @@ def _crossfade_merge(clips: list, output_path: str) -> str:
             out = output_path
         else:
             tmp = tempfile.NamedTemporaryFile(
-                suffix=".mp3", delete=False,
+                suffix=".flac", delete=False,
                 dir=os.path.dirname(output_path),
             )
             tmp.close()
@@ -67,7 +67,7 @@ def _crossfade_merge(clips: list, output_path: str) -> str:
             "ffmpeg", "-y", "-i", current, "-i", next_clip,
             "-filter_complex",
             f"[0][1]acrossfade=d={CROSSFADE_SEC}:c1=qsin:c2=qsin[out]",
-            "-map", "[out]", "-c:a", "libmp3lame", "-b:a", "192k", out,
+            "-map", "[out]", "-c:a", "flac", out,
         ], check=True, stdin=subprocess.DEVNULL, capture_output=True)
         current = out
 
@@ -85,7 +85,7 @@ def _normalise_and_fade(src: str, dst: str, duration: float, trim_sec: float | N
         f"afade=t=in:st=0:d={FADE_IN_SEC},"
         f"afade=t=out:st={out_dur - FADE_OUT_SEC}:d={FADE_OUT_SEC}"
     )
-    cmd = ["ffmpeg", "-y", "-i", src, "-af", af, "-c:a", "libmp3lame", "-b:a", "192k"]
+    cmd = ["ffmpeg", "-y", "-i", src, "-af", af, "-c:a", "flac"]
     if trim_sec and duration > trim_sec:
         cmd += ["-t", str(trim_sec)]
         print(f"[extend] Normalising + trimming to {trim_sec:.0f}s ({trim_sec/60:.1f} min)...")
@@ -101,7 +101,7 @@ def run(draft_dir: str, target_min: int = DEFAULT_MIN) -> str:
     TARGET_SEC = target_min * 60
     print(f"[extend] Target duration: {target_min} min ({TARGET_SEC}s)")
 
-    SKIP = {"music.mp3"}
+    SKIP = {"music.flac"}
     clips_raw = sorted([
         os.path.join(draft_dir, f)
         for f in os.listdir(draft_dir)
@@ -119,7 +119,7 @@ def run(draft_dir: str, target_min: int = DEFAULT_MIN) -> str:
     # Strip silence from each source clip once
     stripped = []
     for i, src in enumerate(clips_raw):
-        dst = os.path.join(draft_dir, f"_stripped_{i+1}.mp3")
+        dst = os.path.join(draft_dir, f"_stripped_{i+1}.flac")
         _strip_silence(src, dst)
         dur = get_duration(dst)
         print(f"[extend] Clip {i+1} after silence strip: {dur:.0f}s ({dur/60:.1f} min)")
@@ -146,13 +146,13 @@ def run(draft_dir: str, target_min: int = DEFAULT_MIN) -> str:
 
     print(f"[extend] Built sequence of {len(sequence)} segments, est. {total:.0f}s ({total/60:.1f} min)")
 
-    merged_path = os.path.join(draft_dir, "_merged.mp3")
+    merged_path = os.path.join(draft_dir, "_merged.flac")
     _crossfade_merge(sequence, merged_path)
 
     merged_dur = get_duration(merged_path)
     print(f"[extend] Merged: {merged_dur:.0f}s ({merged_dur/60:.1f} min)")
 
-    out_path = os.path.join(draft_dir, "music.mp3")
+    out_path = os.path.join(draft_dir, "music.flac")
     _normalise_and_fade(merged_path, out_path, merged_dur,
                         trim_sec=TARGET_SEC if merged_dur > TARGET_SEC else None)
 

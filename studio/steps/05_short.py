@@ -92,7 +92,10 @@ def _generate_short_image(brain: dict, draft_dir: str) -> str:
 # ── Audio discovery ───────────────────────────────────────────────────────────
 
 def _find_audio(draft_dir: str) -> str:
-    """Return audio path: music.mp3 > any .wav > audio extracted from video.mp4"""
+    """Return audio path: music.flac > music.mp3 > any .wav > audio extracted from video.mp4"""
+    flac = os.path.join(draft_dir, "music.flac")
+    if os.path.exists(flac):
+        return flac
     mp3 = os.path.join(draft_dir, "music.mp3")
     if os.path.exists(mp3):
         return mp3

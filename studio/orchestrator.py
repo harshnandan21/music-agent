@@ -157,6 +157,21 @@ def _do_short(brain: dict, draft_dir: str):
         short_id = step04.run_short(brain, draft_dir)
         if short_id:
             _tg_send(f"Short uploaded: https://youtu.be/{short_id}")
+        # Post to Instagram + Facebook Page
+        try:
+            step08  = _load_step("08_social.py")
+            results = step08.run(brain, draft_dir)
+            ig_id   = results.get("instagram")
+            fb_id   = results.get("facebook")
+            msg     = "Social posted:"
+            if ig_id:
+                msg += f"\n📸 Instagram: https://www.instagram.com/reel/{ig_id}/"
+            if fb_id:
+                msg += f"\n📘 Facebook: posted (ID {fb_id})"
+            if ig_id or fb_id:
+                _tg_send(msg)
+        except Exception as se:
+            print(f"[orchestrator] Social posting failed (non-fatal): {se}")
     except Exception as e:
         print(f"[orchestrator] Short failed (non-fatal): {e}")
         _tg_send(f"Short skipped — {e}")
@@ -169,7 +184,7 @@ def _do_auto_steps(client, brain: dict, draft_dir: str, target_min: int):
     date_str = os.path.basename(draft_dir)
 
     # Step A — Generate Lyria clips (saved as clip_1.mp3 … clip_4.mp3)
-    music_path = os.path.join(draft_dir, "music.mp3")
+    music_path = os.path.join(draft_dir, "music.flac")
     if not os.path.exists(music_path):
         _tg_send(f"Generating music via Lyria (~15 min for 4 clips)...")
         auto_music = _load_step("auto_music.py")
@@ -181,7 +196,7 @@ def _do_auto_steps(client, brain: dict, draft_dir: str, target_min: int):
         step02.run(draft_dir, target_min=target_min)
         _tg_send("Music ready.")
     else:
-        print("[orchestrator] music.mp3 already present — skipping music generation.")
+        print("[orchestrator] music.flac already present — skipping music generation.")
 
     # Step C — Generate background image
     image_path = os.path.join(draft_dir, "background.png")
@@ -412,7 +427,7 @@ def do_publish(date_str: str):
     if brain.get("mode") == "auto":
         print("[orchestrator] AUTO mode detected — running auto pipeline.")
         client = genai.Client(api_key=GEMINI_API_KEY)
-        music_path = os.path.join(draft_dir, "music.mp3")
+        music_path = os.path.join(draft_dir, "music.flac")
         if not os.path.exists(music_path) and not NO_TELEGRAM:
             dur_token = tg.new_token()
             tg.send_duration_prompt(dur_token)
@@ -424,11 +439,11 @@ def do_publish(date_str: str):
 
     # ── MANUAL flow ───────────────────────────────────────────────────────────
 
-    # Extend music (skip if music.mp3 already exists)
-    music_path = os.path.join(draft_dir, "music.mp3")
+    # Extend music (skip if music.flac already exists)
+    music_path = os.path.join(draft_dir, "music.flac")
     if os.path.exists(music_path):
-        print("[orchestrator] music.mp3 already present — skipping extend step.")
-        _tg_send("music.mp3 already exists — skipping extend step.")
+        print("[orchestrator] music.flac already present — skipping extend step.")
+        _tg_send("music.flac already exists — skipping extend step.")
     else:
         if NO_TELEGRAM:
             target_min = 20
@@ -525,7 +540,7 @@ def do_publish(date_str: str):
 
 # Large generated files deleted after this many days (video uploaded, no longer needed locally)
 _LARGE_FILE_DAYS = 3
-_LARGE_FILES     = {"video.mp4", "music.mp3", "short.mp4"}
+_LARGE_FILES     = {"video.mp4", "music.flac", "music.mp3", "short.mp4"}
 # Entire draft folder removed after this many days
 _FOLDER_DAYS     = 30
 

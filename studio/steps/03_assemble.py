@@ -1,6 +1,6 @@
 """
 Studio Step 3 — Assemble
-Combines background + music.mp3 into video.mp4.
+Combines background + music.flac into video.mp4.
 
 Clip mode (preferred):
   Drop clip.mp4 (animated seamless loop) in the draft folder.
@@ -215,9 +215,9 @@ def _assemble_from_image(image_path: str, music_path: str | list, duration: floa
 
 
 def run(brain: dict, draft_dir: str) -> str:
-    music_path = os.path.join(draft_dir, "music.mp3")
+    music_path = os.path.join(draft_dir, "music.flac")
     if not os.path.exists(music_path):
-        raise FileNotFoundError(f"[assemble] music.mp3 not found in {draft_dir}")
+        raise FileNotFoundError(f"[assemble] music.flac not found in {draft_dir}")
 
     duration  = get_duration(music_path)
     out_path  = os.path.join(draft_dir, "video.mp4")
