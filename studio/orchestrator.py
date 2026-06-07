@@ -48,6 +48,7 @@ load_dotenv(os.path.join(ROOT_DIR, ".env"))
 
 from google import genai
 from config import GEMINI_API_KEY
+from studio.utils import get_duration
 import studio.telegram as tg
 
 NO_TELEGRAM = "--no-telegram" in sys.argv
