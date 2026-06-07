@@ -457,9 +457,12 @@ def do_publish(date_str: str):
         step02.run(draft_dir, target_min=target_min)
         _tg_send("Music ready.")
 
-    # Assemble video (skip if video.mp4 already exists and non-empty)
+    # Assemble video (skip if video.mp4 already exists and readable)
     video_path = os.path.join(draft_dir, "video.mp4")
-    video_ok   = os.path.exists(video_path) and os.path.getsize(video_path) > 0
+    try:
+        video_ok = os.path.exists(video_path) and get_duration(video_path) > 60
+    except Exception:
+        video_ok = False
     if video_ok:
         print("[orchestrator] video.mp4 already present — skipping assemble step.")
         _tg_send("video.mp4 already exists — skipping assemble step.")
