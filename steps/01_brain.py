@@ -73,7 +73,8 @@ def run(client) -> dict:
     # ── Collect locked override values from config ────────────────────────────
     # Any key set (non-None) in the schedule is a hard constraint.
     locked = {}
-    for key in ("hz_frequency", "title", "thumbnail_hook", "thumbnail_instr", "thumbnail_tagline", "hook_phrase", "playlist"):
+    for key in ("hz_frequency", "title", "thumbnail_hook", "thumbnail_instr", "thumbnail_tagline",
+                "hook_phrase", "playlist", "thaat", "suno_lyrics_style"):
         val = schedule.get(key)
         if val:
             locked[key] = val
@@ -128,13 +129,8 @@ def run(client) -> dict:
     seeds_atmos     = ", ".join(CONTENT_SEEDS["atmosphere_hooks"][:8])
     seeds_patterns  = "\n".join(f"  · {p}" for p in CONTENT_SEEDS["title_patterns"])
     seeds_hooks     = "\n".join(f"  · {p}" for p in CONTENT_SEEDS["hook_phrases"][:12])
-    # Question hooks for this day's use case
-    use_case_key = schedule.get("use_case", "")
-    q_key = ("morning" if "morning" in use_case_key else
-             "sleep" if "sleep" in use_case_key else
-             "focus" if "focus" in use_case_key or "study" in use_case_key else
-             "midnight" if "midnight" in use_case_key or "overactive" in use_case_key else
-             "stress")
+    # Question hooks — drive from playlist key (morning/sleep/focus/midnight/stress)
+    q_key   = schedule.get("playlist", "stress")
     q_hooks = ", ".join(CONTENT_SEEDS.get("question_hooks", {}).get(q_key, []))
     mh_terms = ", ".join(CONTENT_SEEDS.get("mental_health_terms", [])[:6])
     seeds_avoid     = ", ".join(CONTENT_SEEDS["avoid_generic"])
@@ -195,13 +191,33 @@ RECENTLY PUBLISHED (do NOT repeat these angles):
 TASK: {title_instruction}
 Return pure JSON only — no markdown, no extra text.
 
-MUSIC PROMPT GUIDANCE (for Lyria — think like Indian classical recording engineer):
+MUSIC PROMPT GUIDANCE — TWO SEPARATE FIELDS REQUIRED:
+
+① music_prompt  (for Lyria AI — prose sentences, descriptive):
 - State instruments, raga, BPM (35-55 for meditation, 40-45 most soothing)
 - Include: each note decays with long reverb, wide silence between phrases, no buildup no climax
 - Include: warm analog recording quality, loop-friendly structure, deeply meditative
 - Specify playing feel: meend glides, komal notes, alap style, how tabla enters
-- Anti-patterns to explicitly exclude: no Western instruments, no percussion fills, no sudden dynamics
+- Anti-patterns: no Western instruments, no percussion fills, no sudden dynamics
 - Base on: {schedule['music_hints']}
+
+② suno_style_tags  (for Suno Custom Mode STYLE field — COMMA-SEPARATED TAG STACKS, not sentences):
+Suno is a search engine for sound, not ChatGPT. Write tags, not prose.
+Follow this exact master formula:
+  Raga {schedule['raga']}, {schedule['thaat']} thaat, [time of day / season],
+  [primary instrument] [playing role], [secondary instrument] [role], [tertiary if any],
+  [BPM] BPM, [taal name], [3-4 emotional quality tags],
+  high fidelity recording, concert hall acoustics, warm analog feel,
+  no lyrics, no western percussion, DhunDetox wellness channel, loop-friendly fade
+
+Special Suno instrument hint tags (always include for these instruments):
+  sarangi  → append: "bowed sarangi, crying Indian strings, intimate bowed lute"
+  pakhawaj → append: "pakhawaj barrel drum, dhrupad percussion, ancient deep drum"
+  mridangam → append: "mridangam South Indian drum, Carnatic rhythm, two-headed drum"
+  shehnai  → append: "shehnai reed, ceremonial Indian oboe, nadaswaram style"
+  veena    → append: "veena ancient plucked string, Saraswati veena, sustained resonance"
+
+Base on: {schedule['music_hints']}
 
 IMAGE PROMPT GUIDANCE — AUTHENTIC MADHUBANI HEALING ART:
 
@@ -381,7 +397,8 @@ TAGS GUIDANCE: Target 440–460 chars (YouTube shows 500 but rejects above ~465 
     {{"time": "52:00", "title": "Samapti — Resolution & Inner Peace"}},
     {{"time": "58:00", "title": "Outro — Carry the Calm Forward"}}
   ],
-  "music_prompt": "Detailed Lyria prompt per music guidance above",
+  "music_prompt": "Detailed Lyria prose prompt per music guidance above ①",
+  "suno_style_tags": "Comma-separated Suno tag stack per music guidance above ②",
   "image_prompt": "Madhubani painting scene per image guidance above",
   "video_prompt": "Veo 8-second seamless loop per video guidance above",
   "raga": "{schedule['raga']}",

@@ -14,144 +14,151 @@ BRAIN_MODEL   = "gemini-2.5-flash"
 MUSIC_MODEL   = "lyria-realtime-exp"
 IMAGEN_MODEL  = "gemini-3-pro-image-preview"
 
-# ── Weekly schedule — SINGLE SOURCE OF TRUTH for every post ──────────────────
+# ── 20-Day Content Calendar — SINGLE SOURCE OF TRUTH for every post ──────────
 #
-# Every field here controls what gets generated. Edit this dict to customise
-# any day without touching any other file.
+# Cycles via date.today().toordinal() % 20 — repeats every 20 days.
+# 20 unique ragas · 12 instruments (sitar, bansuri, tabla, tanpura, sarangi,
+# harmonium, veena, sarod, shehnai, pakhawaj, mridangam, santoor) ·
+# mix of solos, duos, trios.
 #
 # Required fields
-#   raga              Raga name (passed to Gemini + thumbnail)
-#   raga_mood         Emotional description fed to Gemini for music direction
-#   instruments       List — single / duo / trio; drives music + thumbnail line
-#   use_case          Viewer benefit (study, sleep, etc.)
-#   theme             One-line creative concept for the whole post
-#   music_hints       Detailed playing style guidance for Lyria prompt
-#   image_hints       Detailed scene description for Madhubani image prompt
+#   raga              Raga name
+#   thaat             Parent scale system (fed to Suno style tags)
+#   raga_mood         Emotional description fed to Gemini
+#   instruments       List — drives music + thumbnail line
+#   use_case          Viewer benefit
+#   theme             One-line creative concept
+#   music_hints       Playing style guidance for Lyria + Suno
+#   image_hints       Scene description for Madhubani image prompt
+#   suno_lyrics_style One of: sleep / morning / focus / stress / midnight
 #
-# Optional overrides — set to None to let Gemini decide, or fill in to lock
-#   hz_frequency      e.g. "432Hz" — baked into title + music prompt if set
-#   title             Exact YouTube title (≤70 chars); None = Gemini writes it
-#   thumbnail_hook    2-4 ALL-CAPS words shown large on thumbnail
-#   thumbnail_instr   Instrument & Raga line on thumbnail middle
-#   thumbnail_tagline 6-10 word benefit statement on thumbnail bottom strip
+# Optional overrides — set to None to let Gemini decide
+#   hz_frequency / title / thumbnail_hook / thumbnail_instr / thumbnail_tagline
 #
-WEEKLY_SCHEDULE = {
-    0: {  # Monday — deep focus for the work week
+CONTENT_CALENDAR = {
+    0: {  # Chandrakauns — Veena + Tabla — Deep Focus
         "raga":        "Chandrakauns",
+        "thaat":       "Bhairavi",
         "raga_mood":   "mysterious, meditative, midnight — each note lands with deliberate gravity",
         "instruments": ["veena", "tabla"],
-        "use_case":    "study and focus",
-        "theme":       "Midnight scholar's lamp — absolute stillness, mind locked in deep work",
+        "use_case":    "study and deep focus",
+        "theme":       "Ancient veena in midnight silence — brain fog dissolves, thoughts crystallize in komal stillness",
         "music_hints": (
-            "Veena leading with haunting slow alap, tabla entering softly after 90 seconds. "
-            "Komal gandhar and komal nishad held long. 70 BPM inner pulse. "
-            "Feel of laser-focus, each phrase a thought completing itself. No distraction, no hurry."
+            "Veena leading with haunting slow alap, each note placed with deliberate weight. "
+            "Komal gandhar and komal nishad held long with natural decay. "
+            "Tabla entering softly after 90 seconds with sparse teentaal at 65 BPM. "
+            "Laser-focus quality — each phrase a thought completing itself. "
+            "No distraction, no hurry, wide silence between each phrase."
         ),
         "image_hints": (
-            "Scholar's corner lit by an oil lamp glowing warm orange, veena and tabla "
-            "beside a lotus-patterned mat, full moon outside a geometric window, "
-            "peacock perched on the windowsill, intricate fish-border framing the scene, "
-            "deep indigo and saffron palette."
+            "Scholar's corner lit by an oil lamp glowing warm orange, ancient veena resting "
+            "beside a lotus-patterned mat, full moon outside a geometric latticed window, "
+            "peacock perched silently on the windowsill, fish-border framing the entire scene, "
+            "deep indigo and saffron palette, intricate Madhubani geometric star-ceiling."
         ),
-        # ── overrides ────────────────────────────────────────────────────────
-        "hz_frequency":       "741Hz",
-        "title":              None,
-        "thumbnail_hook":     "MIND WON'T FOCUS?",
-        "thumbnail_instr":    "VEENA & TABLA · RAAG CHANDRAKAUNS",
-        "thumbnail_tagline":  "Dissolve Brain Fog & Think With Clarity",
-        "playlist":           "focus",
+        "hz_frequency":      "741Hz",
+        "title":             None,
+        "thumbnail_hook":    "MIND WON'T FOCUS?",
+        "thumbnail_instr":   "VEENA & TABLA · RAAG CHANDRAKAUNS",
+        "thumbnail_tagline": "Dissolve Brain Fog & Think With Clarity",
+        "playlist":          "focus",
+        "suno_lyrics_style": "focus",
     },
 
-    1: {  # Tuesday — mid-week cortisol drop
+    1: {  # Yaman Kalyan — Sitar + Bansuri + Tabla — Stress Relief
         "raga":        "Yaman Kalyan",
-        "raga_mood":   "romantic, gentle, dusk — the day's weight slowly dissolving",
-        "instruments": ["sitar", "bansuri flute"],
+        "thaat":       "Kalyan",
+        "raga_mood":   "romantic, gentle, dusk — the day's weight slowly dissolving into evening warmth",
+        "instruments": ["sitar", "bansuri", "tabla"],
         "use_case":    "evening cortisol drop and stress relief",
-        "theme":       "Sitar and flute at dusk — cortisol dropping, body unclenching, city noise dissolving",
+        "theme":       "Sitar and bansuri at dusk — call-and-response trio dissolving cortisol, unclenching the body",
         "music_hints": (
-            "Sitar and bansuri in gentle call-and-response. Sitar sets the melodic foundation, "
-            "bansuri answers with breathy long tones. Teentaal at 80 BPM, light tabla. "
-            "Warm meend glides on sitar, flute phrases that feel like a long exhale. "
+            "Sitar sets melodic foundation, bansuri answers with breathy long tones in call-and-response. "
+            "Tabla enters at 2 minutes with gentle teentaal at 80 BPM. "
+            "Warm meend glides on sitar, flute phrases feel like a long exhale. "
             "Mood: relief, soft joy, the body unclenching after a long day."
         ),
         "image_hints": (
             "Lakeside scene at dusk, sitar player and bansuri player facing each other "
-            "on a lotus-adorned carpet, mango tree canopy above, diyas reflected in still water, "
-            "peacocks and deer in golden light, vibrant saffron-to-teal sky."
+            "on a lotus-adorned carpet, tabla player beside them, mango tree canopy above, "
+            "diyas reflected in still water, peacocks and deer in golden light, "
+            "vibrant saffron-to-teal sky, Madhubani wave-and-fish border."
         ),
-        # ── overrides ────────────────────────────────────────────────────────
-        "hz_frequency":       "174Hz",
-        "title":              None,
-        "thumbnail_hook":     "TOO MUCH STRESS?",
-        "thumbnail_instr":    "SITAR & BANSURI · RAAG YAMAN KALYAN",
-        "thumbnail_tagline":  "Drop Your Cortisol & Unwind After a Long Day",
-        "playlist":           "stress",
+        "hz_frequency":      "174Hz",
+        "title":             None,
+        "thumbnail_hook":    "TOO MUCH STRESS?",
+        "thumbnail_instr":   "SITAR, BANSURI & TABLA · RAAG YAMAN KALYAN",
+        "thumbnail_tagline": "Drop Your Cortisol & Unwind After a Long Day",
+        "playlist":          "stress",
+        "suno_lyrics_style": "stress",
     },
 
-    2: {  # Wednesday — overthinking release
+    2: {  # Bageshri — Solo Bansuri — Anxiety / Overthinking
         "raga":        "Bageshri",
-        "raga_mood":   "longing, introspective, late night — emotions quietly surfacing and releasing",
-        "instruments": ["bansuri flute"],
+        "thaat":       "Kafi",
+        "raga_mood":   "longing, introspective, late night — emotions quietly surfacing and releasing like rain",
+        "instruments": ["bansuri"],
         "use_case":    "overthinking and anxiety relief",
-        "theme":       "Lone bansuri in monsoon rain — quiet the overthinking mind, let every held breath go",
+        "theme":       "Lone bansuri in monsoon rain — the simplest sound to quiet the loudest mind",
         "music_hints": (
-            "Solo bansuri, breathy and intimate. Vilambit at 55 BPM. "
-            "Long held komal notes that sigh and resolve, like exhaling weeks of tension. "
-            "Soft rain texture under the tanpura drone. No tabla until 2.5 minutes. "
+            "Solo bansuri, breathy and intimate. No supporting instruments for first 2.5 minutes — pure flute. "
+            "Vilambit at 55 BPM. Long held komal notes that sigh and resolve, like exhaling weeks of tension. "
+            "Soft tanpura drone enters at 2.5 minutes, tabla only after 4 minutes. "
             "Mood: melting, releasing, being held by the music itself."
         ),
         "image_hints": (
-            "Arched doorway with stylized monsoon rain falling outside, bansuri resting "
-            "on an embroidered cushion, candle burning beside a lotus flower, "
-            "rain droplets drawn as teardrops on the geometric border, "
-            "deep teal and rose palette, peacock sheltering under mango leaves."
+            "Arched Madhubani doorway with stylized monsoon rain falling outside as teardrop patterns, "
+            "bansuri resting on an embroidered cushion, single candle burning beside a lotus flower, "
+            "peacock sheltering under large mango leaves, deep teal and rose palette, "
+            "rain drops drawn as concentric circles rippling outward in border."
         ),
-        # ── overrides ────────────────────────────────────────────────────────
-        "hz_frequency":       "528Hz",
-        "title":              None,
-        "thumbnail_hook":     "ANXIETY WON'T GO?",
-        "thumbnail_instr":    "BANSURI FLUTE · RAAG BAGESHRI",
-        "thumbnail_tagline":  "Stop Overthinking & Let Your Mind Finally Rest",
-        "playlist":           "stress",
+        "hz_frequency":      "528Hz",
+        "title":             None,
+        "thumbnail_hook":    "ANXIETY WON'T GO?",
+        "thumbnail_instr":   "BANSURI FLUTE SOLO · RAAG BAGESHRI",
+        "thumbnail_tagline": "Stop Overthinking & Let Your Mind Finally Rest",
+        "playlist":          "stress",
+        "suno_lyrics_style": "stress",
     },
 
-    3: {  # Thursday — pre-weekend deep rest
+    3: {  # Yaman — Santoor + Tanpura — Deep Sleep
         "raga":        "Yaman",
-        "raga_mood":   "peaceful, uplifting, evening calm — light releasing into stillness",
+        "thaat":       "Kalyan",
+        "raga_mood":   "peaceful, uplifting, evening calm — teevra madhyam floating like a moon over still water",
         "instruments": ["santoor", "tanpura"],
         "use_case":    "deep sleep and melatonin release",
         "theme":       "Santoor crystals over tanpura drone — 432Hz releasing melatonin, body drifting into sleep",
         "music_hints": (
-            "Santoor with pure crystal-hammer strokes tuned to 432Hz. Vilambit at 50 BPM. "
-            "Tanpura drone in low register as unbroken foundation. "
+            "Santoor with pure crystal-hammer strokes. Vilambit at 50 BPM. "
+            "Tanpura drone as unbroken low foundation. "
             "Long silences between santoor phrases — the silence is part of the music. "
-            "Progressively sparser after 2 minutes. "
+            "Progressively sparser after 2 minutes. No tabla at all. "
             "Mood: drifting, weightless, each phrase further from wakefulness."
         ),
         "image_hints": (
-            "Open terrace at twilight, santoor lying on a silk cloth beside a glowing tanpura, "
-            "crescent moon and stars drawn in geometric spirals, "
+            "Open terrace at twilight, santoor lying on silk cloth beside a glowing tanpura, "
+            "crescent moon and stars drawn in Madhubani geometric spirals above, "
             "lotus pond below with fish and birds settling for the night, "
-            "soft rose-violet and ivory palette."
+            "soft rose-violet and ivory palette, sleeping deer in corner of scene."
         ),
-        # ── overrides ────────────────────────────────────────────────────────
-        "hz_frequency":       "432Hz",
-        "title":              None,
-        "thumbnail_hook":     "CAN'T FALL ASLEEP?",
-        "thumbnail_instr":    "SANTOOR & TANPURA · RAAG YAMAN",
-        "thumbnail_tagline":  "432Hz to Release Melatonin & Fall Asleep Fast",
-        "playlist":           "sleep",
+        "hz_frequency":      "432Hz",
+        "title":             None,
+        "thumbnail_hook":    "CAN'T FALL ASLEEP?",
+        "thumbnail_instr":   "SANTOOR & TANPURA · RAAG YAMAN",
+        "thumbnail_tagline": "432Hz to Release Melatonin & Fall Asleep Fast",
+        "playlist":          "sleep",
+        "suno_lyrics_style": "sleep",
     },
 
-    4: {  # Friday — morning prana flow
+    4: {  # Bhupali — Sitar + Sarod + Tabla — Morning Energy
         "raga":        "Bhupali",
-        "raga_mood":   "serene, hopeful, expansive — pentatonic openness, bright and alive",
+        "thaat":       "Kalyan",
+        "raga_mood":   "serene, hopeful, expansive — pentatonic openness, bright and alive at sunrise",
         "instruments": ["sitar", "sarod", "tabla"],
         "use_case":    "morning prana flow and cortisol reset",
         "theme":       "Sunrise trio — morning prana awakening, cortisol reset, body and breath in harmony",
         "music_hints": (
-            "Sitar, sarod, and tabla in full sunrise energy. Sitar leads the melody, "
-            "sarod adds resonant depth, tabla drives steady teentaal at 90 BPM. "
+            "Sitar leads melody, sarod adds resonant depth below, tabla drives steady teentaal at 90 BPM. "
             "Bright pentatonic phrases that expand and breathe. "
             "Each 16-beat cycle mirrors an inhale-exhale breath sequence. "
             "Mood: alive, expansive, body and cosmos in harmony."
@@ -162,67 +169,450 @@ WEEKLY_SCHEDULE = {
             "lotus flowers and deer in the foreground, bold geometric sun motif above, "
             "vibrant red, gold and forest-green palette, intricate elephant border."
         ),
-        # ── overrides ────────────────────────────────────────────────────────
-        "hz_frequency":       "432Hz",
-        "title":              None,
-        "thumbnail_hook":     "MORNING ANXIETY?",
-        "thumbnail_instr":    "SITAR, SAROD & TABLA · RAAG BHUPALI",
-        "thumbnail_tagline":  "Reset Morning Cortisol & Start Your Day with Calm Energy",
-        "playlist":           "morning",
+        "hz_frequency":      "432Hz",
+        "title":             None,
+        "thumbnail_hook":    "MORNING ANXIETY?",
+        "thumbnail_instr":   "SITAR, SAROD & TABLA · RAAG BHUPALI",
+        "thumbnail_tagline": "Reset Morning Cortisol & Start Your Day with Calm Energy",
+        "playlist":          "morning",
+        "suno_lyrics_style": "morning",
     },
 
-    5: {  # Saturday — overactive mind, late-night calm
+    5: {  # Darbari Kanada — Sitar + Bansuri + Pakhawaj — Midnight Dhrupad
         "raga":        "Darbari Kanada",
-        "raga_mood":   "majestic, contemplative, late-night gravity — heavy with meaning",
-        "instruments": ["sitar", "bansuri flute", "tabla"],
+        "thaat":       "Asavari",
+        "raga_mood":   "majestic, contemplative, late-night gravity — heavy with dhrupad grandeur",
+        "instruments": ["sitar", "bansuri", "pakhawaj"],
         "use_case":    "overactive mind and late night calm",
-        "theme":       "Midnight trio — silence an overactive mind, let the nervous system finally rest",
+        "theme":       "Dhrupad midnight trio — pakhawaj's ancient pulse beneath sitar and bansuri, silencing the racing mind",
         "music_hints": (
-            "Sitar leads with weighty alap, bansuri answers with midnight phrases, "
-            "tabla enters softly at 3 minutes with a slow dadra. "
-            "45 BPM inner pulse. Deep komal rishab and komal gandhar with heavy meend. "
-            "Mood: majestic stillness, thoughts settling like sediment, profound late-night depth."
+            "Sitar leads with weighty alap, bansuri answers with midnight phrases after 2 minutes. "
+            "Pakhawaj enters softly at 3.5 minutes with slow chautal — deeper and more ancient than tabla. "
+            "40 BPM inner pulse. Deep komal rishab and komal gandhar with heavy meend. "
+            "Pakhawaj barrel drum, dhrupad percussion, ancient deep drum — "
+            "its resonance giving majestic dhrupad gravitas. Thoughts settling like sediment."
         ),
         "image_hints": (
-            "Night garden with three musicians under a flowering tree — sitar player, "
-            "bansuri player, tabla player — full moon glowing overhead, "
-            "peacocks and deer listening in the shadows, oil lamps in a semicircle, "
-            "deep indigo and gold palette, stylized star-filled sky with mandala moon."
+            "Night court scene — sitar player, bansuri player, and pakhawaj player in a "
+            "grand arched pavilion at midnight, oil lamps in a crescent arc around them, "
+            "full moon drawn as mandala above, peacocks with folded wings at the edges, "
+            "deep indigo, gold lamp-glow, and ivory palette, Madhubani star-field ceiling."
         ),
-        # ── overrides ────────────────────────────────────────────────────────
-        "hz_frequency":       "396Hz",
-        "title":              None,
-        "thumbnail_hook":     "MIND WON'T STOP?",
-        "thumbnail_instr":    "SITAR, BANSURI & TABLA · RAAG DARBARI",
-        "thumbnail_tagline":  "Silence an Overactive Mind & Reset Your Nervous System",
-        "playlist":           "midnight",
+        "hz_frequency":      "396Hz",
+        "title":             None,
+        "thumbnail_hook":    "MIND WON'T STOP?",
+        "thumbnail_instr":   "SITAR, BANSURI & PAKHAWAJ · RAAG DARBARI",
+        "thumbnail_tagline": "Silence an Overactive Mind & Reset Your Nervous System",
+        "playlist":          "midnight",
+        "suno_lyrics_style": "midnight",
     },
 
-    6: {  # Sunday — morning cortisol reset
+    6: {  # Bhairavi — Bansuri + Harmonium — Morning Devotional
         "raga":        "Bhairavi",
-        "raga_mood":   "devotional, melancholic, surrendered — the most emotionally complete raga",
-        "instruments": ["bansuri flute", "tanpura"],
-        "use_case":    "morning cortisol reset and meditation",
-        "theme":       "Bansuri over tanpura at the Ganges — lower morning cortisol, surrender to the new week",
+        "thaat":       "Bhairavi",
+        "raga_mood":   "devotional, melancholic, surrendered — all-komal raga of complete emotional release",
+        "instruments": ["bansuri", "harmonium"],
+        "use_case":    "morning cortisol reset and devotional meditation",
+        "theme":       "Bansuri over harmonium warmth — Bhairavi's surrender lowering cortisol, the week's weight lifting",
         "music_hints": (
-            "Bansuri warm and intimate over a continuous tanpura drone. "
-            "Slow vilambit at 60 BPM turning to madhya laya. "
-            "Bhairavi's all-komal notes creating profound emotional depth and surrender. "
-            "Mood: washing clean, openness, readiness for the new week."
+            "Bansuri warm and intimate over continuous harmonium drone. "
+            "Harmonium holds Bhairavi's komal notes as a warm, sustained wave. "
+            "Slow vilambit at 60 BPM. No tabla for first 3 minutes — pure bansuri and harmonium breath. "
+            "Bhairavi's all-komal notes creating profound emotional depth. Mood: washing clean, surrender."
         ),
         "image_hints": (
-            "Bansuri player seated at a river's edge at dawn, tanpura lying beside them "
-            "on a lotus-patterned mat, stylized rising sun with concentric golden rings, "
-            "lotus flowers on the water, birds flying in formation above, "
-            "saffron and gold palette, geometric fish-and-wave border."
+            "Bansuri player seated at a river's edge at dawn, harmonium player beside them "
+            "on a lotus-patterned mat, stylized rising sun with concentric golden rings above, "
+            "lotus flowers opening on the water, birds flying in V-formation, "
+            "saffron and warm gold palette, geometric fish-and-wave Madhubani border."
         ),
-        # ── overrides ────────────────────────────────────────────────────────
-        "hz_frequency":       "432Hz",
-        "title":              None,
-        "thumbnail_hook":     "CORTISOL CALM",
-        "thumbnail_instr":    "BANSURI & TANPURA · RAAG BHAIRAVI",
-        "thumbnail_tagline":  "Lower Morning Cortisol & Reset for the Week Ahead",
-        "playlist":           "morning",
+        "hz_frequency":      "432Hz",
+        "title":             None,
+        "thumbnail_hook":    "CORTISOL CALM",
+        "thumbnail_instr":   "BANSURI & HARMONIUM · RAAG BHAIRAVI",
+        "thumbnail_tagline": "Lower Morning Cortisol & Reset for the Week Ahead",
+        "playlist":          "morning",
+        "suno_lyrics_style": "morning",
+    },
+
+    7: {  # Ahir Bhairav — Shehnai + Tabla + Tanpura — Morning Temple
+        "raga":        "Ahir Bhairav",
+        "thaat":       "Bhairav",
+        "raga_mood":   "gentle awakening, hopeful yet grounded — temple at dawn, warmer than pure Bhairav",
+        "instruments": ["shehnai", "tabla", "tanpura"],
+        "use_case":    "morning anxiety and cortisol reset",
+        "theme":       "Temple shehnai at dawn — sacred morning sound, anxiety evaporating in first light",
+        "music_hints": (
+            "Shehnai leading with ceremonial grace and morning purity, tanpura providing sacred drone. "
+            "Tabla entering softly at 2 minutes with slow keherwa at 75 BPM. "
+            "Ahir Bhairav's komal gandhar and komal dhaivat giving warmth — gentler than pure Bhairav. "
+            "Shehnai reed instrument, ceremonial Indian oboe, nadaswaram style — "
+            "sound of temple opening at first light. Mood: sacred calm, anxiety dissolving."
+        ),
+        "image_hints": (
+            "Temple ghat at dawn, shehnai player seated on the steps above the river, "
+            "tabla player and tanpura player beside, priest lighting diyas in background, "
+            "stylized rising sun with Madhubani mandala rays, lotus flowers on the water, "
+            "birds in formation across the sunrise sky, saffron and warm rose palette."
+        ),
+        "hz_frequency":      "432Hz",
+        "title":             None,
+        "thumbnail_hook":    "MORNING FEEL HEAVY?",
+        "thumbnail_instr":   "SHEHNAI & TABLA · RAAG AHIR BHAIRAV",
+        "thumbnail_tagline": "Temple Dawn Sound to Clear Morning Anxiety",
+        "playlist":          "morning",
+        "suno_lyrics_style": "morning",
+    },
+
+    8: {  # Malkaunsa — Sarangi + Pakhawaj + Tanpura — Anxiety Release
+        "raga":        "Malkaunsa",
+        "thaat":       "Bhairavi",
+        "raga_mood":   "austere, deeply meditative, midnight pentatonic — five notes carrying the weight of silence",
+        "instruments": ["sarangi", "pakhawaj", "tanpura"],
+        "use_case":    "anxiety and nervous system reset",
+        "theme":       "Sarangi in Malkaunsa's midnight — the instrument that cries so you don't have to",
+        "music_hints": (
+            "Sarangi leading with raw emotional alap, each bow stroke a release of tension. "
+            "Bowed sarangi, crying Indian strings, intimate bowed lute — "
+            "tanpura holding the drone. Pakhawaj barrel drum, dhrupad percussion entering at 3 minutes "
+            "with ancient slow rhythm at 45 BPM. Komal gandhar, nishad, dhaivat. "
+            "Mood: the instrument crying so the listener doesn't have to."
+        ),
+        "image_hints": (
+            "Midnight scene with lone sarangi player under a flowering night-jasmine tree, "
+            "pakhawaj drum glowing in lamplight, tanpura lying at their feet, "
+            "full moon drawn as geometric mandala above, jasmine petals falling, "
+            "deep indigo and silver palette, weeping peacock motif in Madhubani border."
+        ),
+        "hz_frequency":      "528Hz",
+        "title":             None,
+        "thumbnail_hook":    "ANXIETY WON'T LEAVE?",
+        "thumbnail_instr":   "SARANGI & PAKHAWAJ · RAAG MALKAUNSA",
+        "thumbnail_tagline": "Let the Sarangi Carry What You Cannot — Nervous System Reset",
+        "playlist":          "stress",
+        "suno_lyrics_style": "stress",
+    },
+
+    9: {  # Todi — Sarod + Tabla — Deep Focus
+        "raga":        "Todi",
+        "thaat":       "Todi",
+        "raga_mood":   "contemplative, melancholic morning — profound and searching, the scholar's raga",
+        "instruments": ["sarod", "tabla"],
+        "use_case":    "deep focus and intellectual clarity",
+        "theme":       "Sarod in Todi's labyrinth — the raga that makes thoughts ordered and precise",
+        "music_hints": (
+            "Sarod exploring Todi's complex komal notes with methodical alap. "
+            "Komal re, komal ga, komal dha, komal ni — each a step inward. "
+            "Tabla entering at 2 minutes with sparse teentaal at 70 BPM. "
+            "Sarod's resonant bass strings giving intellectual weight. "
+            "Mood: the flow state, clarity without strain, deep organised thinking."
+        ),
+        "image_hints": (
+            "Scholar's terrace at early morning, sarod player deeply absorbed in play, "
+            "geometric star pattern above on arched ceiling, tabla player in focused stillness, "
+            "books and lotus flowers on the mat, morning mist outside the latticed window, "
+            "deep teal, ochre and ivory palette, Madhubani geometric grid border."
+        ),
+        "hz_frequency":      "741Hz",
+        "title":             None,
+        "thumbnail_hook":    "BRAIN FOG WON'T LIFT?",
+        "thumbnail_instr":   "SAROD & TABLA · RAAG TODI",
+        "thumbnail_tagline": "Enter the Flow State & Think With Razor Clarity",
+        "playlist":          "focus",
+        "suno_lyrics_style": "focus",
+    },
+
+    10: {  # Puriya Dhanashree — Santoor + Sarod + Pakhawaj — Sleep
+        "raga":        "Puriya Dhanashree",
+        "thaat":       "Marwa",
+        "raga_mood":   "romantic, twilight, deeply emotional — longing that turns into surrender and sleep",
+        "instruments": ["santoor", "sarod", "pakhawaj"],
+        "use_case":    "deep sleep and emotional release before rest",
+        "theme":       "Santoor and sarod at twilight — Puriya Dhanashree's bittersweet tension releasing into sleep",
+        "music_hints": (
+            "Santoor shimmering with twilight phrases, sarod answering from deeper registers. "
+            "Pakhawaj barrel drum, ancient deep drum providing slow chautal pulse at 45 BPM after 3 minutes. "
+            "Puriya Dhanashree's komal re and shuddha ni creating bittersweet twilight tension "
+            "that slowly resolves. Mood: longing dissolving, body surrendering to rest."
+        ),
+        "image_hints": (
+            "Twilight terrace above a lotus lake, santoor and sarod players facing each other, "
+            "pakhawaj drum between them, lanterns glowing amber, crescent moon rising, "
+            "stars drawn as Madhubani geometric spirals, deer and peacocks settling for the night, "
+            "deep rose, violet and gold palette, lotus-vine Madhubani border."
+        ),
+        "hz_frequency":      "432Hz",
+        "title":             None,
+        "thumbnail_hook":    "CAN'T WIND DOWN?",
+        "thumbnail_instr":   "SANTOOR, SAROD & PAKHAWAJ · RAAG PURIYA DHANASHREE",
+        "thumbnail_tagline": "Let Go of the Day & Fall Into Deep Peaceful Sleep",
+        "playlist":          "sleep",
+        "suno_lyrics_style": "sleep",
+    },
+
+    11: {  # Hamsadhwani — Bansuri + Tabla — Morning Peace
+        "raga":        "Hamsadhwani",
+        "thaat":       "Bilawal",
+        "raga_mood":   "auspicious, clear, hopeful — pentatonic joy that doesn't force, morning welcoming",
+        "instruments": ["bansuri", "tabla"],
+        "use_case":    "morning focus and positive energy reset",
+        "theme":       "Bansuri in Hamsadhwani — five sacred notes, infinite clarity, morning mind wide open",
+        "music_hints": (
+            "Bansuri with clean, bright tone exploring the auspicious pentatonic of Hamsadhwani. "
+            "Teentaal at 85 BPM, tabla entering at 90 seconds — no heavy opening. "
+            "No melancholy, no complexity — just opening phrases like a morning lotus. "
+            "Mood: fresh, clear, auspicious beginning, cortisol dropping naturally."
+        ),
+        "image_hints": (
+            "Garden at morning with bansuri player seated under a flowering champak tree, "
+            "tabla player in sunlit corner, five lotus flowers opening one by one in the pond, "
+            "stylized sunrise birds in Madhubani linework above, fresh green and gold palette, "
+            "geometric honeycomb Madhubani border with bees and lotus motifs."
+        ),
+        "hz_frequency":      "432Hz",
+        "title":             None,
+        "thumbnail_hook":    "CAN'T START YOUR DAY?",
+        "thumbnail_instr":   "BANSURI & TABLA · RAAG HAMSADHWANI",
+        "thumbnail_tagline": "Five Sacred Notes to Open Your Morning Mind",
+        "playlist":          "morning",
+        "suno_lyrics_style": "morning",
+    },
+
+    12: {  # Lalit — Solo Sitar — 3am / Pre-dawn
+        "raga":        "Lalit",
+        "thaat":       "Marwa",
+        "raga_mood":   "profound, pre-dawn, deeply philosophical — the raga of the last hour before sunrise",
+        "instruments": ["sitar"],
+        "use_case":    "3am overactive mind and pre-dawn meditation",
+        "theme":       "Sitar alone in the last hour before light — Lalit's paradox dissolving racing thoughts",
+        "music_hints": (
+            "Solo sitar, absolutely no rhythm support — pure alap only. "
+            "Lalit's unique use of both shuddha and teevra madhyam creates tension that never fully resolves. "
+            "No BPM, no pulse — just breath and the sitar. "
+            "Extremely sparse — sometimes 15 seconds of silence between notes. "
+            "Mood: the paradox of 3am, too tired to think, too awake to sleep, peace in that gap."
+        ),
+        "image_hints": (
+            "Lone figure with sitar on a moonlit rooftop, pre-dawn darkness with a sliver of blue light "
+            "just beginning at the horizon, a single oil lamp casting a warm circle of light, "
+            "geometric crescent moon above, city silhouette below in Madhubani folk-art style, "
+            "deep navy, silver moonlight and warm gold lamp-glow palette, minimal sparse border."
+        ),
+        "hz_frequency":      "396Hz",
+        "title":             None,
+        "thumbnail_hook":    "AWAKE AT 3AM?",
+        "thumbnail_instr":   "SITAR SOLO · RAAG LALIT",
+        "thumbnail_tagline": "The Pre-Dawn Raga to Quiet the Last Racing Thoughts",
+        "playlist":          "midnight",
+        "suno_lyrics_style": "midnight",
+    },
+
+    13: {  # Bhimpalasi — Bansuri + Harmonium + Tabla — Emotional Healing
+        "raga":        "Bhimpalasi",
+        "thaat":       "Kafi",
+        "raga_mood":   "devotional, afternoon warmth, emotional surrender — the bhajan of the afternoon heart",
+        "instruments": ["bansuri", "harmonium", "tabla"],
+        "use_case":    "afternoon emotional healing and stress reset",
+        "theme":       "Bansuri over harmonium warmth — Bhimpalasi's afternoon devotion absorbing cortisol and healing emotion",
+        "music_hints": (
+            "Bansuri melodic lead, harmonium providing warm sustained chord-drone below, "
+            "tabla entering at 2 minutes with gentle keherwa at 80 BPM. "
+            "Bhimpalasi's komal gandhar and komal nishad giving emotional depth. "
+            "Harmonium devotional warmth beneath bansuri's flight. "
+            "Mood: emotional release, afternoon healing, the heart softening."
+        ),
+        "image_hints": (
+            "Afternoon courtyard with dappled sunlight, bansuri player and harmonium player "
+            "on a patterned dhurrie, tabla player in shade of neem tree, "
+            "marigold flowers and tulsi plant in foreground, pigeons in geometric Madhubani sky above, "
+            "warm saffron, terracotta and ivory palette, floral and vine border."
+        ),
+        "hz_frequency":      "528Hz",
+        "title":             None,
+        "thumbnail_hook":    "EMOTIONALLY DRAINED?",
+        "thumbnail_instr":   "BANSURI, HARMONIUM & TABLA · RAAG BHIMPALASI",
+        "thumbnail_tagline": "Afternoon Devotional Music for Emotional Reset & Inner Peace",
+        "playlist":          "stress",
+        "suno_lyrics_style": "stress",
+    },
+
+    14: {  # Alhaiya Bilawal — Bansuri + Tabla — Morning (competitor 100K angle)
+        "raga":        "Alhaiya Bilawal",
+        "thaat":       "Bilawal",
+        "raga_mood":   "bright, fresh, morning optimism — light touch, gently climbing phrases, spring morning",
+        "instruments": ["bansuri", "tabla"],
+        "use_case":    "morning anxiety relief and positive energy reset",
+        "theme":       "Bansuri at spring sunrise — Alhaiya Bilawal's brightness washing morning anxiety clean",
+        "music_hints": (
+            "Bansuri with fresh, ascending morning phrases, clean bright tone. "
+            "Teentaal at 85 BPM, tabla entering at 90 seconds. "
+            "Alhaiya Bilawal's shuddha notes with occasional komal nishad for gentle depth. "
+            "Competitor (SoulfulBreathscape) got 100K with this raga — replicate the morning lightness. "
+            "Mood: anxiety dissolving in morning light, fresh start energy."
+        ),
+        "image_hints": (
+            "Spring garden at sunrise, bansuri player in white kurta seated among blooming flowers, "
+            "tabla player in warm morning light, stylized sunrise with ascending geometric rays, "
+            "birds in formation, fresh green and saffron palette, "
+            "spring flowers — jasmine and champa — woven through Madhubani border."
+        ),
+        "hz_frequency":      "432Hz",
+        "title":             None,
+        "thumbnail_hook":    "MORNING ANXIETY?",
+        "thumbnail_instr":   "BANSURI & TABLA · RAAG ALHAIYA BILAWAL",
+        "thumbnail_tagline": "Morning Raga to Clear Anxiety & Start Fresh",
+        "playlist":          "morning",
+        "suno_lyrics_style": "morning",
+    },
+
+    15: {  # Madhuwanti — Sarod + Santoor — Evening Stress
+        "raga":        "Madhuwanti",
+        "thaat":       "Todi",
+        "raga_mood":   "romantic, sweet evening, mysterious tension resolving into peace — honey at dusk",
+        "instruments": ["sarod", "santoor"],
+        "use_case":    "evening stress and emotional wind-down",
+        "theme":       "Sarod and santoor at dusk — Madhuwanti's sweet tension releasing the week's weight",
+        "music_hints": (
+            "Sarod exploring Madhuwanti's unique komal gandhar and teevra madhyam combination, "
+            "santoor adding crystalline responses shimmering above the sarod's depth. "
+            "No tabla — pure melodic duo in slow vilambit at 55 BPM. "
+            "Bittersweet evening quality, like watching the last light fade. "
+            "Mood: sweet resignation, stress dissolving into acceptance and peace."
+        ),
+        "image_hints": (
+            "Dusk terrace overlooking a river, sarod and santoor players in profile "
+            "against an amber and crimson sky, peacock in full display on the parapet, "
+            "first stars appearing above, oil lamps just being lit, "
+            "amber, crimson and peacock-teal palette, honeyed Madhubani scroll border."
+        ),
+        "hz_frequency":      "174Hz",
+        "title":             None,
+        "thumbnail_hook":    "STRESS WON'T LEAVE?",
+        "thumbnail_instr":   "SAROD & SANTOOR · RAAG MADHUWANTI",
+        "thumbnail_tagline": "Rare Evening Raga to Dissolve Stress & Find Peace",
+        "playlist":          "stress",
+        "suno_lyrics_style": "stress",
+    },
+
+    16: {  # Vibhas — Sarangi + Tanpura — Midnight Stillness
+        "raga":        "Vibhas",
+        "thaat":       "Bhairav",
+        "raga_mood":   "austere, pre-dawn, sparse — only five notes, creating profound emptiness and stillness",
+        "instruments": ["sarangi", "tanpura"],
+        "use_case":    "midnight stillness and nervous system shutdown",
+        "theme":       "Sarangi in Vibhas's void — the sparsest raga, bowing silence into sound at midnight",
+        "music_hints": (
+            "Sarangi with immense space between each phrase — Vibhas has only 5 notes (extreme austerity). "
+            "Bowed sarangi, crying Indian strings, intimate bowed lute — "
+            "tanpura as the only other sound. No rhythm, pure alap. "
+            "Each bow stroke separated by 8-10 seconds of silence. The silences are the music. "
+            "35 BPM breath pace. Komal re and komal dha, no madhyam, no nishad. "
+            "Mood: dissolving into the void, thoughts becoming nothing."
+        ),
+        "image_hints": (
+            "Lone sarangi player in near-darkness, single lamp casting minimal light, "
+            "tanpura lying horizontally in the foreground, vast empty midnight sky above "
+            "with five stars drawn as Madhubani geometric points, river below completely still, "
+            "deep navy and moonlit silver palette, sparse minimal Madhubani border."
+        ),
+        "hz_frequency":      "432Hz",
+        "title":             None,
+        "thumbnail_hook":    "THOUGHTS WON'T STOP?",
+        "thumbnail_instr":   "SARANGI & TANPURA · RAAG VIBHAS",
+        "thumbnail_tagline": "The Rarest Midnight Sound — 5 Notes to Absolute Stillness",
+        "playlist":          "midnight",
+        "suno_lyrics_style": "midnight",
+    },
+
+    17: {  # Kedar — Sitar + Tanpura + Mridangam — Midnight Devotional
+        "raga":        "Kedar",
+        "thaat":       "Kalyan",
+        "raga_mood":   "devotional, midnight, sacred — associated with Lord Shiva, temple at midnight",
+        "instruments": ["sitar", "tanpura", "mridangam"],
+        "use_case":    "late night devotional calm and inner peace",
+        "theme":       "Sitar with mridangam at Shiva's midnight — North meets South in sacred rhythm",
+        "music_hints": (
+            "Sitar leading with devotional midnight alap, tanpura providing sacred drone. "
+            "Mridangam South Indian drum, Carnatic rhythm, two-headed drum — "
+            "entering at 3 minutes with slow Carnatic pulse, deeper and more resonant than tabla. "
+            "Kedar's both madhyams (shuddha and teevra) creating spiritual ambiguity. "
+            "50 BPM Carnatic pulse. Mood: sacred midnight energy, prayer without words."
+        ),
+        "image_hints": (
+            "Temple sanctum at midnight, sitar player before a lit Shiva lingam, "
+            "tanpura leaning against a pillar, mridangam player in ceremonial posture, "
+            "oil lamps and incense smoke rising in Madhubani scroll patterns, "
+            "Nandi bull in background, crescent moon on Shiva's crown motif above, "
+            "deep indigo, gold lamp-glow and sacred red palette."
+        ),
+        "hz_frequency":      "432Hz",
+        "title":             None,
+        "thumbnail_hook":    "NEED INNER PEACE?",
+        "thumbnail_instr":   "SITAR & MRIDANGAM · RAAG KEDAR",
+        "thumbnail_tagline": "Sacred Midnight Raga for Deep Inner Peace",
+        "playlist":          "midnight",
+        "suno_lyrics_style": "midnight",
+    },
+
+    18: {  # Pahadi — Bansuri + Sarod + Tabla — Morning Folk
+        "raga":        "Pahadi",
+        "thaat":       "Bilawal",
+        "raga_mood":   "folk-classical, mountain morning, free and open — Pahadi means of the mountains",
+        "instruments": ["bansuri", "sarod", "tabla"],
+        "use_case":    "morning energy and cortisol reset with mountain-folk warmth",
+        "theme":       "Mountain dawn trio — Pahadi's Himalayan freedom, cortisol melting in high-altitude air",
+        "music_hints": (
+            "Bansuri leading with folk-classical mountain phrases, free and open. "
+            "Sarod adding Himalayan depth and resonance below. "
+            "Tabla with folk-flavored keherwa at 90 BPM — lighter and more open than teentaal. "
+            "Pahadi's free use of all notes creating openness unlike fixed classical ragas. "
+            "Mood: mountain air, cortisol dissolving, total freedom."
+        ),
+        "image_hints": (
+            "Mountain terrace at dawn with three musicians — bansuri, sarod, tabla — "
+            "overlooking snow-capped Himalayan peaks drawn in Madhubani folk style, "
+            "prayer flags fluttering above, pine trees and rhododendrons in foreground, "
+            "eagle in geometric flight above, fresh blue, gold and forest-green palette, "
+            "mountain-motif Madhubani border with river and peaks."
+        ),
+        "hz_frequency":      "432Hz",
+        "title":             None,
+        "thumbnail_hook":    "CAN'T WAKE UP CALM?",
+        "thumbnail_instr":   "BANSURI, SAROD & TABLA · RAAG PAHADI",
+        "thumbnail_tagline": "Himalayan Morning Music to Reset Cortisol & Feel Free",
+        "playlist":          "morning",
+        "suno_lyrics_style": "morning",
+    },
+
+    19: {  # Megh — Bansuri + Sarangi + Mridangam — Monsoon Stress Relief
+        "raga":        "Megh",
+        "thaat":       "Kafi",
+        "raga_mood":   "monsoon joy, earthy, liberating — rain washing everything clean and ancient",
+        "instruments": ["bansuri", "sarangi", "mridangam"],
+        "use_case":    "monsoon stress relief and emotional release",
+        "theme":       "Bansuri and sarangi in the first monsoon rain — ancient sounds for ancient relief",
+        "music_hints": (
+            "Bansuri with open monsoon-calling phrases that rise and fall like rain. "
+            "Bowed sarangi, crying Indian strings, intimate bowed lute — adding raw earthy depth below. "
+            "Mridangam South Indian drum, Carnatic rhythm, two-headed drum — "
+            "monsoon pulse at 80 BPM, thunderous yet joyful. "
+            "Megh's ascending phrases with monsoon liberation. "
+            "Mood: the catharsis of rain, letting go completely, ancient seasonal relief."
+        ),
+        "image_hints": (
+            "Monsoon scene with bansuri player, sarangi player and mridangam player "
+            "sheltering under a large banyan tree as stylized rain falls in Madhubani teardrop patterns, "
+            "peacock dancing in full display in the rain, river swelling with Madhubani wave-motifs, "
+            "dark teal, stormy grey and emerald green palette with bursts of saffron, "
+            "rain-and-cloud Madhubani border with dancing peacocks."
+        ),
+        "hz_frequency":      "528Hz",
+        "title":             None,
+        "thumbnail_hook":    "STRESS IN THE RAIN?",
+        "thumbnail_instr":   "BANSURI, SARANGI & MRIDANGAM · RAAG MEGH",
+        "thumbnail_tagline": "Monsoon Raga for Emotional Release & Stress Relief",
+        "playlist":          "stress",
+        "suno_lyrics_style": "stress",
     },
 }
 
@@ -438,8 +828,8 @@ OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "output")
 
 
 def today_schedule() -> dict:
-    """Return today's schedule entry (0=Monday … 6=Sunday)."""
-    return WEEKLY_SCHEDULE[date.today().weekday()]
+    """Return today's schedule entry from the 20-day CONTENT_CALENDAR (cycles via day-of-year % 20)."""
+    return CONTENT_CALENDAR[date.today().toordinal() % 20]
 
 
 def format_instruments(instruments: list) -> str:

@@ -34,25 +34,64 @@ def _suno_prompt(brain: dict) -> str:
     instr1 = parts[0] if parts else "sitar"
     instr2 = parts[1] if len(parts) > 1 else ""
 
-    # Use the rich Gemini-generated music_prompt as the Suno style field
-    style = brain.get("music_prompt", "")
+    # STYLE — use Suno-optimised tag stack; fall back to music_prompt prose if missing
+    style = brain.get("suno_style_tags") or brain.get("music_prompt", "")
 
-    lyrics = (
-        f"[Slow Alap - {instr1.title()} Solo]\n"
-        f"[Deep meditative phrases, wide silences, komal notes held long]\n\n"
-        f"[Vilambit Gat - {(instr2 or instr1).title()} enters]\n"
-        f"[Sparse rhythm, {instr1} melody introspective and grave]\n\n"
-        f"[Extended Meditation]\n"
-        f"[No climax, no resolution — sustained stillness, each phrase completing itself]\n\n"
-        f"[Fade into silence]"
-    )
+    # LYRICS — vary structure by content category
+    category = brain.get("suno_lyrics_style", brain.get("playlist", "stress"))
+
+    if category == "sleep":
+        lyrics = (
+            f"[Opening — pure silence, then {instr1} enters with a single note]\n"
+            f"[Sparse alap — each phrase 8-10 seconds apart, tanpura drone beneath]\n\n"
+            f"[Vilambit — progressively slower, each note fading before the next]\n"
+            f"[Deep Stillness — phrases becoming whispers, vast silence between]\n\n"
+            f"[Final fade — no resolution, sound dissolving into quiet]"
+        )
+    elif category == "morning":
+        lyrics = (
+            f"[Gentle Alap — {instr1} opens softly, ascending phrases like sunrise]\n"
+            f"[Awakening — warmth building, not urgency, a slow opening]\n\n"
+            f"[Madhya Laya — mid-pace steady energy, {(instr2 or instr1)} enters]\n"
+            f"[Open Flow — brightness without force, breathing with the music]\n\n"
+            f"[Gentle Close — leave room to start the day, no dramatic ending]"
+        )
+    elif category == "focus":
+        lyrics = (
+            f"[Slow Alap — {instr1} solo, methodical, each phrase deliberate]\n"
+            f"[Deep Concentration — wide silence between phrases, thought completing itself]\n\n"
+            f"[Vilambit Gat — sparse rhythm enters, laser stillness, no distraction]\n"
+            f"[Extended Flow — sustained clarity, no climax, no break in concentration]\n\n"
+            f"[Open Awareness — no resolution, just sustained focus]"
+        )
+    elif category == "midnight":
+        lyrics = (
+            f"[Heavy Alap — {instr1} alone, gravity in every note, 10-second silences]\n"
+            f"[Deliberate Stillness — thoughts settling like sediment, no hurry]\n\n"
+            f"[Slow Gat — rhythm enters at 3+ minutes, minimal, ancient pulse]\n"
+            f"[Sustained Meditation — no buildup, no climax, just the midnight]\n\n"
+            f"[Fade into silence — the music becomes the room, then nothing]"
+        )
+    else:  # stress / anxiety (default)
+        lyrics = (
+            f"[Slow Alap — {instr1} enters alone, no rhythm, emotional release begins]\n"
+            f"[Komal phrases — longing held, then released, like exhaling weeks of tension]\n\n"
+            f"[Gentle Gat — rhythm enters softly, breath-paced, {(instr2 or instr1)} joins]\n"
+            f"[Emotional Release — phrases that sigh and resolve, the weight lifting]\n\n"
+            f"[Fade — cortisol dropping, nervous system finally resting]"
+        )
 
     return (
         f"SUNO CUSTOM MODE\n\n"
-        f"STYLE FIELD:\n{style}\n\n"
-        f"LYRICS FIELD:\n{lyrics}\n\n"
-        f"TIP: Generate 2-3 clips. Use the one with the most silence and gravity. "
-        f"Avoid clips that build to a dramatic climax."
+        f"STYLE FIELD (paste exactly — comma-separated tag stacks, not sentences):\n{style}\n\n"
+        f"LYRICS FIELD (structural markers — controls arrangement):\n{lyrics}\n\n"
+        f"TIPS:\n"
+        f"· Instrumental toggle → ON (always)\n"
+        f"· Generate 4-6 variations, pick the 2 with the most silence and gravity\n"
+        f"· Use Extend 2-3× to reach 60 minutes\n"
+        f"· Run the best clip through Remaster for cleaner audio\n"
+        f"· Avoid clips that build to a dramatic climax or have Western percussion\n"
+        f"· If rare instrument sounds wrong, add 'no violin, no orchestra' to Style"
     )
 
 
