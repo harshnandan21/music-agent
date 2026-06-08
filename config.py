@@ -623,6 +623,9 @@ CONTENT_SEEDS = {
         "Anxiety Reset", "Nervous System Calm", "Emotional Detox", "Mind Reset",
         "Stop Overthinking", "Morning Clarity", "Work Focus", "Inner Stillness",
         "Sleep Fast", "Wake Up Calm", "Dissolve Tension",
+        # Neuroscience hooks — Raga Heal's top 2 videos: 384K + 368K views each
+        "Dopamine Reset", "Digital Detox", "Vagus Nerve Activation",
+        "Circadian Reset", "Screen Fatigue Reset", "Burnout Reset", "Neural Stillness",
         # Science-backed hooks — high search intent, proven in healing music niche
         "Lower Cortisol", "Parasympathetic Reset", "Melatonin Boost", "HRV Calm",
         "Cortisol Relief", "Nervous System Reset", "Deep Nervous System Healing",
@@ -638,6 +641,9 @@ CONTENT_SEEDS = {
         "Desert Night", "River Fog",
     ],
     "title_patterns": [
+        # ── #1 FORMULA — Neuroscience+Raga (Raga Heal: 384K + 368K views) ─────
+        # "[Wellness/Science Term] [Emoji] | [Raga] [Instrument] [Hz] for [Benefit1], [Benefit2] & [Benefit3]"
+        "{neuroscience_term} {emoji} | Raag {raga} {instrument} {hz} for {benefit1}, {benefit2} & {benefit3}",
         # ── HIGHEST PERFORMING (competitor-validated) ─────────────────────────
         # Question hook — SoulfulBreathscape gets 643K, 195K, 187K with this
         # Format: "Morning Anxiety? 🌱 | Raag X inspired Bansuri to Calm Stress"
@@ -673,11 +679,19 @@ CONTENT_SEEDS = {
         "midnight": ["Mind Won't Settle", "Overactive Mind Tonight", "Thoughts Won't Stop",
                      "Can't Quiet Your Mind", "Overthinking Before Bed"],
     },
+    # Neuroscience-backed hooks (Raga Heal formula — 384K + 368K views)
+    "neuroscience_hooks": [
+        "Dopamine Reset", "Cortisol Drop", "Vagus Nerve Activation",
+        "Digital Detox", "Nervous System Reset", "Circadian Reset",
+        "Screen Fatigue", "Burnout Reset", "Neural Stillness", "Parasympathetic Calm",
+    ],
     # Mental health terms (ShantiofSitar pattern)
     "mental_health_terms": [
         "Mental Health", "Mental Clarity", "Nervous System Calm",
         "Deep Focus", "Stress Relief", "Inner Peace", "Deep Sleep",
         "Anxiety Relief", "Emotional Healing", "Mind & Soul",
+        # Neuroscience-backed (high search intent)
+        "Dopamine Reset", "Cortisol Relief", "Vagus Nerve", "Digital Detox",
     ],
     "hook_phrases": [
         # ── Question hooks (competitor-validated — SoulfulBreathscape) ────────

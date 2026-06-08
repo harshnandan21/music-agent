@@ -20,6 +20,39 @@ from config import (
 
 USED_IDEAS_FILE = os.path.join(os.path.dirname(OUTPUT_DIR), "used_ideas.json")
 
+# Cinematic mood backdrops keyed by playlist type.
+# These are the base scene descriptions for the Madhubani Hybrid image system:
+# cinematic Indian scene in the centre, Madhubani ornamental border on all edges.
+# Source: thumbnail design brief analysis — differentiates from every competitor
+# who uses generic photographic landscapes with no folk-art identity.
+_MOOD_BACKDROP = {
+    "morning": (
+        "Cinematic Indian sunrise landscape, soft golden mist over a serene river, "
+        "distant Himalayan silhouette, warm peach-saffron-gold sky at the horizon, "
+        "deep indigo-rose at the top fading to warm amber at sunrise"
+    ),
+    "sleep": (
+        "Cinematic moonlit Indian night scene, full moon over the Yamuna river, "
+        "distant temple silhouette with glowing oil lamps, deep indigo and purple night sky "
+        "with subtle stars, soft golden lamp reflections shimmering in still water"
+    ),
+    "midnight": (
+        "Cinematic Indian midnight scene, crescent moon above an ancient temple, "
+        "oil lamps glowing warm gold in the foreground, deep navy and indigo sky, "
+        "river below perfectly still, subtle star-field in soft geometric patterns"
+    ),
+    "stress": (
+        "Cinematic Indian monsoon scene, gentle rain falling over lush green Kerala backwaters, "
+        "ancient temple in the distance, mist rising from rain-soaked earth, "
+        "deep teal and forest green palette with warm gold highlights"
+    ),
+    "focus": (
+        "Cinematic serene Indian forest meditation grove, ancient banyan tree with soft dappled "
+        "morning sunlight, deep sage green and forest tones, warm gold light shafts through the "
+        "canopy, peaceful clearing with wildflowers and moss-covered ground"
+    ),
+}
+
 
 def _load_used_ideas(n: int = 20) -> list:
     if not os.path.exists(USED_IDEAS_FILE):
@@ -97,6 +130,14 @@ def run(client) -> dict:
             "Generate 8 SEO-optimised title options (≤70 chars each). "
             "Pick the strongest as 'title'. Put all 8 in 'title_options'.\n\n"
             "SEO TITLE PATTERNS — use ALL 8, one per pattern:\n\n"
+            "  ★★ #1 FORMULA — Neuroscience + Raga (Raga Heal: 384K + 368K views, highest in niche):\n"
+            "  Pattern N — '[Wellness/Science Term] [Emoji] | [Raga] [Instrument] [Hz] for [Benefit1], [Benefit2] & [Benefit3]'\n"
+            "    Wellness terms: Dopamine Reset · Cortisol Drop · Vagus Nerve · Digital Detox\n"
+            "                    Nervous System Reset · Circadian Reset · Screen Fatigue · Burnout Reset\n"
+            "    Examples: 'Dopamine Reset 🌿 | Bansuri Raga Bhimpalasi 432Hz for Focus, Calm & Inner Peace'\n"
+            "              'Vagus Nerve Reset | Veena Raga Bhairavi 432Hz for Deep Calm & Anxiety Relief'\n"
+            "              'Digital Detox | Santoor Raga Yaman 432Hz for Screen Fatigue, Sleep & Mental Clarity'\n"
+            "              'Cortisol Drop 🌿 | Sitar Raga Bhupali 432Hz for Morning Calm, Focus & Anxiety Relief'\n\n"
             "  ★ HIGHEST PERFORMING (competitor-validated view counts):\n"
             "  Pattern A — Question hook (643K views): '{Question}? 🌱 | Raag X inspired {Instrument} to {benefit}'\n"
             "    Examples: 'Morning Anxiety? 🌱 | Raag Bhairavi inspired Bansuri to Calm Stress'\n"
@@ -130,9 +171,11 @@ def run(client) -> dict:
     seeds_patterns  = "\n".join(f"  · {p}" for p in CONTENT_SEEDS["title_patterns"])
     seeds_hooks     = "\n".join(f"  · {p}" for p in CONTENT_SEEDS["hook_phrases"][:12])
     # Question hooks — drive from playlist key (morning/sleep/focus/midnight/stress)
-    q_key   = schedule.get("playlist", "stress")
-    q_hooks = ", ".join(CONTENT_SEEDS.get("question_hooks", {}).get(q_key, []))
-    mh_terms = ", ".join(CONTENT_SEEDS.get("mental_health_terms", [])[:6])
+    q_key         = schedule.get("playlist", "stress")
+    q_hooks       = ", ".join(CONTENT_SEEDS.get("question_hooks", {}).get(q_key, []))
+    mh_terms      = ", ".join(CONTENT_SEEDS.get("mental_health_terms", [])[:8])
+    neuro_hooks   = ", ".join(CONTENT_SEEDS.get("neuroscience_hooks", []))
+    mood_backdrop = _MOOD_BACKDROP.get(q_key, _MOOD_BACKDROP["stress"])
     seeds_avoid     = ", ".join(CONTENT_SEEDS["avoid_generic"])
     hz_note         = f"Hz frequency for this post: {locked['hz_frequency']}" if "hz_frequency" in locked else ""
 
@@ -158,6 +201,7 @@ TODAY'S POST CONFIG (from weekly schedule):
 
 CONTENT SEEDS (weave 1-2 naturally):
 - Outcome hooks: {seeds_outcomes}
+- Neuroscience/wellness hooks (Raga Heal formula — 384K + 368K views): {neuro_hooks}
 - Mental health terms (ShantiofSitar pattern): {mh_terms}
 - Question hooks for today's use case (SoulfulBreathscape pattern — 643K views): {q_hooks}
 - Atmosphere hooks: {seeds_atmos}
@@ -219,12 +263,12 @@ Special Suno instrument hint tags (always include for these instruments):
 
 Base on: {schedule['music_hints']}
 
-IMAGE PROMPT GUIDANCE — AUTHENTIC MADHUBANI HEALING ART:
+IMAGE PROMPT GUIDANCE — MADHUBANI HYBRID (Cinematic Scene + Folk Art Border):
 
-Structure the image_prompt exactly like this template — it must have all four sections:
+Structure the image_prompt with all four sections — cinematic interior, Madhubani border frame:
 
 SECTION 1 — OPENING STYLE DECLARATION (word for word):
-"Create a breathtaking, authentic Madhubani (Mithila) folk-art masterpiece for a YouTube healing music video background. The artwork should feel sacred, calming, spiritual, and deeply connected to Indian culture and wellness traditions. Authentic Madhubani painting style, handmade folk-art appearance, museum-quality Mithila artwork, intricate black outlines, dense decorative patterns, traditional Indian aesthetics. Masterpiece, ultra-detailed, 8K, professional artwork, highly intricate patterns, elegant composition, timeless Indian folk-art beauty."
+"{mood_backdrop}. A serene {instruments_label} player seated in the scene in traditional attire, eyes closed, radiating healing energy. Photorealistic cinematic quality throughout the central scene, ultra-detailed, 8K. Painterly Madhubani folk art ornamental border frames all four edges — peacocks, lotus flowers, fish motifs, sacred vines, geometric Mithila patterns in warm gold (#D4A857) on deep indigo (#1A1F3A). The Madhubani heritage lives in the border and decorative accents; the central scene is cinematic, clear, and atmospheric. 16:9 aspect ratio, professional photography depth of field, no text, no watermarks, no UI elements."
 
 SECTION 2 — CENTRAL SCENE (build from today's schedule and emotional direction):
 - Describe the central figure: a serene Indian musician ({instruments_label} player) OR a meditating figure depending on the scene
@@ -355,6 +399,7 @@ SECTION 6 — WHY IT HEALS (2 sentences, concise):
 
 ────────────────────────────
 
+☕ Support DhunDetox: buymeacoffee.com/dhundetox
 💛 If this music brought you stillness, please LIKE, SUBSCRIBE, and SHARE with someone who needs peace.
 🔔 Subscribe to DhunDetox for daily Indian classical healing music, raga therapy, and mindful sound journeys.
 💬 Comment below: {{one engaging question for this video's theme}}

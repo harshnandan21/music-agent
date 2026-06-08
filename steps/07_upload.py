@@ -14,6 +14,15 @@ SCOPES = [
     "https://www.googleapis.com/auth/youtube.force-ssl",  # required for comments
 ]
 
+# Fixed tags on every video — identical every time ensures consistent algorithmic
+# clustering (same pool → YouTube promotes all videos together, not just one).
+# Source: Shunya SoundScapes uses same 10 tags → consistent algorithmic grouping.
+CORE_TAGS = [
+    "meditationmusic", "relaxingmusic", "sleepmusic", "indianclassicalmusic",
+    "ragamusic", "healingfrequencies", "432hz", "bansurimusic",
+    "anxietyrelief", "stressrelief",
+]
+
 
 def _get_credentials():
     from google.oauth2.credentials import Credentials
@@ -53,7 +62,12 @@ def run(brain: dict, video_path: str, thumbnail_path: str, publish_at: str = Non
 
     seen = set()
     candidates = []
-    # 1. Curated tags[] first
+    # 0. Fixed core tags — always first (consistent algorithmic clustering)
+    for t in CORE_TAGS:
+        if t not in seen:
+            candidates.append(t)
+            seen.add(t)
+    # 1. Curated tags[] next
     for t in brain.get("tags", []):
         t = t.strip()
         if t and t.isascii() and t not in seen:

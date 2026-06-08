@@ -20,6 +20,12 @@ Usage:
   python studio/orchestrator.py --publish
   python studio/orchestrator.py --publish --date 2026-05-25
   python studio/orchestrator.py --publish --no-telegram
+  python studio/orchestrator.py --publish --shorts   ← enable Shorts (disabled by default)
+
+Shorts strategy: Shorts are disabled by default until 1,000 organic subscribers.
+  Evidence: every top channel in this niche (Raga Heal 60K, Soulful Breathscape 11K)
+  posts zero Shorts — healing music is a search/recommendation niche, not a scroll
+  niche. Shorts dilute watch-time quality signals. Re-enable with --shorts after 1K subs.
 
 Before running --publish in MANUAL mode, drop into studio/drafts/YYYY-MM-DD/:
   clip_1.mp3       (required) your recorded music
@@ -51,7 +57,8 @@ from config import GEMINI_API_KEY
 from studio.utils import get_duration
 import studio.telegram as tg
 
-NO_TELEGRAM = "--no-telegram" in sys.argv
+NO_TELEGRAM    = "--no-telegram" in sys.argv
+SHORTS_ENABLED = "--shorts" in sys.argv
 
 
 def _tg_send(text: str):
@@ -149,7 +156,11 @@ def _send_manual_prompts(brain: dict, date_str: str, file_mode: str = "LAPTOP"):
 # ── Short helper ─────────────────────────────────────────────────────────────
 
 def _do_short(brain: dict, draft_dir: str):
-    """Generate short.mp4 and upload it as a YouTube Short. Non-fatal on failure."""
+    """Generate short.mp4 and upload it as a YouTube Short. Non-fatal on failure.
+    Disabled by default — pass --shorts to enable. Strategy: no Shorts until 1K organic subs."""
+    if not SHORTS_ENABLED:
+        print("[orchestrator] Shorts skipped (pass --shorts to enable — wait until 1K organic subs)")
+        return
     try:
         _tg_send("Generating 60-sec Short (scheduled 11 PM)...")
         step05   = _load_step("05_short.py")
