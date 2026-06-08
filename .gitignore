@@ -2,6 +2,7 @@
 client_secret.json
 youtube_token.json
 output/
+studio/drafts/
 .claude/
 __pycache__/
 *.pyc
