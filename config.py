@@ -1,5 +1,4 @@
 import os
-from datetime import date
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
@@ -841,9 +840,20 @@ if os.name == "nt" and os.path.exists(FFMPEG_DIR) and FFMPEG_DIR not in os.envir
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "output")
 
 
+def _post_count() -> int:
+    """Return total number of posts published so far (used_ideas.json entry count)."""
+    path = os.path.join(os.path.dirname(__file__), "used_ideas.json")
+    if not os.path.exists(path):
+        return 0
+    import json
+    with open(path) as f:
+        return len(json.load(f))
+
+
 def today_schedule() -> dict:
-    """Return today's schedule entry from the 20-day CONTENT_CALENDAR (cycles via day-of-year % 20)."""
-    return CONTENT_CALENDAR[date.today().toordinal() % 20]
+    """Return the next schedule entry from the 20-day CONTENT_CALENDAR.
+    Cycles by post count so skipping posting days never skips ragas."""
+    return CONTENT_CALENDAR[_post_count() % 20]
 
 
 def format_instruments(instruments: list) -> str:
