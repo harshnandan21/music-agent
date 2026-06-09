@@ -412,15 +412,17 @@ SECTION 6 — WHY IT HEALS (2 sentences, concise):
 {hashtag_str}
 
 KEYWORD STRING (separate field — for YouTube tags):
-Comma-separated, no spaces after commas, total 470–480 chars exactly.
-Pattern: raga name variations → instrument + raga combos → instrument alone → meditation/healing/use-case terms → emotion terms → channel name (thelifemerit) → 2-3 Hindi keywords at end (e.g. ध्यान संगीत,<instrument> संगीत,राग <raga in Devanagari>).
+⚠️ HARD LIMIT: Comma-separated, NO spaces after commas, TOTAL MUST BE EXACTLY 470–480 chars.
+Count characters before outputting. If over 480 — remove terms. If under 470 — add terms. Do NOT output a string outside this range.
+Pattern: raga name variations → instrument + raga combos → instrument alone → meditation/healing/use-case terms → emotion terms → channel name (dhundetox) → 2-3 Hindi keywords at end (e.g. ध्यान संगीत,<instrument> संगीत,राग <raga in Devanagari>).
 Do NOT include Hz frequency terms in the keyword string.
-Example: raag {schedule['raga'].lower()},raga {schedule['raga'].lower()},{instruments_label.replace(' & ', ' ').replace(', ', ' ')},indian classical music,meditation music,healing music,...,thelifemerit,ध्यान संगीत,राग {schedule['raga'].lower()}
+PROCESS: Build your list → count total chars → trim/expand to hit 470-480 → output.
+Example (count = 475): raag {schedule['raga'].lower()},raga {schedule['raga'].lower()},{instruments_label.replace(' & ', ' ').replace(', ', ' ')},indian classical music,meditation music,healing music,stress relief,sleep music,anxiety relief,deep relaxation,indian raga,classical meditation,relaxing music,mindfulness,dhundetox,ध्यान संगीत,राग {schedule['raga'].lower()}
 
 TAGS GUIDANCE: Target 440–460 chars (YouTube shows 500 but rejects above ~465 in practice). English only. First tag = primary keyword (raag name). Then: raga name variations, instrument+raga combos, instrument alone, broad categories (meditation music, healing music, stress relief), long-tail benefit combos (raag X for anxiety, X meditation), emotion/use-case terms, channel brand (dhundetox) last. Each tag with spaces counts +2 chars toward the budget. Aim for 22–26 quality tags.
 
 {{
-  "title": "strongest of the 8 options — prioritise Pattern A (question hook) or B (instrument-first) as they have highest view counts",
+  "title": "★★ DEFAULT to Pattern N (Neuroscience formula) — highest performing in niche (Raga Heal: 384K + 368K views). Use Pattern A (question hook) only if Pattern N does not fit naturally. Never default to Pattern D/E/F/G/H.",
   "title_options": [
     "Pattern A — Question hook (643K views): '[Question]? 🌱 | Raag X inspired [Instrument] to/for [benefit]'",
     "Pattern B — Instrument-first (220K views): '[Instrument] for [Mental Health Term] | Raag X | [Hz] Indian Classical'",

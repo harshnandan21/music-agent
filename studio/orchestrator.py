@@ -458,7 +458,7 @@ def do_publish(date_str: str):
         _tg_send("music.flac already exists — skipping extend step.")
     else:
         if NO_TELEGRAM:
-            target_min = 20
+            target_min = 60
             print(f"[orchestrator] --no-telegram: defaulting to {target_min} min")
         else:
             dur_token = tg.new_token()
