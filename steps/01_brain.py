@@ -413,6 +413,9 @@ SECTION 6 — WHY IT HEALS (2 sentences, concise):
 
 ⚠️ Disclaimer: This music is intended for relaxation and wellness. Not a substitute for professional medical treatment.
 
+🎵 All music is original and commercially licensed.
+Creative direction & visual artwork © Dhun Detox.
+
 {hashtag_str}
 
 KEYWORD STRING (separate field — for YouTube tags):
