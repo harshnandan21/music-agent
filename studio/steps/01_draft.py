@@ -90,6 +90,8 @@ def _suno_prompt(brain: dict) -> str:
         f"· Generate 4-6 variations, pick the 2 with the most silence and gravity\n"
         f"· Use Extend 2-3× to reach 60 minutes\n"
         f"· Run the best clip through Remaster for cleaner audio\n"
+        f"· Use Inpainting to fix weak sections (e.g. if tabla drops out unnaturally)\n"
+        f"· Download stems → layer/refine in Audacity or GarageBand if needed\n"
         f"· Avoid clips that build to a dramatic climax or have Western percussion\n"
         f"· If rare instrument sounds wrong, add 'no violin, no orchestra' to Style"
     )

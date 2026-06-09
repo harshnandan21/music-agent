@@ -247,11 +247,13 @@ MUSIC PROMPT GUIDANCE — TWO SEPARATE FIELDS REQUIRED:
 
 ② suno_style_tags  (for Suno Custom Mode STYLE field — COMMA-SEPARATED TAG STACKS, not sentences):
 Suno is a search engine for sound, not ChatGPT. Write tags, not prose.
-Follow this exact master formula:
-  Raga {schedule['raga']}, {schedule['thaat']} thaat, [time of day / season],
+Follow this exact master formula (DhunDetox brand template):
+  Raga {schedule['raga']}, Indian classical instrumental, {schedule['thaat']} thaat, [time of day / season],
   [primary instrument] [playing role], [secondary instrument] [role], [tertiary if any],
-  [BPM] BPM, [taal name], [3-4 emotional quality tags],
-  high fidelity recording, concert hall acoustics, warm analog feel,
+  [BPM] BPM, [taal name or "no taal"], alap-jor-jhala structure,
+  [3-4 emotional quality tags: e.g. meditative, introspective, spiritual calm, healing resonance],
+  cinematic warmth, emotional depth, spiritual stillness,
+  high fidelity recording, concert hall acoustics, AIR Studios quality, warm analog feel,
   no lyrics, no western percussion, DhunDetox wellness channel, loop-friendly fade
 
 Special Suno instrument hint tags (always include for these instruments):
