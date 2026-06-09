@@ -61,6 +61,16 @@ NO_TELEGRAM    = "--no-telegram" in sys.argv
 SHORTS_ENABLED = "--shorts" in sys.argv
 
 
+def _next_upload_slot() -> str:
+    """Next 00:00 UTC (5:30 AM IST) at least 5 min from now — YouTube scheduling requirement."""
+    from datetime import datetime, timezone, timedelta
+    now  = datetime.now(timezone.utc)
+    slot = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    if slot <= now + timedelta(minutes=5):
+        slot += timedelta(days=1)
+    return slot.isoformat()
+
+
 def _tg_send(text: str):
     if not NO_TELEGRAM:
         tg.send_text(text)
@@ -242,9 +252,11 @@ def _do_auto_steps(client, brain: dict, draft_dir: str, target_min: int):
     )
 
     if NO_TELEGRAM:
-        print("[orchestrator] --no-telegram: auto-approving upload.")
+        publish_at = _next_upload_slot()
+        from datetime import datetime, timezone
+        _dt = datetime.fromisoformat(publish_at)
+        print(f"[orchestrator] --no-telegram: scheduling for {_dt.strftime('%d %b %Y %H:%M UTC')} (5:30 AM IST)")
         decision   = "approved"
-        publish_at = None
     else:
         token = tg.new_token()
         caption = (
@@ -506,9 +518,11 @@ def do_publish(date_str: str):
     )
 
     if NO_TELEGRAM:
-        print("[orchestrator] --no-telegram: auto-approving upload.")
+        publish_at = _next_upload_slot()
+        from datetime import datetime, timezone
+        _dt = datetime.fromisoformat(publish_at)
+        print(f"[orchestrator] --no-telegram: scheduling for {_dt.strftime('%d %b %Y %H:%M UTC')} (5:30 AM IST)")
         decision   = "approved"
-        publish_at = None
     else:
         token = tg.new_token()
         caption = (
