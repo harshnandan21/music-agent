@@ -13,7 +13,7 @@ from config import YOUTUBE_CLIENT_SECRET_FILE, YOUTUBE_TOKEN_FILE
 
 COPYRIGHT = (
     "\n🎵 All music is original and commercially licensed.\n"
-    "Creative direction & visual artwork © Dhun Detox."
+    "Creative direction & visual artwork © DhunDetox."
 )
 DISCLAIMER = "⚠️ Disclaimer:"
 
@@ -49,8 +49,11 @@ def _get_credentials():
 
 def _insert_copyright(desc: str) -> tuple[str, bool]:
     """Insert copyright after disclaimer line. Returns (new_desc, was_changed)."""
-    if "All music is original and commercially licensed" in desc:
-        return desc, False  # already present
+    if "© DhunDetox." in desc:
+        return desc, False  # already correct
+    # Fix old "Dhun Detox" spelling if present
+    if "© Dhun Detox." in desc:
+        return desc.replace("© Dhun Detox.", "© DhunDetox."), True
 
     # Find disclaimer line and insert after it
     idx = desc.find(DISCLAIMER)
