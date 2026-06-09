@@ -317,10 +317,12 @@ STYLE PRINCIPLES (always apply):
 - Ornate decorative border on all four edges — paisley, lotus, geometric motifs
 - Rich botanical elements natural to the scene — derive from raga setting
 
-TEXT OVERLAY (always include, baked into image):
+BAKED-IN TEXT (always include, rendered as part of the painting — NOT labelled "overlay"):
 A wide ornate parchment or stone banner (top or woven naturally into the composition) containing:
-  Line 1 (large bold serif, high contrast): short punchy version of title — max 6 words, no emojis, no Hz numbers
+  Line 1 (large bold serif, high contrast): the thumbnail_hook value — max 6 words, no emojis, no Hz numbers
   Line 2 (smaller elegant serif): "Raag {schedule['raga']} · {{hz_frequency}}  |  {{2-3 word benefit}}"
+  Bottom strip (legible serif): the thumbnail_tagline value
+CRITICAL: Do NOT include the word "OVERLAY" or any meta-labels anywhere in the image. The text must appear as part of the artwork itself.
 
 COMPOSITION — invent a fresh approach each time. Some possibilities to draw from:
 - The two-world split: musician at centre, one half shows the emotional problem (tangled spirals for overthinking, dark storm clouds for stress, fragmented shards for anxiety, grey fog for brain fatigue), other half shows the relief (peacock in full bloom, deer in golden light, lotus opening, moon emerging from clouds) — both halves dissolving into the music

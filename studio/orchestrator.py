@@ -500,14 +500,17 @@ def do_publish(date_str: str):
         step03.run(brain, draft_dir)
         _tg_send("Video assembled.")
 
-    # Generate thumbnail (skip if already exists)
+    # Thumbnail — use manually dropped thumbnail.png (Gemini-generated).
+    # Pass --generate-thumbnail to auto-generate a PIL placeholder instead.
     thumb_path = os.path.join(draft_dir, "thumbnail.png")
-    if not os.path.exists(thumb_path):
+    if not os.path.exists(thumb_path) and "--generate-thumbnail" in sys.argv:
         try:
             step06 = _load_step("06_thumbnail.py")
             step06.run(brain, draft_dir)
         except Exception as e:
             print(f"[orchestrator] Thumbnail generation failed (non-fatal): {e}")
+    elif not os.path.exists(thumb_path):
+        print("[orchestrator] No thumbnail.png found — drop your Gemini thumbnail into the draft folder before uploading.")
 
     # Approval — show thumbnail as preview image
     preview_image = next(
