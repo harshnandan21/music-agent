@@ -137,22 +137,23 @@ def _veo_video_prompt(brain: dict) -> str:
     if not elements:
         return f"VEO — VIDEO PROMPTS\n\nBase prompt:\n{video_prompt}"
 
+    # All elements except the current one — used in the "freeze" sentence
+    all_frozen = "musicians, instruments, temple, sky, border patterns, and all other elements"
+
     clips = []
     for i, element in enumerate(elements[:4], 1):
+        others = [e for j, e in enumerate(elements[:4]) if j != i - 1]
+        freeze_list = ", ".join(others) + (", " if others else "") + "musicians, instruments, temple, sky, and all Madhubani border patterns"
         clips.append(
-            f"CLIP {i} — save as clip_{i}.mp4\n"
-            f"Upload background.png as source image.\n\n"
-            f"* Visual Style: Madhubani painting aesthetic — all human figures, musicians,\n"
-            f"  and instruments are completely frozen, motionless painted sculptures.\n"
-            f"* Allowed Motion: Strictly limited to {element} only.\n"
-            f"  Zero motion from any other element or character in the scene.\n"
-            f"* Camera Rules: Static locked camera, no panning, zooming, or tilting.\n"
-            f"* Technical Output: 8-second seamless loop, first and last frame identical."
+            f"CLIP {i} (clip_{i}.mp4):\n"
+            f"Only {element} animate subtly. "
+            f"The {freeze_list} remain completely frozen like a painting. "
+            f"Static camera. 8-second seamless loop."
         )
 
-    divider = "\n" + "-" * 50 + "\n"
+    divider = "\n\n"
     return (
-        f"VEO — VIDEO PROMPTS (4 × 8-second clips)\n"
+        f"VEO — VIDEO PROMPTS (Gemini Videos tab)\n"
         f"Upload background.png as source image for EACH clip.\n"
         f"{'=' * 50}\n\n"
         + divider.join(clips)
