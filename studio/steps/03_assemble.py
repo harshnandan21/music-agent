@@ -29,12 +29,14 @@ SCALE_FILTER = (
     "scale=1920:1080:force_original_aspect_ratio=decrease,"
     "pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black"
 )
-LOGO_SIZE    = 180   # covers Gemini watermark; safe after 1920x1080 video scaling
+LOGO_SIZE    = 130   # covers Gemini watermark; safe after 1920x1080 video scaling
 # Gemini watermark sits at ~96-97% of image dims.
 # After scaling to 1080p, logo must stay within frame — use 95.5% x, 93% y.
 LOGO_CX_PCT  = 0.955
 LOGO_CY_PCT  = 0.930
-XFADE_DUR    = 0.5
+XFADE_DUR      = 0.30
+CURTAIN_HOLD   = 0.5   # black hold before curtain opens
+CURTAIN_DUR    = 1.0   # splith open animation duration
 
 
 def _make_circular_logo(size: int = LOGO_SIZE) -> str | None:
@@ -161,36 +163,47 @@ def _assemble_from_clip(clip_path: str, music_path: str, duration: float, out_pa
     logo_path = _make_circular_logo()
     has_logo  = logo_path is not None
 
-    inputs = []
+    # Index 0 = black lavfi source for curtain open; clips start at index 1
+    black_dur = CURTAIN_HOLD + CURTAIN_DUR
+    inputs = [
+        "-f", "lavfi",
+        "-i", f"color=black:size=1920x1080:rate=24:duration={black_dur}",
+    ]
     for _ in range(n_clips):
         inputs += ["-i", clip_path]
     inputs += ["-i", music_path]
     if has_logo:
         inputs += ["-i", logo_path]
 
-    music_idx      = n_clips
-    logo_idx       = n_clips + 1
+    music_idx      = 1 + n_clips
+    logo_idx       = 1 + n_clips + 1
     fade_out_start = duration - 3
 
-    # Scale all clips to 1920x1080
-    parts = [f"[{i}:v]{SCALE_FILTER}[sv{i}]" for i in range(n_clips)]
+    # Scale all clips to 1920x1080 (shifted by 1 for black source at index 0)
+    # setpts+fps normalizes timestamps so xfade vertopen works correctly
+    parts = [f"[{i+1}:v]{SCALE_FILTER},setpts=PTS-STARTPTS,fps=24[sv{i}]" for i in range(n_clips)]
 
-    # Xfade dissolve chain
-    prev = "[sv0]"
+    # Curtain open: black splits top/bottom revealing sv0
+    parts.append("[0:v]format=yuv420p[black]")
+    parts.append(
+        f"[black][sv0]xfade=transition=vertopen:duration={CURTAIN_DUR}:offset={CURTAIN_HOLD:.3f}[c0]"
+    )
+
+    # Dissolve chain — offsets shifted by CURTAIN_HOLD vs. the non-curtain case
+    prev = "[c0]"
     for i in range(1, n_clips):
-        offset = i * effective_dur
+        offset = CURTAIN_HOLD + i * effective_dur
         label  = f"[xf{i}]"
         parts.append(
             f"{prev}[sv{i}]xfade=transition=dissolve:duration={XFADE_DUR}:offset={offset:.3f}{label}"
         )
         prev = label
 
-    # Fade in/out
-    parts.append(f"{prev}fade=t=in:st=0:d=2,fade=t=out:st={fade_out_start:.1f}:d=3[vfade]")
+    # Fade out only (curtain handles the open)
+    parts.append(f"{prev}fade=t=out:st={fade_out_start:.1f}:d=3[vfade]")
 
     # Logo overlay
     if has_logo:
-        # Center logo at 95.5% x / 93% y — covers Gemini watermark, stays in frame
         parts.append(f"[vfade][{logo_idx}:v]overlay=x=trunc(W*0.955)-w/2:y=trunc(H*0.930)-h/2:format=auto[v]")
         video_map = "[v]"
     else:
@@ -209,7 +222,7 @@ def _assemble_from_clip(clip_path: str, music_path: str, duration: float, out_pa
         "-movflags", "+faststart",
         out_path,
     ]
-    print(f"[assemble] Assembling {n_clips} clips with dissolve transitions...")
+    print(f"[assemble] Assembling {n_clips} clips with curtain open + dissolve transitions...")
     subprocess.run(cmd, check=True, stdin=subprocess.DEVNULL)
 
 
@@ -282,6 +295,9 @@ def run(brain: dict, draft_dir: str) -> str:
         raise FileNotFoundError(f"[assemble] music.flac not found in {draft_dir}")
 
     duration = get_duration(music_path)
+    if "--test" in sys.argv:
+        duration = min(duration, 60)
+        print(f"[assemble] TEST MODE — capping duration at {duration:.0f}s")
     out_path = os.path.join(draft_dir, "video.mp4")
     clips    = _find_clips(draft_dir)
 
