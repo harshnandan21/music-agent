@@ -116,7 +116,47 @@ def _gemini_bg_prompt(brain: dict) -> str:
 
 
 def _veo_video_prompt(brain: dict) -> str:
-    return f"VEO — VIDEO PROMPT (8-second seamless loop)\n\n{brain.get('video_prompt', '')}"
+    """Generate 4 Gemini Animation Blueprint prompts from brain.json video_prompt."""
+    video_prompt = brain.get("video_prompt", "")
+
+    # Parse animated elements from the "Only animate these subtle elements:" bullet list
+    elements = []
+    in_section = False
+    for line in video_prompt.split("\n"):
+        if "only animate" in line.lower() or "animate these" in line.lower():
+            in_section = True
+            continue
+        if in_section:
+            stripped = line.strip()
+            if stripped.startswith("-"):
+                element = stripped.lstrip("- ").split(":")[0].strip()
+                elements.append(element)
+            elif stripped and not stripped.startswith("-"):
+                in_section = False
+
+    if not elements:
+        return f"VEO — VIDEO PROMPTS\n\nBase prompt:\n{video_prompt}"
+
+    clips = []
+    for i, element in enumerate(elements[:4], 1):
+        clips.append(
+            f"CLIP {i} — save as clip_{i}.mp4\n"
+            f"Upload background.png as source image.\n\n"
+            f"* Visual Style: Madhubani painting aesthetic — all human figures, musicians,\n"
+            f"  and instruments are completely frozen, motionless painted sculptures.\n"
+            f"* Allowed Motion: Strictly limited to {element} only.\n"
+            f"  Zero motion from any other element or character in the scene.\n"
+            f"* Camera Rules: Static locked camera, no panning, zooming, or tilting.\n"
+            f"* Technical Output: 8-second seamless loop, first and last frame identical."
+        )
+
+    divider = "\n" + "-" * 50 + "\n"
+    return (
+        f"VEO — VIDEO PROMPTS (4 × 8-second clips)\n"
+        f"Upload background.png as source image for EACH clip.\n"
+        f"{'=' * 50}\n\n"
+        + divider.join(clips)
+    )
 
 
 def run(client, draft_dir: str) -> tuple[dict, str]:
