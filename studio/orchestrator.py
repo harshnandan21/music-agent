@@ -28,11 +28,15 @@ Shorts strategy: Shorts are disabled by default until 1,000 organic subscribers.
   niche. Shorts dilute watch-time quality signals. Re-enable with --shorts after 1K subs.
 
 Before running --publish in MANUAL mode, drop into studio/drafts/YYYY-MM-DD/:
-  clip_1.mp3       (required) your recorded music
-  clip_2.mp3       (optional) second clip — interleaved with clip_1
-  clip.mp4         (optional) 8-second Veo loop — preferred over background image
-  background.png   (required if no clip.mp4) 1920x1080 background
-  thumbnail.png    (optional) custom thumbnail
+  clip_1.mp3 / .wav   (required) your music
+  clip_2.mp3 / .wav   (optional) second clip — crossfaded with clip_1
+  clip_1.mp4          (recommended) Veo 8-sec loop, variant 1 (e.g. flame)
+  clip_2.mp4          (recommended) Veo 8-sec loop, variant 2 (e.g. smoke)
+  clip_3.mp4          (recommended) Veo 8-sec loop, variant 3 (e.g. sky glow)
+  clip_4.mp4          (optional)    Veo 8-sec loop, variant 4 (e.g. ripple)
+  clip.mp4            (fallback if no clip_N.mp4) single Veo loop
+  background.png      (fallback if no .mp4 clips) static image
+  thumbnail.png       (required) custom thumbnail
 """
 
 import importlib.util, io, json, os, shutil, sys, traceback
@@ -143,20 +147,28 @@ def _send_manual_prompts(brain: dict, date_str: str, file_mode: str = "LAPTOP"):
 
     drop_plain = (
         f"\n{'='*60}\n📂 Drop files into: studio/drafts/{date_str}/\n{'='*60}\n"
-        f"  clip_1.mp3 or .wav  (required)\n"
-        f"  clip_2.mp3 or .wav  (optional)\n"
-        f"  background.png      (required)\n"
-        f"  clip.mp4            (optional — 8s Veo loop)\n\n"
+        f"  clip_1.mp3 or .wav  (required — music)\n"
+        f"  clip_2.mp3 or .wav  (optional — second music clip)\n"
+        f"  clip_1.mp4          (recommended — Veo clip, flame motion)\n"
+        f"  clip_2.mp4          (recommended — Veo clip, smoke motion)\n"
+        f"  clip_3.mp4          (recommended — Veo clip, sky glow)\n"
+        f"  clip_4.mp4          (optional   — Veo clip, water ripple)\n"
+        f"  background.png      (required if no .mp4 clips — static fallback)\n"
+        f"  thumbnail.png       (required)\n\n"
         f"Then run:\n"
         f"  python studio/orchestrator.py --publish --date {date_str}\n"
     )
     drop_html = (
         f"<b>📂 Drop files into:</b>\n"
         f"<code>studio/drafts/{date_str}/</code>\n\n"
-        f"  clip_1.mp3 or .wav  (required)\n"
-        f"  clip_2.mp3 or .wav  (optional)\n"
-        f"  background.png      (required)\n"
-        f"  clip.mp4            (optional — 8s Veo loop)\n\n"
+        f"  clip_1.mp3 or .wav  (required — music)\n"
+        f"  clip_2.mp3 or .wav  (optional — second music clip)\n"
+        f"  clip_1.mp4          (recommended — Veo: flame motion)\n"
+        f"  clip_2.mp4          (recommended — Veo: smoke motion)\n"
+        f"  clip_3.mp4          (recommended — Veo: sky glow)\n"
+        f"  clip_4.mp4          (optional   — Veo: water ripple)\n"
+        f"  background.png      (fallback if no .mp4 clips)\n"
+        f"  thumbnail.png       (required)\n\n"
         f"Then run:\n"
         f"<code>python studio/orchestrator.py --publish --date {date_str}</code>"
     )

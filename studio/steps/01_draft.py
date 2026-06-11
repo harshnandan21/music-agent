@@ -194,10 +194,14 @@ def run(client, draft_dir: str) -> tuple[dict, str]:
         tg.send_text(
             f"Idea locked in for {date_label}!\n\n"
             f"Drop your files into studio/drafts/{date_label}/\n"
-            f"  clip_1.mp3      (required)\n"
-            f"  clip_2.mp3      (optional)\n"
-            f"  background.png  (required)\n"
-            f"  thumbnail.png   (optional)\n\n"
+            f"  clip_1.mp3 or .wav  (required — music)\n"
+            f"  clip_2.mp3 or .wav  (optional — second clip)\n"
+            f"  clip_1.mp4          (recommended — Veo: flame motion)\n"
+            f"  clip_2.mp4          (recommended — Veo: smoke motion)\n"
+            f"  clip_3.mp4          (recommended — Veo: sky glow)\n"
+            f"  clip_4.mp4          (optional   — Veo: water ripple)\n"
+            f"  background.png      (fallback if no .mp4 clips)\n"
+            f"  thumbnail.png       (required)\n\n"
             f"Then run:\npython studio/orchestrator.py --publish"
         )
         # Offer automation: run full automated pipeline into the draft folder

@@ -2,12 +2,18 @@
 Studio Step 3 — Assemble
 Combines background + music.flac into video.mp4.
 
-Clip mode (preferred):
-  Drop clip.mp4 (animated seamless loop) in the draft folder.
-  Clips are looped with 0.5s xfade dissolve transitions.
+Multi-clip mode (best — eliminates obvious loop):
+  Drop clip_1.mp4 ... clip_N.mp4 in the draft folder.
+  Clips are merged with 0.5s dissolve transitions into a master loop,
+  then that master loop repeats across the full audio duration.
+  Recommended: 3-4 clips, each an 8-sec Veo variant of the same scene
+  with a different single animated element per clip.
 
-Static image mode (fallback):
-  Drop background.png/jpg. Used when no clip.mp4 is found.
+Single-clip mode (good):
+  Drop clip.mp4. Looped with 0.5s dissolve transitions.
+
+Static image mode (fallback — YouTube inauthentic-content risk):
+  Drop background.png/jpg. Used when no clip files are found.
 """
 
 import math, os, subprocess, sys
@@ -66,9 +72,65 @@ def _stamp_logo(bg_path: str) -> str:
     return out
 
 
-def _find_clip(draft_dir: str) -> str | None:
-    p = os.path.join(draft_dir, "clip.mp4")
-    return p if os.path.exists(p) else None
+def _find_clips(draft_dir: str) -> list[str]:
+    """Return clip_1.mp4...clip_N.mp4 (preferred) or [clip.mp4] (fallback), sorted numerically."""
+    numbered = sorted(
+        (os.path.join(draft_dir, f) for f in os.listdir(draft_dir)
+         if f.startswith("clip_") and f.endswith(".mp4")),
+        key=lambda p: int(os.path.basename(p)[5:-4]) if os.path.basename(p)[5:-4].isdigit() else 99,
+    )
+    if numbered:
+        return numbered
+    single = os.path.join(draft_dir, "clip.mp4")
+    return [single] if os.path.exists(single) else []
+
+
+def _merge_clips(clips: list[str], tmp_dir: str) -> str:
+    """Concatenate multiple Veo clips with dissolve transitions into one master loop clip."""
+    if len(clips) == 1:
+        return clips[0]
+
+    out = os.path.join(tmp_dir, "merged_clip.mp4")
+    print(f"[assemble] Merging {len(clips)} clips into master loop...")
+
+    durations = []
+    for clip in clips:
+        r = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-show_entries", "format=duration",
+             "-of", "csv=p=0", clip],
+            capture_output=True, text=True, check=True,
+        )
+        durations.append(float(r.stdout.strip()))
+
+    inputs = []
+    for clip in clips:
+        inputs += ["-i", clip]
+
+    n = len(clips)
+    parts = [f"[{i}:v]{SCALE_FILTER}[sv{i}]" for i in range(n)]
+
+    prev = "[sv0]"
+    offset = durations[0] - XFADE_DUR
+    for i in range(1, n):
+        label = "[vout]" if i == n - 1 else f"[xf{i}]"
+        parts.append(
+            f"{prev}[sv{i}]xfade=transition=dissolve:"
+            f"duration={XFADE_DUR}:offset={offset:.3f}{label}"
+        )
+        prev = label
+        offset += durations[i] - XFADE_DUR
+
+    subprocess.run(
+        ["ffmpeg", "-y"] + inputs + [
+            "-filter_complex", ";".join(parts),
+            "-map", "[vout]", "-an",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "20",
+            "-pix_fmt", "yuv420p",
+            out,
+        ],
+        check=True, stdin=subprocess.DEVNULL,
+    )
+    return out
 
 
 def _find_image(draft_dir: str) -> str:
@@ -219,17 +281,18 @@ def run(brain: dict, draft_dir: str) -> str:
     if not os.path.exists(music_path):
         raise FileNotFoundError(f"[assemble] music.flac not found in {draft_dir}")
 
-    duration  = get_duration(music_path)
-    out_path  = os.path.join(draft_dir, "video.mp4")
-    clip_path = _find_clip(draft_dir)
+    duration = get_duration(music_path)
+    out_path = os.path.join(draft_dir, "video.mp4")
+    clips    = _find_clips(draft_dir)
 
-    if clip_path:
-        print(f"[assemble] clip.mp4 found — video loop mode")
+    if clips:
+        print(f"[assemble] {len(clips)} clip(s) found — video loop mode")
+        clip_path = _merge_clips(clips, draft_dir) if len(clips) > 1 else clips[0]
         _assemble_from_clip(clip_path, music_path, duration, out_path)
     else:
         image_path = _find_image(draft_dir)
         image_path = _stamp_logo(image_path)
-        print(f"[assemble] Audio={duration:.0f}s, image={os.path.basename(image_path)}")
+        print(f"[assemble] No video clips — static image fallback (Audio={duration:.0f}s)")
         _assemble_from_image(image_path, music_path, duration, out_path)
 
     size_mb = os.path.getsize(out_path) / 1_048_576
