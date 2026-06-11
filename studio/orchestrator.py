@@ -492,7 +492,7 @@ _FOLDER_DAYS     = 30
 
 # Files always safe to keep (never touched by immediate cleanup)
 _KEEP_NAMES = {"brain.json", "background.png", "background.jpg", "background.jpeg",
-               "thumbnail.png", "thumbnail.jpg", "video.mp4", "short.mp4"}
+               "thumbnail.png", "thumbnail.jpg", "video.mp4", "short.mp4", "music.flac"}
 _KEEP_PREFIXES = ("clip_", "clip.")
 _KEEP_SUFFIXES = (".wav", ".mp3")
 
@@ -534,7 +534,7 @@ def _cleanup_draft(draft_dir: str):
 
     token = tg.new_token()
     tg.send_choice_prompt(token, msg, [("🗑 Clean Up", "CLEANUP"), ("⏭ Skip", "SKIP")])
-    choice = tg.wait_for_choice(token, timeout_seconds=3600)
+    choice = tg.wait_for_choice(token, timeout_seconds=600)  # 10 min — don't block pipeline
     if choice == "CLEANUP":
         for fname, fpath in to_delete:
             size_mb = os.path.getsize(fpath) / 1_048_576
