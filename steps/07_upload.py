@@ -110,23 +110,30 @@ def run(brain: dict, video_path: str, thumbnail_path: str, publish_at: str = Non
         },
     }
 
-    media = MediaFileUpload(video_path, mimetype="video/mp4", resumable=True, chunksize=5 * 1024 * 1024)
+    # 1MB chunks: complete faster on slow/congested connections, less likely to hit
+    # YouTube's per-chunk timeout that causes WinError 10054 connection resets.
+    media = MediaFileUpload(video_path, mimetype="video/mp4", resumable=True, chunksize=1 * 1024 * 1024)
     print("[upload] Uploading:", brain['title'].encode('ascii', 'replace').decode('ascii'))
 
     request = youtube.videos().insert(part=",".join(body.keys()), body=body, media_body=media)
     response = None
     import time
+    last_pct   = -1
+    retry_wait = 30   # exponential backoff: 30 → 60 → 120 → 240s max
     while response is None:
         try:
             status, response = request.next_chunk()
+            retry_wait = 30  # reset backoff on success
         except Exception as e:
-            wait = 30
-            print(f"[upload] Network error ({e}) — retrying in {wait}s...")
-            time.sleep(wait)
+            print(f"[upload] Network error ({e}) — retrying in {retry_wait}s...")
+            time.sleep(retry_wait)
+            retry_wait = min(retry_wait * 2, 240)
             continue
         if status:
             pct = int(status.progress() * 100)
-            print(f"[upload] {pct}% uploaded...")
+            if pct != last_pct:
+                print(f"[upload] {pct}% uploaded...")
+                last_pct = pct
 
     video_id = response["id"]
     print(f"[upload] Uploaded: https://youtu.be/{video_id}")
