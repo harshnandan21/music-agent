@@ -3,12 +3,10 @@ import re, subprocess
 
 
 def get_duration(path: str) -> float:
-    """Return audio/video duration in seconds using ffmpeg."""
+    """Return audio/video duration in seconds using ffprobe (reads header, no decode)."""
     r = subprocess.run(
-        ["ffmpeg", "-i", path, "-f", "null", "-"],
-        capture_output=True, text=True,
+        ["ffprobe", "-v", "quiet", "-show_entries", "format=duration",
+         "-of", "csv=p=0", path],
+        capture_output=True, text=True, check=True,
     )
-    m = re.search(r"Duration:\s+(\d+):(\d+):([\d.]+)", r.stderr)
-    if not m:
-        raise RuntimeError(f"Cannot read duration of {path}")
-    return int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3))
+    return float(r.stdout.strip())
