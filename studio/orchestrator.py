@@ -477,20 +477,76 @@ def do_publish(date_str: str):
     print(f"\nDONE — https://youtu.be/{video_id}")
 
     _do_short(brain, draft_dir)
+    _cleanup_draft(draft_dir)
     print("=" * 60)
 
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────
 
-# Large generated files deleted after this many days (video uploaded, no longer needed locally)
-_LARGE_FILE_DAYS = 3
+# video.mp4 kept 5 days post-upload (re-upload safety net), then auto-deleted
+_VIDEO_KEEP_DAYS = 5
+_LARGE_FILE_DAYS = 5
 _LARGE_FILES     = {"video.mp4", "music.flac", "music.mp3", "short.mp4"}
 # Entire draft folder removed after this many days
 _FOLDER_DAYS     = 30
 
+# Files always safe to keep (never touched by immediate cleanup)
+_KEEP_NAMES = {"brain.json", "background.png", "background.jpg", "background.jpeg",
+               "thumbnail.png", "thumbnail.jpg", "video.mp4", "short.mp4"}
+_KEEP_PREFIXES = ("clip_", "clip.")
+_KEEP_SUFFIXES = (".wav", ".mp3")
+
+
+def _cleanup_draft(draft_dir: str):
+    """After upload: delete intermediate files, ask via Telegram before removing."""
+    to_delete = []
+    for fname in os.listdir(draft_dir):
+        fpath = os.path.join(draft_dir, fname)
+        if not os.path.isfile(fpath):
+            continue
+        if fname in _KEEP_NAMES:
+            continue
+        if any(fname.startswith(p) for p in _KEEP_PREFIXES):
+            continue
+        if any(fname.endswith(s) for s in _KEEP_SUFFIXES):
+            continue
+        to_delete.append((fname, fpath))
+
+    if not to_delete:
+        print("[cleanup] No intermediate files to remove.")
+        return
+
+    total_mb = sum(os.path.getsize(p) / 1_048_576 for _, p in to_delete)
+    file_list = "\n".join(f"  • {n} ({os.path.getsize(p)/1_048_576:.1f} MB)" for n, p in to_delete)
+    msg = (
+        f"🗑 Clean up intermediate files? ({total_mb:.0f} MB total)\n\n"
+        f"{file_list}\n\n"
+        f"video.mp4 is kept for {_VIDEO_KEEP_DAYS} days then auto-deleted."
+    )
+
+    if NO_TELEGRAM:
+        for fname, fpath in to_delete:
+            size_mb = os.path.getsize(fpath) / 1_048_576
+            os.remove(fpath)
+            print(f"[cleanup] Deleted {fname} ({size_mb:.1f} MB)")
+        print(f"[cleanup] Freed {total_mb:.0f} MB of intermediate files.")
+        return
+
+    token = tg.new_token()
+    tg.send_choice_prompt(token, msg, [("🗑 Clean Up", "CLEANUP"), ("⏭ Skip", "SKIP")])
+    choice = tg.wait_for_choice(token, timeout_seconds=3600)
+    if choice == "CLEANUP":
+        for fname, fpath in to_delete:
+            size_mb = os.path.getsize(fpath) / 1_048_576
+            os.remove(fpath)
+            print(f"[cleanup] Deleted {fname} ({size_mb:.1f} MB)")
+        _tg_send(f"✅ Cleaned up {total_mb:.0f} MB of intermediate files.\nvideo.mp4 kept for {_VIDEO_KEEP_DAYS} days.")
+    else:
+        print("[cleanup] Cleanup skipped by user.")
+
 
 def _auto_cleanup():
-    """Called automatically at startup: purge large files >3 days old, folders >30 days old."""
+    """Called automatically at startup: purge large files >5 days old, folders >30 days old."""
     drafts_root = os.path.join(STUDIO_DIR, "drafts")
     if not os.path.isdir(drafts_root):
         return
