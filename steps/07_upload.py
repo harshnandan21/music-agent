@@ -131,46 +131,64 @@ def run(brain: dict, video_path: str, thumbnail_path: str, publish_at: str = Non
     video_id = response["id"]
     print(f"[upload] Uploaded: https://youtu.be/{video_id}")
 
+    # YouTube needs ~30s to propagate the video ID before thumbnail/playlist APIs work
+    print("[upload] Waiting 30s for YouTube to propagate video ID...")
+    time.sleep(30)
+
     # Set thumbnail (optional — skipped if no path provided)
     if thumbnail_path:
-        try:
-            # Compress to under 2MB (YouTube limit) before uploading
-            import io
-            from PIL import Image
-            img = Image.open(thumbnail_path).convert("RGB")
-            for quality in (85, 70, 55, 40):
-                buf = io.BytesIO()
-                img.save(buf, format="JPEG", quality=quality)
-                if buf.tell() < 2 * 1024 * 1024:
-                    break
-            buf.seek(0)
-            import tempfile, pathlib
-            tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
-            tmp.write(buf.read()); tmp.close()
-            youtube.thumbnails().set(
-                videoId=video_id,
-                media_body=MediaFileUpload(tmp.name, mimetype="image/jpeg"),
-            ).execute()
-            pathlib.Path(tmp.name).unlink(missing_ok=True)
-            print("[upload] Thumbnail set.")
-        except Exception as e:
-            print(f"[upload] Thumbnail skipped (verify channel at youtube.com/verify): {e}")
+        for attempt in range(1, 4):
+            try:
+                import io
+                from PIL import Image
+                img = Image.open(thumbnail_path).convert("RGB")
+                for quality in (85, 70, 55, 40):
+                    buf = io.BytesIO()
+                    img.save(buf, format="JPEG", quality=quality)
+                    if buf.tell() < 2 * 1024 * 1024:
+                        break
+                buf.seek(0)
+                import tempfile, pathlib
+                tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+                tmp.write(buf.read()); tmp.close()
+                youtube.thumbnails().set(
+                    videoId=video_id,
+                    media_body=MediaFileUpload(tmp.name, mimetype="image/jpeg"),
+                ).execute()
+                pathlib.Path(tmp.name).unlink(missing_ok=True)
+                print("[upload] Thumbnail set.")
+                break
+            except Exception as e:
+                if attempt < 3:
+                    print(f"[upload] Thumbnail attempt {attempt} failed ({e}) — retrying in 30s...")
+                    time.sleep(30)
+                else:
+                    print(f"[upload] Thumbnail skipped (verify channel at youtube.com/verify): {e}")
     else:
         print("[upload] No thumbnail — skipping.")
 
     # Add to the video's designated playlist (looked up by key from brain)
     playlist_id = get_playlist_id(brain.get("playlist", ""))
     if playlist_id:
-        youtube.playlistItems().insert(
-            part="snippet",
-            body={
-                "snippet": {
-                    "playlistId": playlist_id,
-                    "resourceId": {"kind": "youtube#video", "videoId": video_id},
-                }
-            },
-        ).execute()
-        print(f"[upload] Added to playlist '{brain.get('playlist')}' ({playlist_id})")
+        for attempt in range(1, 4):
+            try:
+                youtube.playlistItems().insert(
+                    part="snippet",
+                    body={
+                        "snippet": {
+                            "playlistId": playlist_id,
+                            "resourceId": {"kind": "youtube#video", "videoId": video_id},
+                        }
+                    },
+                ).execute()
+                print(f"[upload] Added to playlist '{brain.get('playlist')}' ({playlist_id})")
+                break
+            except Exception as e:
+                if attempt < 3:
+                    print(f"[upload] Playlist attempt {attempt} failed ({e}) — retrying in 30s...")
+                    time.sleep(30)
+                else:
+                    print(f"[upload] Playlist add failed (non-fatal): {e}")
     else:
         print(f"[upload] No playlist ID set for key '{brain.get('playlist', 'none')}' — skipping.")
 
