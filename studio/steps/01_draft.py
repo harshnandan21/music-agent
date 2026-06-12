@@ -115,6 +115,27 @@ def _gemini_bg_prompt(brain: dict) -> str:
     return preamble
 
 
+def _thumbnail_prompt(brain: dict) -> str:
+    hook    = brain.get("thumbnail_hook", "")
+    instr   = brain.get("thumbnail_instr", "")
+    tagline = brain.get("thumbnail_tagline", "")
+    title   = brain.get("title", "")
+    prompt  = brain.get("thumbnail_prompt", "")
+    return (
+        f"GEMINI PRO — THUMBNAIL (16:9, baked-in text)\n\n"
+        f"Context:\n"
+        f"  Video title: {title}\n"
+        f"  Hook text:   {hook}\n"
+        f"  Instr line:  {instr}\n"
+        f"  Tagline:     {tagline}\n\n"
+        f"TEXT TO BAKE IN (render as part of the painting, not a label):\n"
+        f"  Line 1 (large bold serif):  {hook}\n"
+        f"  Line 2 (smaller serif):     {instr}\n"
+        f"  Bottom strip:               {tagline}\n\n"
+        f"IMAGE PROMPT:\n{prompt}"
+    )
+
+
 def _veo_video_prompt(brain: dict) -> str:
     """Generate 4 Gemini Animation Blueprint prompts from brain.json video_prompt."""
     video_prompt = brain.get("video_prompt", "")
@@ -163,9 +184,10 @@ def _veo_video_prompt(brain: dict) -> str:
 def _print_draft(brain: dict, date_label: str):
     """Print full idea summary + all prompts to terminal."""
     SEP = "=" * 60
-    suno  = _suno_prompt(brain)
-    bg    = _gemini_bg_prompt(brain)
-    video = _veo_video_prompt(brain)
+    suno      = _suno_prompt(brain)
+    bg        = _gemini_bg_prompt(brain)
+    thumbnail = _thumbnail_prompt(brain)
+    video     = _veo_video_prompt(brain)
 
     title_opts = brain.get("title_options", [])
     print(f"\n{SEP}")
@@ -186,6 +208,8 @@ def _print_draft(brain: dict, date_label: str):
     print(suno)
     print(f"\n{SEP}\n")
     print(bg)
+    print(f"\n{SEP}\n")
+    print(thumbnail)
     print(f"\n{SEP}\n")
     print(video)
     print(f"\n{SEP}")
