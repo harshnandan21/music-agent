@@ -201,26 +201,35 @@ Phase 1 of the studio workflow.
 
 1. Runs `steps/01_brain.py` via `importlib.util` (handles digit-prefixed module names).
 2. Saves `brain.json` to `studio/drafts/YYYY-MM-DD/`.
-3. Sends Telegram approval message with idea summary + all 8 title options.
-4. Sends a `.txt` document with all prompts bundled (easy copy-paste on phone):
-   - **Suno Custom Mode:** style field + structural lyrics markers
-   - **Gemini Pro — Background Image:** wraps `brain["image_prompt"]`
+3. Prints all prompts to terminal in this order: Suno → Background → Thumbnail → Veo.
+4. Sends Telegram approval message with idea summary + all 8 title options.
+5. Sends a `.txt` document with all prompts bundled (easy copy-paste on phone):
+   - **Suno Custom Mode:** style field + structural lyrics markers (6 variations across 3 energy levels)
+   - **Gemini Pro — Background Image:** wraps `brain["image_prompt"]` (no baked-in text)
+   - **Gemini Pro — Thumbnail:** wraps `brain["thumbnail_prompt"]` (with baked-in text)
    - **Veo — Video Prompt:** 8-second seamless loop animation guide
-5. Waits 10 hours for APPROVE tap. Timeout → auto-rejected.
+6. Waits 10 hours for APPROVE tap. Timeout → auto-rejected.
+
+**`thumbnail_prompt` vs `image_prompt`:** Two separate brain fields. `image_prompt` is for the background (no text, cinematic). `thumbnail_prompt` is for the YouTube thumbnail (with baked-in hook text, tagline, instrument line).
 
 ---
 
 ### `studio/steps/02_extend.py`
 
-Extends 1 or 2 user-provided clips to target duration (default 20 min, configurable).
+Extends user-provided clips to target duration (default 60 min, configurable). Accepts 1–N clips.
 
 **Algorithm:**
-1. Auto-discovers `.mp3`/`.wav` files in the draft folder (sorted by name, skips `music.mp3`).
+1. Auto-discovers `.mp3`/`.wav` files in the draft folder (sorted by name, skips `music.flac`).
 2. Strips silence from each clip (both ends, -50dB threshold).
-3. Builds an interleaved sequence (1 clip: `1→1→1…`, 2 clips: `1→2→1→2…`) until ≥ target + 60s.
+3. Builds an interleaved cycle (`1→2→3→…→N→1→2→…`) until total estimated duration ≥ target (60 min). Stops as soon as the threshold is crossed — does NOT add another partial clip.
 4. Crossfade-merges segments iteratively (pair-wise) — 6s `acrossfade` with `qsin` curve.
-5. Final pass: `dynaudnorm` volume levelling + 3s fade-in + 8s fade-out + trim to exact target.
-6. Output: `draft_dir/music.mp3`
+5. Final pass: `dynaudnorm` volume levelling + 3s fade-in + 8s fade-out. **No hard trim** — the last clip plays to its natural end.
+6. Hard cap at `target + 10 min` (e.g. 70 min for a 60-min target) to prevent runaway builds.
+7. Output: `draft_dir/music.flac`
+
+**Why no hard trim:** Always-exactly-60:00 videos signal automation to YouTube. Natural end gives 60–70 min variation (e.g. 63:42), which looks organic.
+
+**6-clip workflow:** Generate 6 Suno clips (3 energy levels × 2 variations: sparse → medium → full). Name them `1.wav`–`6.wav`. Alphabetical sort = playback order. Pipeline interleaves all 6 so the same clip doesn't repeat for ~24 min in a 60-min video.
 
 ---
 
@@ -247,6 +256,8 @@ Assembles the final `video.mp4`. Two modes:
 - Position: centered at `cx = width × 95.5%`, `cy = height × 93%` — mathematically ensures logo stays fully within 1920×1080 video frame after FFmpeg scaling (bottom: 1051/1080px, right: 1895/1920px)
 - `_make_circular_logo(size)` — creates circular PNG from `assets/logo.png`, cached as `assets/logo_Npx.png`
 - Silently skips if `assets/logo.png` doesn't exist
+
+**Clip discovery:** `_find_clips()` looks for `clip_1.mp4`, `clip_2.mp4`, … (numbered). Falls back to `clip.mp4` if no numbered clips found. Image: `background.png` first, then any `.png` alphabetically.
 
 **Both modes produce:** 1920×1080, H.264 CRF 20, AAC 256kbps, `+faststart`.
 
@@ -336,11 +347,10 @@ Entry point for cloud deployments (Hetzner / Railway).
 
 | File | Required | Notes |
 |---|---|---|
-| `clip_1.mp3` | Yes (static mode) | Primary music clip (Suno) |
-| `clip_2.mp3` | No | Second variation — interleaved with clip_1 |
-| `clip.mp4` | No | 8–10s animated loop (Kling/Veo) — preferred for richer visuals |
-| `background.png` | If no clip.mp4 | 16:9 Madhubani background (Gemini Pro) |
-| `thumbnail.png` | No | High-contrast thumbnail with baked-in text |
+| `1.wav` … `6.wav` | Yes (audio) | Suno clips — any `.mp3`/`.wav` name works, alphabetical sort = playback order. 6 clips recommended (3 energy levels × 2 variations). |
+| `clip_1.mp4` … `clip_N.mp4` | Preferred (video) | Numbered animated loops from Veo/Kling (8–10s each). Must be named `clip_1.mp4`, `clip_2.mp4` etc. — assemble step won't find other names. |
+| `background.png` | If no clip_N.mp4 | 16:9 Madhubani background (Gemini Pro) — exact name required. |
+| `thumbnail.png` | No | YouTube thumbnail with baked-in hook text (Gemini Pro). |
 
 ---
 

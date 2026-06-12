@@ -192,9 +192,8 @@ wide stereo field, natural reverb decay, organic recording
 |---|---|---|
 | **Custom mode** | Always | Separate Style, Lyrics, Title fields — never use Simple mode |
 | **Instrumental toggle** | Always ON | Vocals destroy classical authenticity |
-| **Generate variations** | Every session | Generate 4-6, cherry-pick the 2 with most silence and gravity |
-| **Extend** | After picking best clip | Extend 2-3× to reach 8-10 min → extend again to 60 min |
-| **Remaster** | After extending | Run the final extended clip through Remaster for cleaner audio |
+| **Generate variations** | Every session | Generate 6 clips across 3 energy levels (see DhunDetox 6-clip workflow below) |
+| **Remaster** | After generating | Run each clip through Remaster for cleaner audio |
 | **Inpainting** | Fix weak sections | If tabla drops out unnaturally or a phrase sounds wrong, use inpainting to fix that region |
 | **Download stems** | Optional refinement | Download stems and layer/refine in Audacity or GarageBand |
 
@@ -247,21 +246,35 @@ Without this tag, Suno generates a loop or pop structure (verse/chorus). With it
 
 ---
 
+## DhunDetox 6-Clip Workflow
+
+Generate 6 clips per post — 3 energy levels × 2 variations. The pipeline interleaves all 6 so the same clip doesn't repeat for ~24 min. A single looped track risks a YouTube "inauthentic content" flag.
+
+**Energy level structure:**
+| Clips | Level | Style |
+|---|---|---|
+| 1–2 | SPARSE | Solo bansuri dominant, no tabla or very faint, very slow, alap-like, long silences |
+| 3–4 | MEDIUM | Full trio building, tabla enters gently, 38–45 BPM, meditative flow |
+| 5–6 | FULL | Full trio peak, bansuri freely flowing, sarod warm, tabla conversational, 48–50 BPM |
+
+**Each prompt has:**
+- **STYLE FIELD** — base style tags + section-specific modifiers (this is what Suno actually processes)
+- **LYRICS FIELD** — only simple bracket markers like `[Slow Alap]`, `[Steady Flow]`, `[Morning Peak]` — no descriptive prose, Suno ignores it
+
 ## End-to-End Workflow
 
 ```
 1. Pick raga → note its thaat, time of day, emotional quality
-2. Build Style field using DhunDetox master formula above
-3. Write Lyrics field using structural markers for your content category
-4. Generate 4-6 variations in Suno (Instrumental ON)
-5. Pick best 2 clips — choose the ones with most silence and gravity
-6. Extend best clip 2-3× to reach 8-10 minutes
-7. Extend again to 60 minutes
-8. Run final clip through Remaster
-9. Use Inpainting if any section sounds wrong
-10. Download stems if further refinement needed in Audacity
-11. Drop clip_1.mp3 into studio/drafts/YYYY-MM-DD/
-12. Run: python studio/orchestrator.py --publish --date YYYY-MM-DD --no-telegram
+2. Run --draft to get all 6 Suno prompts (3 energy × 2 variations)
+3. In Suno: use Custom Mode, Instrumental ON
+4. Generate each of the 6 prompts → Remaster each clip
+5. Use Inpainting if any section sounds wrong
+6. Download as WAV → name 1.wav, 2.wav, 3.wav, 4.wav, 5.wav, 6.wav
+   (alphabetical sort = playback order: sparse first, full last)
+7. Drop all 6 WAVs into studio/drafts/YYYY-MM-DD/
+8. Also drop: clip_1.mp4…clip_4.mp4 (Veo), background.png (Gemini), thumbnail.png
+9. Run: python studio/orchestrator.py --publish --date YYYY-MM-DD
+10. Pipeline extends all 6 clips to natural 60–70 min, assembles, uploads
 ```
 
 ---
