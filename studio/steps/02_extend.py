@@ -125,17 +125,17 @@ def run(draft_dir: str, target_min: int = DEFAULT_MIN) -> str:
         print(f"[extend] Clip {i+1} after silence strip: {dur:.0f}s ({dur/60:.1f} min)")
         stripped.append(dst)
 
-    # Build interleaved sequence until we exceed TARGET_SEC
-    # With 2 clips: 1→2→1→2→... ; with 1 clip: 1→1→1→...
-    # Each crossfade overlap reduces effective duration by CROSSFADE_SEC
+    # Build interleaved sequence until we exceed TARGET_SEC.
+    # Stop as soon as we cross the minimum — let the last clip finish naturally.
+    # This produces 60–70 min videos (not always exactly 60:00 which looks like automation).
+    MAX_SEC = target_min * 60 + 10 * 60  # hard cap at target + 10 min
     sequence = []
     total = 0.0
     idx = 0
-    while total < TARGET_SEC + 60:   # overshoot by 1 min so trim is clean
+    while total < TARGET_SEC:
         clip = stripped[idx % len(stripped)]
         sequence.append(clip)
         dur = get_duration(clip)
-        # Each segment after the first loses CROSSFADE_SEC to overlap
         if len(sequence) == 1:
             total += dur
         else:
@@ -152,9 +152,11 @@ def run(draft_dir: str, target_min: int = DEFAULT_MIN) -> str:
     merged_dur = get_duration(merged_path)
     print(f"[extend] Merged: {merged_dur:.0f}s ({merged_dur/60:.1f} min)")
 
+    # No trim — let audio end at natural clip boundary (gives 60–70 min variation)
+    # Hard cap only if somehow exceeded target + 10 min
     out_path = os.path.join(draft_dir, "music.flac")
     _normalise_and_fade(merged_path, out_path, merged_dur,
-                        trim_sec=TARGET_SEC if merged_dur > TARGET_SEC else None)
+                        trim_sec=MAX_SEC if merged_dur > MAX_SEC else None)
 
     # Cleanup temp files
     for p in stripped + [merged_path]:
