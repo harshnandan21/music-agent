@@ -325,35 +325,11 @@ def do_draft(date_str: str):
 
     client = genai.Client(api_key=GEMINI_API_KEY)
     step01 = _load_step("01_draft.py")
-
-    MAX_RETRIES = 3
-    decision    = "rejected"
-    for attempt in range(1, MAX_RETRIES + 1):
-        if attempt > 1:
-            print(f"[orchestrator] Generating new idea (attempt {attempt}/{MAX_RETRIES})...")
-        _, decision = step01.run(client, draft_dir)
-        if decision != "rejected":
-            break
-        if attempt < MAX_RETRIES:
-            tg.send_text(f"Generating a fresh idea... (attempt {attempt + 1}/{MAX_RETRIES})")
-        else:
-            tg.send_text("All ideas rejected. Run --draft manually when ready.")
-
-    if decision == "rejected":
-        print("All ideas rejected via Telegram. Re-run --draft to try again.")
-        print("=" * 60)
-        return
-
-    # Manual/Laptop mode only
-    mode      = "manual"
-    file_mode = "LAPTOP"
+    _, _ = step01.run(client, draft_dir)
 
     brain = _load_brain(draft_dir)
-    brain["mode"] = mode
+    brain["mode"] = "manual"
     _save_brain(brain, draft_dir)
-    print(f"[orchestrator] Mode: {mode} / {file_mode}")
-
-    _send_manual_prompts(brain, date_str, file_mode)
 
     print("=" * 60)
     print(f"Draft saved: {draft_dir}")

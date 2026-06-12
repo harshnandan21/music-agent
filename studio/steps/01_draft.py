@@ -160,6 +160,40 @@ def _veo_video_prompt(brain: dict) -> str:
     )
 
 
+def _print_draft(brain: dict, date_label: str):
+    """Print full idea summary + all prompts to terminal."""
+    SEP = "=" * 60
+    suno  = _suno_prompt(brain)
+    bg    = _gemini_bg_prompt(brain)
+    video = _veo_video_prompt(brain)
+
+    title_opts = brain.get("title_options", [])
+    print(f"\n{SEP}")
+    print(f"DHUNDETOX — IDEA OF THE DAY ({date_label})")
+    print(SEP)
+    print(f"Raga:        {brain.get('raga', '')}")
+    print(f"Instruments: {brain.get('instrument', '')}")
+    print(f"Hz:          {brain.get('hz_frequency', '')}")
+    print(f"Use case:    {brain.get('use_case', '')}")
+    print(f"\nTitle: {brain.get('title', '')}")
+    if title_opts:
+        print("\nOther title options:")
+        for i, t in enumerate(title_opts):
+            print(f"  {i+1}. {t}")
+    print(f"\nHook:    {brain.get('thumbnail_hook', '')}")
+    print(f"Tagline: {brain.get('thumbnail_tagline', '')}")
+    print(f"\n{SEP}\n")
+    print(suno)
+    print(f"\n{SEP}\n")
+    print(bg)
+    print(f"\n{SEP}\n")
+    print(video)
+    print(f"\n{SEP}")
+    print(f"Drop files into: studio/drafts/{date_label}/")
+    print(f"Then run: python studio/orchestrator.py --publish --date {date_label}")
+    print(SEP)
+
+
 def run(client, draft_dir: str) -> tuple[dict, str]:
     os.makedirs(draft_dir, exist_ok=True)
     date_label = os.path.basename(draft_dir)
@@ -173,101 +207,5 @@ def run(client, draft_dir: str) -> tuple[dict, str]:
         json.dump(brain, f, indent=2, ensure_ascii=False)
     print(f"[draft] Saved -> {brain_path}")
 
-    # 1 — Idea summary with APPROVE / REJECT
-    caption = (
-        f"DhunDetox — Idea of the Day ({date_label})\n\n"
-        f"Raga: {brain.get('raga', '—')}\n"
-        f"Instruments: {brain.get('instrument', '—')}\n"
-        f"Use case: {brain.get('use_case', '—')}\n\n"
-        f"Title:\n{brain.get('title', '—')}\n\n"
-        + (
-            "Other title options:\n"
-            + "\n".join(f"  {i+1}. {t}" for i, t in enumerate(brain.get("title_options", [])))
-            + "\n\n"
-            if brain.get("title_options") else ""
-        )
-        + f"Hook: {brain.get('thumbnail_hook', '—')}\n"
-        f"Tagline: {brain.get('thumbnail_tagline', '—')}\n\n"
-        f"Approve to lock in today's idea."
-    )
-    token = tg.new_token()
-    tg.send_approval(None, caption, token)
-
-    # 2 — All prompts as a single .txt file (open on phone → easy copy-paste)
-    suno  = _suno_prompt(brain)
-    bg    = _gemini_bg_prompt(brain)
-    video = _veo_video_prompt(brain)
-    divider = "\n" + "=" * 60 + "\n\n"
-    doc_content = (
-        f"DHUNDETOX — IDEA OF THE DAY ({date_label})\n"
-        f"{'=' * 60}\n\n"
-        f"Raga:        {brain.get('raga', '')}\n"
-        f"Instruments: {brain.get('instrument', '')}\n"
-        f"Title:       {brain.get('title', '')}\n"
-        + (
-            "".join(f"  Option {i+1}: {t}\n" for i, t in enumerate(brain.get("title_options", [])))
-            if brain.get("title_options") else ""
-        )
-        + f"Hz:          {brain.get('hz_frequency', '')}\n"
-        f"Hook:        {brain.get('thumbnail_hook', '')}\n"
-        f"Tagline:     {brain.get('thumbnail_tagline', '')}\n"
-        + divider
-        + suno
-        + divider
-        + bg
-        + divider
-        + video
-        + "\n"
-    )
-    tg.send_document(
-        filename=f"dhundetox-{date_label}.txt",
-        content=doc_content,
-        caption=f"Open file to copy Suno + Gemini prompts",
-    )
-
-    print("[draft] Prompts sent. Waiting up to 10h for approval (no reply = rejected)...")
-    decision = tg.wait_for_decision(token, timeout_seconds=36000)
-    if decision == "timeout":
-        decision = "rejected"
-    print(f"[draft] Decision: {decision}")
-
-    if decision == "approved":
-        tg.send_text(
-            f"Idea locked in for {date_label}!\n\n"
-            f"Drop your files into studio/drafts/{date_label}/\n"
-            f"  clip_1.mp3 or .wav  (required — music)\n"
-            f"  clip_2.mp3 or .wav  (optional — second clip)\n"
-            f"  clip_1.mp4          (recommended — Veo: flame motion)\n"
-            f"  clip_2.mp4          (recommended — Veo: smoke motion)\n"
-            f"  clip_3.mp4          (recommended — Veo: sky glow)\n"
-            f"  clip_4.mp4          (optional   — Veo: water ripple)\n"
-            f"  background.png      (fallback if no .mp4 clips)\n"
-            f"  thumbnail.png       (required)\n\n"
-            f"Then run:\npython studio/orchestrator.py --publish"
-        )
-        # Offer automation: run full automated pipeline into the draft folder
-        try:
-            choice_token = tg.new_token()
-            tg.send_choice_prompt(choice_token,
-                "<b>Would you like to automate generation now?</b>\nGenerate music, image, assemble & upload automatically.",
-                [("⚡ Automate now", "AUTOMATE"), ("📝 Manual — I'll add files", "MANUAL")]
-            )
-            choice = tg.wait_for_choice(choice_token, timeout_seconds=3600)
-            if choice == "AUTOMATE":
-                tg.send_text("Starting automated generation now — I'll report back when done.")
-                try:
-                    import studio.auto_publish as auto_pub
-                    auto_pub.run(brain, draft_dir)
-                    tg.send_text("Automated pipeline finished. Check draft folder or YouTube for result.")
-                    decision = "automated"
-                except Exception as e:
-                    tg.send_text(f"Automation failed: {e}")
-            else:
-                tg.send_text("OK — keep files in the draft folder and run --publish when ready.")
-        except Exception:
-            # Non-fatal — keep original manual instructions
-            pass
-    else:
-        tg.send_text(f"Idea for {date_label} rejected / timed out. Run --draft again for a new idea.")
-
-    return brain, decision
+    _print_draft(brain, date_label)
+    return brain, "approved"
