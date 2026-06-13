@@ -56,6 +56,9 @@ sys.path.insert(0, STUDIO_DIR)
 from dotenv import load_dotenv
 load_dotenv(os.path.join(ROOT_DIR, ".env"))
 
+# Force line-buffered stdout so progress shows in real-time when piped to a file
+sys.stdout.reconfigure(line_buffering=True)
+
 from google import genai
 from config import GEMINI_API_KEY
 from studio.utils import get_duration
@@ -434,6 +437,9 @@ def do_publish(date_str: str):
         if decision == "rejected":
             print("[orchestrator] Upload rejected via Telegram. Files kept in draft folder.")
             sys.exit(0)
+
+    file_mb = os.path.getsize(os.path.join(draft_dir, "video.mp4")) / 1_048_576
+    _tg_send(f"⬆️ Uploading now ({file_mb:.0f} MB)... will notify at 25/50/75% and when done.")
 
     step04   = _load_step("04_upload.py")
     video_id = step04.run(brain, draft_dir, publish_at=publish_at)

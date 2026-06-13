@@ -6,6 +6,18 @@ Uses OAuth 2.0 (token file persisted across runs).
 
 import os, sys, json
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+# Optional Telegram progress updates (graceful fallback if not available)
+try:
+    import studio.telegram as _tg_mod
+    def _tg_progress(msg: str):
+        try:
+            _tg_mod.send_text(msg)
+        except Exception:
+            pass
+except Exception:
+    def _tg_progress(msg: str):
+        pass
 from config import YOUTUBE_CLIENT_SECRET_FILE, YOUTUBE_TOKEN_FILE, get_playlist_id
 
 SCOPES = [
@@ -134,6 +146,8 @@ def run(brain: dict, video_path: str, thumbnail_path: str, publish_at: str = Non
             if pct != last_pct:
                 print(f"[upload] {pct}% uploaded...")
                 last_pct = pct
+                if pct in (25, 50, 75):
+                    _tg_progress(f"⬆️ Upload: {pct}% done...")
 
     video_id = response["id"]
     print(f"[upload] Uploaded: https://youtu.be/{video_id}")
