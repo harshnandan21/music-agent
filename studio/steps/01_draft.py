@@ -38,10 +38,15 @@ def _suno_prompt(brain: dict) -> str:
     cat  = brain.get("suno_lyrics_style", brain.get("playlist", "stress"))
 
     # ── Energy-level style modifiers ──────────────────────────────────────
+    parts3 = _parse_instruments(brain.get("instrument", "sitar"))
+    instr3 = parts3[2] if len(parts3) > 2 else ""
+    # Exclude all non-lead instruments for sparse clips
+    sparse_exclusions = ", ".join(
+        f"no {x}" for x in [instr2, instr3] if x
+    ) or "no tabla"
     sparse_mod = (
-        f"solo {instr1} dominant, no tabla, "
-        + (f"no {instr2}, " if instr2 else "")
-        + "ultra slow 30 BPM, vast silence between phrases, "
+        f"solo {instr1} dominant, {sparse_exclusions}, "
+        "ultra slow 30 BPM, vast silence between phrases, "
         "alap only, no rhythm section, extreme stillness, long pauses"
     )
     medium_mod = (
