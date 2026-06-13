@@ -265,22 +265,23 @@ Special Suno instrument hint tags (always include for these instruments):
 
 Base on: {schedule['music_hints']}
 
-IMAGE PROMPT GUIDANCE — ILLUSTRATED ART STYLE (Soft Painterly Digital Illustration):
+IMAGE PROMPT GUIDANCE — MADHUBANI ILLUSTRATED HYBRID:
 
-Style: {IMAGE_STYLE_V2}
+DhunDetox brand identity = Madhubani border + illustrated central scene.
+The central scene is soft painterly illustration (competitor quality — one prominent musician, face visible, natural background).
+The Madhubani lives in the BORDER and as accent patterns on clothing/instruments only — NOT covering the background.
 
-Generate image_prompt as a soft painterly digital illustration — NOT Madhubani, NOT photorealistic. Think: Indian classical concept art, Artstation quality, storybook illustration, one prominent musician with natural scenic background.
-
-CENTRAL FIGURE (most important — always one musician, always prominent):
+CENTRAL FIGURE (most important element — prominent, illustrated):
 - One Indian musician playing {instruments_label} — seated cross-legged, traditional posture
 - Face clearly visible, eyes gently closed, serene and meditative expression
 - Female musician for string instruments (veena, sitar, sarod), male or female for wind/percussion
-- Wearing traditional attire: ornate saree or kurta with subtle embroidery in raga-appropriate colours
+- Wearing traditional saree or kurta with Madhubani-patterned embroidery (fish motifs, lotus, peacock detailing on fabric)
 - Warm golden glow/halo softly behind the musician's head
-- Instrument beautifully detailed, fingers in playing position
+- Instrument richly decorated with Madhubani linework detailing
 - Upper body dominant in frame — musician takes 50-60% of the composition
+- Art style: soft painterly digital illustration, semi-realistic face, NOT folk-art abstracted
 
-BACKGROUND SCENE (natural, scenic, time-appropriate):
+BACKGROUND SCENE (natural, scenic, illustrated):
 - {mood_backdrop}
 - Derived from schedule image hints: {schedule['image_hints']}
 - Soft painterly depth — foreground clear, background impressionist and atmospheric
@@ -298,28 +299,31 @@ COLOUR PALETTE — derive from raga and time of day:
     night/midnight ragas → deep blue, violet, silver moonlight, warm lamp-gold
     monsoon ragas → deep teal, forest green, grey-rose, bursts of saffron
 
-BORDER AND CLOSING (include word for word):
-"Light elegant decorative border on all four edges — thin ornate line with subtle Indian floral and lotus motifs, NOT dense Madhubani pattern coverage. The border is airy and refined, complementing the illustration without overpowering it.
-16:9 aspect ratio, concept art quality, 8K detail.
-Negative prompt: No text, no title, no words, no watermarks, no logos, no UI elements, no modern objects, no heavy folk art patterns, no dense Madhubani, no anime, no photorealistic CGI, no AI artefacts, no blurry details."
+MADHUBANI BORDER (channel signature — always include, full ornamental):
+"Frame the entire artwork with an exquisite full Madhubani border featuring peacocks, lotus flowers, fish motifs, sacred vines, geometric Mithila patterns, traditional floral elements, and fine black linework in warm gold (#D4A857) on deep indigo (#1A1F3A). The Madhubani heritage lives in this border and in the Madhubani-patterned accents on the musician's attire and instrument."
 
-THUMBNAIL PROMPT GUIDANCE (16:9 YouTube thumbnail — illustrated portrait style):
+CLOSING (include word for word):
+"16:9 aspect ratio, concept art quality, 8K detail. Soft painterly illustrated central scene with full Madhubani ornamental border.
+Negative prompt: No text, no title, no words, no watermarks, no logos, no UI elements, no modern objects, no anime, no photorealistic CGI, no AI artefacts, no blurry details."
+
+THUMBNAIL PROMPT GUIDANCE (16:9 YouTube thumbnail — Madhubani Illustrated portrait):
 Generate thumbnail_prompt as a SEPARATE composition from the background — optimised for YouTube click-through at small size.
 
-SAME STYLE: soft painterly digital illustration, same as background. NOT Madhubani, NOT photorealistic.
+SAME HYBRID STYLE: soft painterly illustrated central figure + full Madhubani ornamental border on all four edges.
 
 COMPOSITION — portrait style (musician takes 60-70% of frame):
 - The {instruments_label} musician close and prominent — upper body and instrument dominant
-- Face expressive of the emotional state: furrowed brow dissolving into peace, closed eyes with hint of relief
-- Background: atmospheric colour wash — simpler than the background image, soft bokeh nature elements
-- The scene immediately tells the viewer what they'll FEEL watching this video
+- Face expressive of the emotional state: eyes closed, serene, warm golden glow
+- Musician's attire and instrument have Madhubani pattern accents (fish, lotus, peacock motifs on fabric)
+- Background: atmospheric colour wash — soft bokeh nature elements, raga-appropriate mood
+- Full Madhubani ornamental border framing all four edges (peacocks, lotus, fish, sacred vines)
 
 TEXT BANNER — clean and readable (critical for mobile click-through):
-A clean ivory/cream parchment scroll or stone tablet naturally integrated in the upper portion of the composition:
-  Line 1 (LARGE bold serif, dark ink on ivory/cream background): the thumbnail_hook value — ALL CAPS, max 5 words
+A clean ivory/cream parchment scroll woven naturally into the upper composition:
+  Line 1 (LARGE bold serif, dark ink on ivory/cream): the thumbnail_hook value — ALL CAPS, max 5 words
   Line 2 (smaller elegant serif): {instruments_label} · Raag {schedule['raga']}
-  Bottom strip (small legible serif on a subtle ribbon): the thumbnail_tagline value
-The banner must look like it belongs in the scene (a painted scroll, temple plaque, stone inscription) — NOT a digital graphic overlay. Dark text on light background for maximum legibility at small sizes.
+  Bottom strip (small legible serif): the thumbnail_tagline value
+Dark text on light background for maximum legibility. The scroll looks like it belongs in the painting — NOT a digital overlay.
 
 COLOUR PALETTE: same as background — raga mood and time of day
   Always: warm golden light touching the musician, inviting and emotional
