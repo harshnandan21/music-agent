@@ -34,66 +34,88 @@ def _suno_prompt(brain: dict) -> str:
     instr1 = parts[0] if parts else "sitar"
     instr2 = parts[1] if len(parts) > 1 else ""
 
-    # STYLE — use Suno-optimised tag stack; fall back to music_prompt prose if missing
-    style = brain.get("suno_style_tags") or brain.get("music_prompt", "")
+    base = brain.get("suno_style_tags") or brain.get("music_prompt", "")
+    cat  = brain.get("suno_lyrics_style", brain.get("playlist", "stress"))
 
-    # LYRICS — vary structure by content category
-    category = brain.get("suno_lyrics_style", brain.get("playlist", "stress"))
+    # ── Energy-level style modifiers ──────────────────────────────────────
+    sparse_mod = (
+        f"solo {instr1} dominant, no tabla, "
+        + (f"no {instr2}, " if instr2 else "")
+        + "ultra slow 30 BPM, vast silence between phrases, "
+        "alap only, no rhythm section, extreme stillness, long pauses"
+    )
+    medium_mod = (
+        f"{instr1} leads, "
+        + (f"{instr2} enters gently, " if instr2 else "")
+        + "tabla 40 BPM very soft, sparse gat, trio building slowly, "
+        "meditative flow, measured pace, no climax"
+    )
+    full_mod = (
+        f"full trio peak, {instr1} freely flowing, "
+        + (f"{instr2} warm resonance, " if instr2 else "")
+        + "tabla conversational 48 BPM, complete alap-jor-jhala arc, "
+        "musical conversation, flowing energy"
+    )
 
-    if category == "sleep":
-        lyrics = (
-            f"[Opening — pure silence, then {instr1} enters with a single note]\n"
-            f"[Sparse alap — each phrase 8-10 seconds apart, tanpura drone beneath]\n\n"
-            f"[Vilambit — progressively slower, each note fading before the next]\n"
-            f"[Deep Stillness — phrases becoming whispers, vast silence between]\n\n"
-            f"[Final fade — no resolution, sound dissolving into quiet]"
-        )
-    elif category == "morning":
-        lyrics = (
-            f"[Gentle Alap — {instr1} opens softly, ascending phrases like sunrise]\n"
-            f"[Awakening — warmth building, not urgency, a slow opening]\n\n"
-            f"[Madhya Laya — mid-pace steady energy, {(instr2 or instr1)} enters]\n"
-            f"[Open Flow — brightness without force, breathing with the music]\n\n"
-            f"[Gentle Close — leave room to start the day, no dramatic ending]"
-        )
-    elif category == "focus":
-        lyrics = (
-            f"[Slow Alap — {instr1} solo, methodical, each phrase deliberate]\n"
-            f"[Deep Concentration — wide silence between phrases, thought completing itself]\n\n"
-            f"[Vilambit Gat — sparse rhythm enters, laser stillness, no distraction]\n"
-            f"[Extended Flow — sustained clarity, no climax, no break in concentration]\n\n"
-            f"[Open Awareness — no resolution, just sustained focus]"
-        )
-    elif category == "midnight":
-        lyrics = (
-            f"[Heavy Alap — {instr1} alone, gravity in every note, 10-second silences]\n"
-            f"[Deliberate Stillness — thoughts settling like sediment, no hurry]\n\n"
-            f"[Slow Gat — rhythm enters at 3+ minutes, minimal, ancient pulse]\n"
-            f"[Sustained Meditation — no buildup, no climax, just the midnight]\n\n"
-            f"[Fade into silence — the music becomes the room, then nothing]"
-        )
+    # ── Simple bracket lyrics per energy level + category ─────────────────
+    sparse_v1 = "[Solo Alap]\n[Long Silence]\n\n[Single Phrase]\n[Stillness]"
+    sparse_v2 = "[Opening Note]\n[Vast Silence]\n\n[Slow Alap]\n[Fade Into Quiet]"
+
+    if cat == "morning":
+        medium_v1 = "[Trio Enters]\n[Gentle Gat]\n\n[Steady Flow]\n[Morning Light]"
+        medium_v2 = "[Awakening]\n[Soft Rhythm]\n\n[Open Flow]\n[Gentle Brightness]"
+        full_v1   = "[Full Trio]\n[Morning Peak]\n\n[Flowing Energy]\n[Gentle Close]"
+        full_v2   = "[Complete Arc]\n[Madhya Laya]\n\n[Conversational]\n[Warm Ending]"
+    elif cat == "sleep":
+        medium_v1 = "[Drone Deepens]\n[Slow Gat]\n\n[Dissolving]\n[Deep Stillness]"
+        medium_v2 = "[Sparse Entry]\n[Night Rhythm]\n\n[Fading]\n[Silence]"
+        full_v1   = "[Full Night]\n[Deep Meditation]\n\n[Dissolving]\n[Final Fade]"
+        full_v2   = "[Vilambit]\n[Night Peak]\n\n[Slow Dissolution]\n[Into Silence]"
+    elif cat == "focus":
+        medium_v1 = "[Trio Enters]\n[Deliberate Gat]\n\n[Concentration]\n[Sustained Flow]"
+        medium_v2 = "[Methodical]\n[Sparse Rhythm]\n\n[Clarity]\n[Extended Focus]"
+        full_v1   = "[Full Clarity]\n[Peak Focus]\n\n[No Distraction]\n[Open Awareness]"
+        full_v2   = "[Deep Work]\n[Sustained]\n\n[Laser Stillness]\n[Focused Close]"
+    elif cat == "midnight":
+        medium_v1 = "[Midnight Gat]\n[Ancient Pulse]\n\n[Heavy Stillness]\n[Sustained]"
+        medium_v2 = "[Slow Entry]\n[Night Rhythm]\n\n[Contemplation]\n[Settling]"
+        full_v1   = "[Full Midnight]\n[Deep Meditation]\n\n[No Climax]\n[Fade Into Dark]"
+        full_v2   = "[Complete Arc]\n[Midnight Peak]\n\n[Vilambit]\n[Into Nothing]"
     else:  # stress / anxiety (default)
-        lyrics = (
-            f"[Slow Alap — {instr1} enters alone, no rhythm, emotional release begins]\n"
-            f"[Komal phrases — longing held, then released, like exhaling weeks of tension]\n\n"
-            f"[Gentle Gat — rhythm enters softly, breath-paced, {(instr2 or instr1)} joins]\n"
-            f"[Emotional Release — phrases that sigh and resolve, the weight lifting]\n\n"
-            f"[Fade — cortisol dropping, nervous system finally resting]"
+        medium_v1 = "[Trio Enters]\n[Gentle Gat]\n\n[Emotional Release]\n[Weight Lifting]"
+        medium_v2 = "[Soft Rhythm]\n[Breath-Paced]\n\n[Sighing Phrases]\n[Resolve]"
+        full_v1   = "[Full Trio]\n[Steady Flow]\n\n[Complete Release]\n[Nervous System Rest]"
+        full_v2   = "[Musical Conversation]\n[Peak Flow]\n\n[Settling]\n[Cortisol Drop]"
+
+    def _clip(n, style_mod, lyrics, label):
+        return (
+            f"── CLIP {n} ({label}) ──────────────────────────────\n"
+            f"STYLE FIELD:\n{base}, {style_mod}\n\n"
+            f"LYRICS FIELD:\n{lyrics}\n"
         )
+
+    clips = "\n".join([
+        _clip(1, sparse_mod, sparse_v1, "SPARSE var 1  → save as 1.wav"),
+        _clip(2, sparse_mod, sparse_v2, "SPARSE var 2  → save as 2.wav"),
+        _clip(3, medium_mod, medium_v1, "MEDIUM var 1  → save as 3.wav"),
+        _clip(4, medium_mod, medium_v2, "MEDIUM var 2  → save as 4.wav"),
+        _clip(5, full_mod,   full_v1,   "FULL var 1    → save as 5.wav"),
+        _clip(6, full_mod,   full_v2,   "FULL var 2    → save as 6.wav"),
+    ])
 
     return (
-        f"SUNO CUSTOM MODE\n\n"
-        f"STYLE FIELD (paste exactly — comma-separated tag stacks, not sentences):\n{style}\n\n"
-        f"LYRICS FIELD (structural markers — controls arrangement):\n{lyrics}\n\n"
+        f"SUNO CUSTOM MODE — 6 CLIPS (3 energy levels × 2 variations)\n"
+        f"Instrumental toggle → ON for all clips.\n"
+        f"{'=' * 60}\n\n"
+        f"{clips}\n"
+        f"{'=' * 60}\n"
         f"TIPS:\n"
-        f"· Instrumental toggle → ON (always)\n"
-        f"· Generate 4-6 variations, pick the 2 with the most silence and gravity\n"
-        f"· Use Extend 2-3× to reach 60 minutes\n"
-        f"· Run the best clip through Remaster for cleaner audio\n"
-        f"· Use Inpainting to fix weak sections (e.g. if tabla drops out unnaturally)\n"
-        f"· Download stems → layer/refine in Audacity or GarageBand if needed\n"
-        f"· Avoid clips that build to a dramatic climax or have Western percussion\n"
-        f"· If rare instrument sounds wrong, add 'no violin, no orchestra' to Style"
+        f"· SPARSE (1-2): solo {instr1}, no rhythm — alap-like, long silences\n"
+        f"· MEDIUM (3-4): trio building, tabla very soft 40 BPM\n"
+        f"· FULL (5-6):   full trio peak, tabla 48 BPM\n"
+        f"· Remaster each clip after generating\n"
+        f"· Drop all 6 in draft folder — pipeline loops to natural 60-70 min\n"
+        f"· Avoid dramatic climax or Western percussion"
     )
 
 

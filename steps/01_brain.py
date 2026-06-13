@@ -454,6 +454,7 @@ TAGS GUIDANCE: Target 440–460 chars (YouTube shows 500 but rejects above ~465 
   "music_prompt": "Detailed Lyria prose prompt per music guidance above ①",
   "suno_style_tags": "Comma-separated Suno tag stack per music guidance above ②",
   "image_prompt": "Madhubani painting scene per image guidance above",
+  "thumbnail_prompt": "16:9 YouTube thumbnail with baked-in text per thumbnail guidance above",
   "video_prompt": "Veo 8-second seamless loop per video guidance above",
   "raga": "{schedule['raga']}",
   "instrument": "{instruments_label}",
