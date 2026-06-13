@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from config import (
     BRAIN_MODEL, OUTPUT_DIR,
     today_schedule, format_instruments,
-    CONTENT_SEEDS, MADHUBANI_STYLE,
+    CONTENT_SEEDS, IMAGE_STYLE_V2,
     VIDEO_ANIMATION_GUIDE, YOUTUBE_KEYWORDS,
 )
 
@@ -265,81 +265,66 @@ Special Suno instrument hint tags (always include for these instruments):
 
 Base on: {schedule['music_hints']}
 
-IMAGE PROMPT GUIDANCE — MADHUBANI HYBRID (Cinematic Scene + Folk Art Border):
+IMAGE PROMPT GUIDANCE — ILLUSTRATED ART STYLE (Soft Painterly Digital Illustration):
 
-Structure the image_prompt with all four sections — cinematic interior, Madhubani border frame:
+Style: {IMAGE_STYLE_V2}
 
-SECTION 1 — OPENING STYLE DECLARATION (word for word):
-"{mood_backdrop}. A serene {instruments_label} player seated in the scene in traditional attire, eyes closed, radiating healing energy. Photorealistic cinematic quality throughout the central scene, ultra-detailed, 8K. Painterly Madhubani folk art ornamental border frames all four edges — peacocks, lotus flowers, fish motifs, sacred vines, geometric Mithila patterns in warm gold (#D4A857) on deep indigo (#1A1F3A). The Madhubani heritage lives in the border and decorative accents; the central scene is cinematic, clear, and atmospheric. 16:9 aspect ratio, professional photography depth of field, no text, no watermarks, no UI elements."
+Generate image_prompt as a soft painterly digital illustration — NOT Madhubani, NOT photorealistic. Think: Indian classical concept art, Artstation quality, storybook illustration, one prominent musician with natural scenic background.
 
-SECTION 2 — CENTRAL SCENE (build from today's schedule and emotional direction):
-- Describe the central figure: a serene Indian musician ({instruments_label} player) OR a meditating figure depending on the scene
-  → Seated in a traditional posture, eyes closed, wearing an ornate saree or kurta decorated with Madhubani patterns, fish symbols, and geometric motifs. Radiating inner peace and healing energy.
-- Describe the setting derived from schedule image_hints: {schedule['image_hints']}
-- Describe the instruments: {instruments_label} richly decorated with traditional Madhubani linework and folk-art detailing, placed near the central figure
-- Emotional direction based on use case "{schedule['use_case']}":
-    deep sleep / melatonin → luminous crescent moon in deep indigo sky, moonlight reflecting on still water, deer resting nearby, lotus flowers closed for night, absolute stillness
-    stress relief / cortisol drop → dusk scene with warm golden light, flowing river, mango tree canopy, birds settling into branches, diyas reflecting in water
-    overthinking / anxiety → monsoon scene with ornamental rain, lone musician under an arched doorway, peacock sheltering under leaves, single candlelight
-    focus / deep work → moonlit midnight corner, oil lamp casting warm circle of light, geometric stars and moon outside window, instruments waiting in silence
-    morning / cortisol reset → radiant sunrise with concentric golden rings, birds in V-formation across sky, open terrace, flowering trees, sacred energy rising
-    overactive mind / midnight → deep midnight garden, crescent moon, three musicians under flowering tree, oil lamps in semicircle, animals listening in stillness
-- Include raga-specific nature elements:
-    Chandrakauns / Darbari → peacock as symbol of mystery, midnight geometry, crescent moon
-    Yaman / Santoor → graceful deer, twilight terrace, lotus pond with moonlight reflections
-    Bageshri → monsoon rain with teardrop motifs, peacock sheltering, candlelight
-    Bhairavi → Ganges riverbank at dawn, birds in flight, sunrise lotus
-    Bhupali → mountain terrace at sunrise, three musicians, radiant birds
-    Yaman Kalyan → lakeside at dusk, sitar and bansuri, diyas reflected in still water
+CENTRAL FIGURE (most important — always one musician, always prominent):
+- One Indian musician playing {instruments_label} — seated cross-legged, traditional posture
+- Face clearly visible, eyes gently closed, serene and meditative expression
+- Female musician for string instruments (veena, sitar, sarod), male or female for wind/percussion
+- Wearing traditional attire: ornate saree or kurta with subtle embroidery in raga-appropriate colours
+- Warm golden glow/halo softly behind the musician's head
+- Instrument beautifully detailed, fingers in playing position
+- Upper body dominant in frame — musician takes 50-60% of the composition
 
-SECTION 3 — SCENE DETAILS AND ATMOSPHERE:
-- Background architecture: ancient Indian temple pavilion or natural landscape richly decorated with traditional Madhubani linework
-- Large sacred trees with patterned leaves arching across the scene, filled with birds and symbolic nature motifs
-- Sky filled with celestial patterns — crescent moon or rising sun with traditional Mithila symbolism
-- Riverbank or pond filled with lotus flowers, peacocks, deer, fish, and glowing fireflies
-- Every element contains authentic Madhubani decorative patterns and intricate hand-drawn textures
-- Soft ambient lighting — moonlit glow OR sunrise gold — magical dreamlike atmosphere with subtle golden highlights
-- Composition: large open central area with clean space for future text overlay; visually balanced and complete
+BACKGROUND SCENE (natural, scenic, time-appropriate):
+- {mood_backdrop}
+- Derived from schedule image hints: {schedule['image_hints']}
+- Soft painterly depth — foreground clear, background impressionist and atmospheric
+- Natural elements matching raga and use case "{schedule['use_case']}":
+    deep sleep / melatonin → moonlit lake, lotus flowers closed, deer resting, absolute stillness, deep blue-silver
+    stress relief / cortisol → golden river at dusk, mango trees, birds settling, warm amber glow
+    overthinking / anxiety → monsoon rain on a garden, peacock sheltering, soft candlelight, deep teal
+    focus / deep work → moonlit room with latticed window, oil lamp, crescent moon, deep indigo
+    morning / cortisol reset → sunrise over river, birds in flight, open terrace, warm saffron-gold
+    overactive mind / midnight → midnight garden, crescent moon, oil lamps, deep blue-violet
 
-SECTION 4 — BORDER AND CLOSING (word for word):
-"Frame the entire artwork with an exquisite Madhubani border featuring peacocks, lotus flowers, fish motifs, sacred vines, geometric Mithila patterns, traditional floral elements, and fine black linework.
-Color palette: deep indigo blue, moonlit silver, earthy terracotta, warm ochre, emerald green, lotus pink, traditional Madhubani red, natural yellow pigments, subtle gold highlights.
-Negative prompt: No text, no title, no words, no frequency numbers, no logo, no watermark, no channel name, no labels, no duration stamp, no UI elements, no modern objects, no photorealism, no 3D render, no cartoon style, no anime, no blurry details, no empty background, no AI artifacts."
+COLOUR PALETTE — derive from raga and time of day:
+    dawn/morning ragas → warm saffron, peach, gold, soft ivory, fresh green
+    dusk/evening ragas → amber, rose, peacock teal, warm orange-gold
+    night/midnight ragas → deep blue, violet, silver moonlight, warm lamp-gold
+    monsoon ragas → deep teal, forest green, grey-rose, bursts of saffron
 
-THUMBNAIL PROMPT GUIDANCE (16:9 YouTube thumbnail — rich painterly style):
-Generate thumbnail_prompt as a SEPARATE image from the background. This is the YouTube thumbnail — it must have baked-in text and strong visual storytelling. Be creative with the composition — do NOT repeat the same layout every time.
+BORDER AND CLOSING (include word for word):
+"Light elegant decorative border on all four edges — thin ornate line with subtle Indian floral and lotus motifs, NOT dense Madhubani pattern coverage. The border is airy and refined, complementing the illustration without overpowering it.
+16:9 aspect ratio, concept art quality, 8K detail.
+Negative prompt: No text, no title, no words, no watermarks, no logos, no UI elements, no modern objects, no heavy folk art patterns, no dense Madhubani, no anime, no photorealistic CGI, no AI artefacts, no blurry details."
 
-STYLE PRINCIPLES (always apply):
-- Rich Indian painting — Mughal miniature meets folk art. NOT flat or digital. Painterly, textured, illustrative, intricate.
-- Central figure: the {instruments_label} player — seated, eyes closed, serene, ornate outfit in colours matching the raga's mood
-- Music flows visibly from the instrument — as wisps, smoke, notes, ripples, light — connecting to the world around them
-- The scene tells the emotional story of the raga and use case through symbolism, not text
-- Ornate decorative border on all four edges — paisley, lotus, geometric motifs
-- Rich botanical elements natural to the scene — derive from raga setting
+THUMBNAIL PROMPT GUIDANCE (16:9 YouTube thumbnail — illustrated portrait style):
+Generate thumbnail_prompt as a SEPARATE composition from the background — optimised for YouTube click-through at small size.
 
-BAKED-IN TEXT (always include, rendered as part of the painting — NOT labelled "overlay"):
-A wide ornate parchment or stone banner (top or woven naturally into the composition) containing:
-  Line 1 (large bold serif, high contrast): the thumbnail_hook value — max 6 words, no emojis, no Hz numbers
-  Line 2 (smaller elegant serif): "Raag {schedule['raga']} · {{hz_frequency}}  |  {{2-3 word benefit}}"
-  Bottom strip (legible serif): the thumbnail_tagline value
-CRITICAL: Do NOT include the word "OVERLAY" or any meta-labels anywhere in the image. The text must appear as part of the artwork itself.
+SAME STYLE: soft painterly digital illustration, same as background. NOT Madhubani, NOT photorealistic.
 
-COMPOSITION — invent a fresh approach each time. Some possibilities to draw from:
-- The two-world split: musician at centre, one half shows the emotional problem (tangled spirals for overthinking, dark storm clouds for stress, fragmented shards for anxiety, grey fog for brain fatigue), other half shows the relief (peacock in full bloom, deer in golden light, lotus opening, moon emerging from clouds) — both halves dissolving into the music
-- The immersive scene: musician fully embedded in a rich landscape — river at dawn, monsoon garden, moonlit terrace — the music animates the whole scene with visible sound waves
-- The before/after arch: upper half dark and chaotic, lower half calm and luminous, musician at the threshold playing the transition
-- The circular mandala: musician at centre of a radiant circular composition, raga's nature symbols radiating outward like petals, problem symbols at outer edges dissolving inward
-- The atmospheric portrait: musician large in frame, face and instrument dominant, atmospheric landscape behind — painterly like a classical Indian portrait but with visible sound and emotion
-- Or invent something entirely fitting to the specific raga and use case
+COMPOSITION — portrait style (musician takes 60-70% of frame):
+- The {instruments_label} musician close and prominent — upper body and instrument dominant
+- Face expressive of the emotional state: furrowed brow dissolving into peace, closed eyes with hint of relief
+- Background: atmospheric colour wash — simpler than the background image, soft bokeh nature elements
+- The scene immediately tells the viewer what they'll FEEL watching this video
 
-COLOUR PALETTE: always derive from raga mood and time of day
-  monsoon/night ragas → deep indigo, stormy teal, rose, silver rain
-  dawn ragas → saffron, warm gold, ivory, fresh green
-  dusk ragas → amber, crimson, peacock teal, turmeric
-  midnight ragas → dark navy, deep violet, gold lamp-glow
-  Always: warm golden halo or glow behind the central musician
+TEXT BANNER — clean and readable (critical for mobile click-through):
+A clean ivory/cream parchment scroll or stone tablet naturally integrated in the upper portion of the composition:
+  Line 1 (LARGE bold serif, dark ink on ivory/cream background): the thumbnail_hook value — ALL CAPS, max 5 words
+  Line 2 (smaller elegant serif): {instruments_label} · Raag {schedule['raga']}
+  Bottom strip (small legible serif on a subtle ribbon): the thumbnail_tagline value
+The banner must look like it belongs in the scene (a painted scroll, temple plaque, stone inscription) — NOT a digital graphic overlay. Dark text on light background for maximum legibility at small sizes.
 
-OUTPUT: write thumbnail_prompt as one flowing paragraph of rich descriptive prose — as if briefing a master illustrator. Do NOT use bullet points. Make it specific, vivid, and unique to this raga and use case.
+COLOUR PALETTE: same as background — raga mood and time of day
+  Always: warm golden light touching the musician, inviting and emotional
+
+OUTPUT: write thumbnail_prompt as one flowing paragraph — specific about musician expression, clothing colours, instrument position, banner design, background atmosphere. Make it unique to this raga and use case.
 
 VIDEO PROMPT GUIDANCE (for Veo — seamless 8-second loop):
 Generate video_prompt in this EXACT format, derived from the image scene above:

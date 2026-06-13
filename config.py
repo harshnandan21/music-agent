@@ -730,8 +730,8 @@ CONTENT_SEEDS = {
     ],
 }
 
-# ── Madhubani visual style (shared by image + thumbnail prompts) ──────────────
-MADHUBANI_STYLE = (
+# ── Madhubani visual style V1 — ARCHIVED (kept for future use) ────────────────
+MADHUBANI_STYLE_V1 = (
     "Authentic Madhubani (Mithila) folk-art masterpiece. "
     "Sacred, calming, spiritual, deeply connected to Indian culture and wellness traditions. "
     "Authentic Madhubani painting style, handmade folk-art appearance, museum-quality Mithila artwork. "
@@ -742,6 +742,24 @@ MADHUBANI_STYLE = (
     "lotus pink, traditional Madhubani red, natural yellow pigments, subtle gold highlights. "
     "Masterpiece, ultra-detailed, 8K, professional artwork, highly intricate patterns, timeless Indian folk-art beauty. "
     "No text, no watermarks, no letters, no modern objects, no photorealism, no 3D render, no cartoon style."
+)
+
+# ── Illustrated art style V2 — ACTIVE (soft painterly digital illustration) ───
+# Inspired by top-performing Indian classical channels (Soulful Breathscape style):
+# one prominent musician, natural scenic background, light ornate border, warm palette.
+IMAGE_STYLE_V2 = (
+    "Soft painterly digital illustration, Indian classical music art, semi-realistic style, "
+    "concept art quality, Artstation quality, storybook illustration. "
+    "NOT photorealistic. NOT Madhubani folk art patterns. NOT anime. NOT flat design. "
+    "One central Indian musician as the dominant figure — face clearly visible, "
+    "eyes gently closed, serene meditative expression, traditional attire with subtle embroidery. "
+    "Warm golden halo/glow softly behind the musician. "
+    "Natural scenic background relevant to raga time and mood — river, lotus pond, "
+    "forest, mountains, temple steps, moonlit terrace — painted in soft impressionist style. "
+    "Light elegant decorative border on all edges — thin ornate line with subtle Indian motifs, "
+    "NOT dense Madhubani pattern coverage. "
+    "Warm inviting color palette derived from raga mood and time of day. "
+    "High detail, 8K quality. No text, no watermarks, no UI elements, no modern objects."
 )
 
 # ── Video animation elements by scene type (for Veo/video_prompt guidance) ────
