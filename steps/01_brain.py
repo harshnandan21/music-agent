@@ -278,8 +278,9 @@ CENTRAL FIGURE (most important element — prominent, illustrated):
 - Wearing traditional saree or kurta with Madhubani-patterned embroidery (fish motifs, lotus, peacock detailing on fabric)
 - Warm golden glow/halo softly behind the musician's head
 - Instrument richly decorated with Madhubani linework detailing
-- Upper body dominant in frame — musician takes 50-60% of the composition
+- Musician takes 35-45% of the composition — elegant, not portrait-dominant; gives breathing room to the scene
 - Art style: soft painterly digital illustration, semi-realistic face, NOT folk-art abstracted
+- Overall composition should feel balanced, airy, and visually beautiful — not cramped
 
 BACKGROUND SCENE (natural, scenic, illustrated):
 - {mood_backdrop}
@@ -299,8 +300,8 @@ COLOUR PALETTE — derive from raga and time of day:
     night/midnight ragas → deep blue, violet, silver moonlight, warm lamp-gold
     monsoon ragas → deep teal, forest green, grey-rose, bursts of saffron
 
-MADHUBANI BORDER (channel signature — always include, full ornamental):
-"Frame the entire artwork with an exquisite full Madhubani border featuring peacocks, lotus flowers, fish motifs, sacred vines, geometric Mithila patterns, traditional floral elements, and fine black linework in warm gold (#D4A857) on deep indigo (#1A1F3A). The Madhubani heritage lives in this border and in the Madhubani-patterned accents on the musician's attire and instrument."
+MADHUBANI BORDER (channel signature — always include, but refined and proportionate):
+"Frame the entire artwork with a refined Madhubani border — elegant and slender (not thick or overpowering), featuring peacocks, lotus flowers, fish motifs, sacred vines, and geometric Mithila patterns in warm gold (#D4A857) on deep indigo (#1A1F3A). The border is a decorative accent that completes the frame, not a dominant element — it should feel like a beautiful frame on a painting, not a wall of patterns. The Madhubani heritage also lives in the patterned accents on the musician's attire and instrument."
 
 CLOSING (include word for word):
 "16:9 aspect ratio, concept art quality, 8K detail. Soft painterly illustrated central scene with full Madhubani ornamental border.
@@ -309,14 +310,14 @@ Negative prompt: No text, no title, no words, no watermarks, no logos, no UI ele
 THUMBNAIL PROMPT GUIDANCE (16:9 YouTube thumbnail — Madhubani Illustrated portrait):
 Generate thumbnail_prompt as a SEPARATE composition from the background — optimised for YouTube click-through at small size.
 
-SAME HYBRID STYLE: soft painterly illustrated central figure + full Madhubani ornamental border on all four edges.
+SAME HYBRID STYLE: soft painterly illustrated central figure + refined slender Madhubani border on all four edges.
 
-COMPOSITION — portrait style (musician takes 60-70% of frame):
-- The {instruments_label} musician close and prominent — upper body and instrument dominant
-- Face expressive of the emotional state: eyes closed, serene, warm golden glow
+COMPOSITION — balanced portrait (musician takes 45-55% of frame):
+- The {instruments_label} musician elegant and visible — upper body and instrument clear, positioned slightly to one side
+- Face serene, eyes closed, warm golden glow behind head — beautiful, not overpowering
 - Musician's attire and instrument have Madhubani pattern accents (fish, lotus, peacock motifs on fabric)
-- Background: atmospheric colour wash — soft bokeh nature elements, raga-appropriate mood
-- Full Madhubani ornamental border framing all four edges (peacocks, lotus, fish, sacred vines)
+- Background: atmospheric scenic — beautiful natural elements, raga-appropriate mood, not just a colour wash
+- Refined slender Madhubani border framing all four edges — elegant frame, NOT thick or overpowering
 
 TEXT BANNER — clean and readable (critical for mobile click-through):
 A clean ivory/cream parchment scroll woven naturally into the upper composition:
