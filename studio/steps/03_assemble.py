@@ -156,73 +156,49 @@ def _assemble_from_clip(clip_path: str, music_path: str, duration: float, out_pa
          "-of", "csv=p=0", clip_path],
         capture_output=True, text=True, check=True,
     )
-    clip_dur      = float(probe.stdout.strip())
-    effective_dur = clip_dur - XFADE_DUR
-    n_clips       = max(2, math.ceil((duration - clip_dur) / effective_dur) + 1)
+    clip_dur = float(probe.stdout.strip())
+    n_loops  = max(2, math.ceil(duration / clip_dur) + 1)
 
     logo_path = _make_circular_logo()
     has_logo  = logo_path is not None
+    fade_out_start = duration - 3
+    tmp_dir = os.path.dirname(out_path)
 
-    # Index 0 = black lavfi source for curtain open; clips start at index 1
-    black_dur = CURTAIN_HOLD + CURTAIN_DUR
-    inputs = [
-        "-f", "lavfi",
-        "-i", f"color=black:size=1920x1080:rate=24:duration={black_dur}",
-    ]
-    for _ in range(n_clips):
-        inputs += ["-i", clip_path]
-    inputs += ["-i", music_path]
+    # Write a concat list file — avoids Windows 32k command-line length limit
+    # that occurs when passing 100+ -i flags for a 60-min video
+    list_path  = os.path.join(tmp_dir, "loop_concat.txt")
+    clip_fwd   = os.path.abspath(clip_path).replace("\\", "/")
+    with open(list_path, "w") as fh:
+        for _ in range(n_loops):
+            fh.write(f"file '{clip_fwd}'\n")
+
+    inputs = ["-f", "concat", "-safe", "0", "-i", list_path, "-i", music_path]
     if has_logo:
         inputs += ["-i", logo_path]
-
-    music_idx      = 1 + n_clips
-    logo_idx       = 1 + n_clips + 1
-    fade_out_start = duration - 3
-
-    # Scale all clips to 1920x1080 (shifted by 1 for black source at index 0)
-    # setpts+fps normalizes timestamps so xfade vertopen works correctly
-    parts = [f"[{i+1}:v]{SCALE_FILTER},setpts=PTS-STARTPTS,fps=24[sv{i}]" for i in range(n_clips)]
-
-    # Curtain open: black splits top/bottom revealing sv0
-    parts.append("[0:v]format=yuv420p[black]")
-    parts.append(
-        f"[black][sv0]xfade=transition=vertopen:duration={CURTAIN_DUR}:offset={CURTAIN_HOLD:.3f}[c0]"
-    )
-
-    # Dissolve chain — offsets shifted by CURTAIN_HOLD vs. the non-curtain case
-    prev = "[c0]"
-    for i in range(1, n_clips):
-        offset = CURTAIN_HOLD + i * effective_dur
-        label  = f"[xf{i}]"
-        parts.append(
-            f"{prev}[sv{i}]xfade=transition=dissolve:duration={XFADE_DUR}:offset={offset:.3f}{label}"
-        )
-        prev = label
-
-    # Fade out only (curtain handles the open)
-    parts.append(f"{prev}fade=t=out:st={fade_out_start:.1f}:d=3[vfade]")
-
-    # Logo overlay
-    if has_logo:
-        parts.append(f"[vfade][{logo_idx}:v]overlay=x=trunc(W*0.955)-w/2:y=trunc(H*0.930)-h/2:format=auto[v]")
-        video_map = "[v]"
+        logo_idx = 2
+        fc = (f"[0:v]{SCALE_FILTER},fade=t=in:st=0:d=1,"
+              f"fade=t=out:st={fade_out_start:.1f}:d=3[vf];"
+              f"[vf][{logo_idx}:v]overlay=x=trunc(W*0.955)-w/2:y=trunc(H*0.930)-h/2:format=auto[v]")
+        filter_args = ["-filter_complex", fc]
+        video_map   = "[v]"
     else:
-        video_map = "[vfade]"
+        filter_args = ["-vf",
+                       f"{SCALE_FILTER},fade=t=in:st=0:d=1,fade=t=out:st={fade_out_start:.1f}:d=3"]
+        video_map   = "0:v"
 
-    cmd = [
-        "ffmpeg", "-y",
-    ] + inputs + [
-        "-filter_complex", ";".join(parts),
-        "-map", video_map,
-        "-map", f"{music_idx}:a",
-        "-c:v", "libx264", "-preset", "fast", "-crf", "20",
-        "-c:a", "aac", "-b:a", "256k",
-        "-pix_fmt", "yuv420p",
-        "-t", str(duration),
-        "-movflags", "+faststart",
-        out_path,
-    ]
-    print(f"[assemble] Assembling {n_clips} clips with curtain open + dissolve transitions...")
+    cmd = (
+        ["ffmpeg", "-y"] + inputs + filter_args + [
+            "-map", video_map,
+            "-map", "1:a",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "20",
+            "-c:a", "aac", "-b:a", "256k",
+            "-pix_fmt", "yuv420p",
+            "-t", str(duration),
+            "-movflags", "+faststart",
+            out_path,
+        ]
+    )
+    print(f"[assemble] Assembling {n_loops} loops via concat list (fade-in + fade-out)...")
     subprocess.run(cmd, check=True, stdin=subprocess.DEVNULL)
 
 
